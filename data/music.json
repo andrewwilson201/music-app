@@ -3545,19 +3545,25 @@
      "id": "af1cb69112c",
      "artist": "mandy indiana",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273515f91e90266ff3cdc78e7c8",
+     "spotify": "https://open.spotify.com/album/2W2pytiTdjR0VArgmbQD3M"
     },
     {
      "id": "a887e4d8da6",
      "artist": "david moore",
      "title": "graze the bell",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27388a0458624876c2a82d551c0",
+     "spotify": "https://open.spotify.com/album/6pZZlJ0eXSavMeSN60mGD9"
     },
     {
      "id": "ade6a9e9d3e",
      "artist": "kin",
      "title": "kmru",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a44d5aa4a79",
@@ -3565,7 +3571,9 @@
      "title": "marathon",
      "songs": [
       "peacemaking"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27326b9b08fd44a08aa4001b220",
+     "spotify": "https://open.spotify.com/album/6DygEWTpUZOaQWSugKs4mk"
     },
     {
      "id": "adecf1b35f9",
@@ -3573,19 +3581,25 @@
      "title": "nothing's about to happen to me",
      "songs": [
       "I'll change for you"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273be1cdc30c83c5822adac15a9",
+     "spotify": "https://open.spotify.com/album/2M9F3AsbWy7n4LwmJ8pqEu"
     },
     {
      "id": "a3d72880d63",
      "artist": "twisted teens",
      "title": "blame the clown",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b70d5388afd345b4a00010af",
+     "spotify": "https://open.spotify.com/album/6WVULKossUfiq6AkHBZtIp"
     },
     {
      "id": "a511546dd84",
      "artist": "wendy eisenberg",
      "title": "wendy eisenberg",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273272a63020eaf0549aaec739f",
+     "spotify": "https://open.spotify.com/album/461pbwQf3k7oOQ43DZjzf5"
     },
     {
      "id": "af198f05d29",
@@ -3594,19 +3608,25 @@
      "songs": [
       "in the blink of an eye",
       "love story"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b2de727fc0b3d644cd8b7e57",
+     "spotify": "https://open.spotify.com/album/0FypCc1StF9mNiLemcuJ3J"
     },
     {
      "id": "adb87cdd475",
      "artist": "avalon emerson",
      "title": "written into changes",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27317012ffa2fd2e418939fa7b5",
+     "spotify": "https://open.spotify.com/album/652IHz4kGbrNGIkq40T6wU"
     },
     {
      "id": "ac72d0699f5",
      "artist": "bon iver",
      "title": "volumes: one",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2738a0df30152364ff0767ac58c",
+     "spotify": "https://open.spotify.com/album/2tV8MeptqoxJcuwQbh6Khr"
     },
     {
      "id": "ac7a6355f10",
@@ -3630,7 +3650,9 @@
      "id": "afcee56f0dc",
      "artist": "friko",
      "title": "something worth waiting for",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739171a712617b6f16dd897746",
+     "spotify": "https://open.spotify.com/album/4myypnSDFC6PrjZRDYcBaC"
     },
     {
      "id": "ab6cd56eef3",
@@ -3642,19 +3664,25 @@
      "id": "aad3cdec22f",
      "artist": "eliana glass",
      "title": "eat home",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ca03e51eb5ce016c58dded6a",
+     "spotify": "https://open.spotify.com/album/7G97vpfUnWvMFwlyA3ZrHu"
     },
     {
      "id": "ae0e424f146",
      "artist": "angine de poitrine",
      "title": "vol II",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2734821b77fd92093513d7634b5",
+     "spotify": "https://open.spotify.com/album/3FqqIeynZXFBcyLS9FlWMo"
     },
     {
      "id": "af7f2aa3da4",
      "artist": "ana roxanne",
      "title": "poem 1",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f32a3d82c33b956a32dd3fb9",
+     "spotify": "https://open.spotify.com/album/4eLf3APm1Cb4vqmJUnDLpr"
     },
     {
      "id": "afd48cc615c",
@@ -3666,13 +3694,17 @@
      "id": "a24a8e9c4ba",
      "artist": "american football",
      "title": "lp4",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27359654022fe74df87ff7cf866",
+     "spotify": "https://open.spotify.com/album/3fhKJU3nUfduKj9YhEAoGf"
     },
     {
      "id": "a2ac1d3f919",
      "artist": "frkse",
      "title": "through the slow dusk",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273456e2de108380c6a45ade479",
+     "spotify": "https://open.spotify.com/album/25BwWThS8IZtx72TdoZIEX"
     },
     {
      "id": "a683034c46b",
@@ -3680,19 +3712,25 @@
      "title": "beauty land",
      "songs": [
       "frog"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c70598100d2b92371ab5a3d7",
+     "spotify": "https://open.spotify.com/album/60obFnzuMGgVR5bHKioyX2"
     },
     {
      "id": "ad0cc80395f",
      "artist": "boards of canada",
      "title": "inferno",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c0588d9dcd8bd9e7a7845844",
+     "spotify": "https://open.spotify.com/album/0mu3EvWYfNwBfISSg0q03p"
     },
     {
      "id": "af8a450be17",
      "artist": "broken social scene",
      "title": "remember the humans",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ddef443d3aabbd8bb7e2e686",
+     "spotify": "https://open.spotify.com/album/0yPmrfp6Vtm0lvLjPDAXaO"
     },
     {
      "id": "ac6aadb9616",
@@ -3704,13 +3742,17 @@
      "id": "ae0a35bbd7c",
      "artist": "ed o brien",
      "title": "blue morpho",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2733c408a82f600f91aec07a3c9",
+     "spotify": "https://open.spotify.com/album/6U0M6Tp6DMGduBdp5rVzqe"
     },
     {
      "id": "ab84c30e9d2",
      "artist": "duval timothy",
      "title": "rain music",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b763e5ba19c24d73c88f2f95",
+     "spotify": "https://open.spotify.com/album/6gfE8grb3T3OL8sxkHapjy"
     },
     {
      "id": "a5fbb770162",
@@ -3754,25 +3796,33 @@
      "id": "a18df1c9cd8",
      "artist": "BASIC",
      "title": "BASIC",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737dc13f6495f644e3ae9c3046",
+     "spotify": "https://open.spotify.com/album/5pDCrxDFqutGLW3B5ypsCA"
     },
     {
      "id": "a3102b884ff",
      "artist": "ear",
      "title": "rumspringa",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ff70e306fc821eefc96552c1",
+     "spotify": "https://open.spotify.com/album/1EHtMAqAB6GSnw8IbuXFLn"
     },
     {
      "id": "ab561c3a98d",
      "artist": "beth orton",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737b3c19207864e04f65e16741",
+     "spotify": "https://open.spotify.com/album/2xsnBz8QqjNPUDVFp0PKZS"
     },
     {
      "id": "ab0cc6a18fd",
      "artist": "channel beads",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736692913a50453073957e1bfa",
+     "spotify": "https://open.spotify.com/album/2e1eja8MYlw9fn7v48ZFlU"
     },
     {
      "id": "a4e6decaea3",
@@ -3811,7 +3861,9 @@
      "id": "a9f43522bef",
      "artist": "adrian rew",
      "title": "slot machine music, vol1 & 2",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e8c42282f09c547c311ea07c",
+     "spotify": "https://open.spotify.com/album/3YhNBc4eZ14MGBiYGz8jqw"
     },
     {
      "id": "a20fff1a93a",
@@ -3858,7 +3910,9 @@
      "id": "a52c69a4a84",
      "artist": "hanna stretton",
      "title": "tiarn",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273d2290ecce53252e1baa8f964",
+     "spotify": "https://open.spotify.com/album/2Kt7Izz50rQVGCxalT4NQT"
     },
     {
      "id": "aeb7f7d9a17",
@@ -3873,7 +3927,9 @@
      "id": "a145498a6e2",
      "artist": "gb",
      "title": "herzsprung",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273355fe9cfb136e988e9700650",
+     "spotify": "https://open.spotify.com/album/0bOMbuBlJbKyajSoFMJxf1"
     },
     {
      "id": "a35e4bfb992",
@@ -3897,7 +3953,9 @@
      "id": "a7d925b2c80",
      "artist": "djrum",
      "title": "I wander",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27326bfad7dfcc51796fb8d57c6",
+     "spotify": "https://open.spotify.com/album/02yCblfjlo1MFWBMLWXwbr"
     },
     {
      "id": "a8f4956552a",
@@ -3925,7 +3983,9 @@
      "title": "linda's head",
      "songs": [
       "faraway"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273706ed40347d60a9876111635",
+     "spotify": "https://open.spotify.com/album/2wB9detc1PQGC8MmHmQEPg"
     },
     {
      "id": "aba73ae26ec",
