@@ -48,8 +48,10 @@ const emit = () => listeners.forEach((fn) => fn());
 const setStatus = (s, err = '') => { status = s; lastError = err; emit(); };
 
 function api(path, opts = {}) {
-  const { owner, repo, token } = getConfig();
-  return fetch(`https://api.github.com/repos/${owner}/${repo}/${path}`, {
+  const { owner, repo } = getConfig();
+  const token = getConfig().token.replace(/[^\x21-\x7e]/g, ''); // drop stray spaces/newlines from pasting
+  const url = `https://api.github.com/repos/${owner.trim()}/${repo.trim()}${path ? `/${path}` : ''}`;
+  return fetch(url, {
     ...opts,
     headers: {
       Accept: 'application/vnd.github+json',
@@ -162,7 +164,9 @@ async function save() {
 }
 
 export async function testConnection() {
-  const res = await api('');
+  let res;
+  try { res = await api(''); }
+  catch { throw new Error("Couldn't reach GitHub. Check your connection, then try again."); }
   if (res.status === 401) throw new Error('That token was rejected.');
   if (res.status === 404) throw new Error('Repo not found, or the token has no access to it.');
   if (!res.ok) throw new Error(`GitHub said ${res.status}`);

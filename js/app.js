@@ -1,5 +1,5 @@
-import * as store from './store.js';
-import { queueArt, prioritise, searchAlbums, findArt, spotifyUrl, spotifyArtistUrl, placeholder, norm } from './art.js';
+import * as store from './store.js?v=3';
+import { queueArt, prioritise, searchAlbums, findArt, spotifyUrl, spotifyArtistUrl, placeholder, norm } from './art.js?v=3';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
