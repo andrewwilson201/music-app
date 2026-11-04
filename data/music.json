@@ -3964,7 +3964,8 @@
      "artist": "cameron winter",
      "title": "live at carniege hall",
      "songs": [],
-     "art": ""
+     "art": "",
+     "artTry": 2
     },
     {
      "id": "a3655f0a577",
@@ -3982,7 +3983,8 @@
      "id": "a4020c2b407",
      "artist": "william basinski",
      "title": "passing the cup of sorrows",
-     "songs": []
+     "songs": [],
+     "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/f4/1f/38/f41f381d-2aea-eca5-b195-7e68efa4c0c1/67417.jpg/600x600bb.jpg"
     },
     {
      "id": "ac5e125f2fd",
