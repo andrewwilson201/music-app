@@ -1,6 +1,6 @@
-import * as store from './store.js?v=8';
-import * as spotify from './spotify.js?v=8';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=8';
+import * as store from './store.js?v=9';
+import * as spotify from './spotify.js?v=9';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=9';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -13,6 +13,8 @@ const ICON = {
   play: '<svg viewBox="0 0 24 24"><path d="M8 5.5v13l11-6.5-11-6.5Z"/></svg>',
   spotify: '<svg viewBox="0 0 24 24" class="fill"><path d="M12 2a10 10 0 1 0 0 20 10 10 0 0 0 0-20Zm4.6 14.4a.6.6 0 0 1-.9.2c-2.4-1.5-5.4-1.8-9-1a.6.6 0 1 1-.3-1.2c3.9-.9 7.2-.5 9.9 1.1.3.2.4.6.3.9Zm1.2-2.7a.8.8 0 0 1-1 .3c-2.7-1.7-6.9-2.2-10.2-1.2a.8.8 0 1 1-.4-1.5c3.7-1.1 8.3-.6 11.4 1.4.3.2.4.7.2 1Zm.1-2.8C14.7 9 9.3 8.8 6.2 9.8a.9.9 0 1 1-.5-1.8c3.6-1.1 9.6-.9 13.3 1.3a.9.9 0 0 1-1.1 1.6Z"/></svg>',
   close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
+  grid: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>',
+  list: '<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="5" height="5" rx="1"/><rect x="3.5" y="14.5" width="5" height="5" rx="1"/><path d="M11.5 6h9M11.5 8.5h6M11.5 16h9M11.5 18.5h6"/></svg>',
   grip: '<svg viewBox="0 0 24 24" class="fill"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>',
   edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>',
   trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
@@ -21,7 +23,8 @@ const ICON = {
 };
 
 let data;
-let ui = { sort: 'latest', filter: '' };
+let ui = { sort: 'latest', filter: '', view: 'grid' };
+try { ui.view = localStorage.getItem('music-log:view') || 'grid'; } catch {}
 let sortable = null;
 
 // ------------------------------------------------------------------ boot
@@ -39,6 +42,8 @@ async function boot() {
   }
   store.subscribe(onStoreChange);
   onStoreChange();
+  migrateArtCache();
+  setTimeout(backfillArt, 4000);
   if (spotifyMsg) setTimeout(() => toast(spotifyMsg, spotifyMsg.includes('failed') ? 'error' : ''), 300);
   window.addEventListener('hashchange', () => {
     [...modalRoot.children].forEach((w) => closeModal(w, true));
@@ -135,6 +140,32 @@ function watchCovers(root = app) {
   });
 }
 
+// Artwork found while not connected to GitHub lives only in this browser.
+// Once connected, copy it into the data so it's saved for every device.
+let artSinceSave = 0;
+function migrateArtCache() {
+  if (!store.canSync()) return;
+  let moved = 0;
+  for (const [id, url] of Object.entries(artCache)) {
+    const found = store.findAlbum(id);
+    if (found && !found.album.art && url && !url.startsWith('miss:')) { found.album.art = url; moved++; }
+  }
+  artCache = {};
+  try { localStorage.removeItem(artCacheKey); } catch {}
+  if (moved) store.commit({ quiet: true, delay: 3000 });
+}
+
+// When synced and logged in to Spotify, quietly fetch covers for every album
+// still missing one (newest years first), so they're saved once for good.
+function backfillArt() {
+  if (!store.canSync() || !spotify.connected()) return;
+  for (const y of store.years()) {
+    for (const album of data.years[y].albums.slice().reverse()) {
+      if (artFor(album) === undefined) requestArt(album);
+    }
+  }
+}
+
 async function requestArt(album) {
   if (artFor(album) !== undefined) return;
   const found = await queueArt(album);
@@ -148,7 +179,9 @@ function setArt(album, url, spotifyLink = '') {
     if (url) delete album.artTry; else album.artTry = artVersion();
     if (spotifyLink && !album.spotify) album.spotify = spotifyLink;
     delete artCache[album.id];
-    store.commit({ quiet: true, delay: 6000 });
+    // Save in batches: a long backfill would otherwise keep pushing the save back.
+    artSinceSave = (artSinceSave + 1) % 20;
+    store.commit({ quiet: true, delay: artSinceSave === 0 ? 0 : 6000 });
   } else {
     artCache[album.id] = url || `miss:${artVersion()}`;
     try { localStorage.setItem(artCacheKey, JSON.stringify(artCache)); } catch {}
@@ -182,6 +215,43 @@ function cardHtml(album, yearData, showYear = '') {
       <span class="card-artist">${album.title ? esc(album.artist) : '<i>no album noted</i>'}${showYear ? ` · ${showYear}` : ''}</span>
     </span>
   </button>`;
+}
+
+function rowHtml(album, yearData, showYear = '') {
+  const rank = yearData ? store.favRank(yearData, album.id) : 0;
+  const songs = (album.songs || []).join(', ');
+  return `<div class="row-item">
+    <button class="row-open" data-open="${album.id}">
+      ${coverHtml(album, 'sm')}
+      <span class="row-meta">
+        <span class="row-title">${esc(album.title || album.artist)}</span>
+        <span class="row-artist">${album.title ? esc(album.artist) : '<i>no album noted</i>'}${showYear ? ` · ${showYear}` : ''}</span>
+        ${songs ? `<span class="row-songs">♪ ${esc(songs)}</span>` : ''}
+      </span>
+      ${rank ? `<span class="row-rank" title="#${rank} favourite">${ICON.heart}${rank}</span>` : ''}
+    </button>
+    <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify" aria-label="Play ${esc(album.title || album.artist)} on Spotify">${ICON.spotify}</a>
+  </div>`;
+}
+
+function albumsHtml(list, yearData, showYear = '') {
+  return ui.view === 'list'
+    ? `<div class="rows">${list.map((a) => rowHtml(a, yearData, showYear)).join('')}</div>`
+    : `<div class="grid">${list.map((a) => cardHtml(a, yearData, showYear)).join('')}</div>`;
+}
+
+const viewToggleHtml = () => `<div class="view-toggle" role="group" aria-label="View">
+  <button type="button" data-view="grid" class="${ui.view === 'grid' ? 'on' : ''}" aria-pressed="${ui.view === 'grid'}" title="Grid view">${ICON.grid}</button>
+  <button type="button" data-view="list" class="${ui.view === 'list' ? 'on' : ''}" aria-pressed="${ui.view === 'list'}" title="List view">${ICON.list}</button>
+</div>`;
+
+function bindViewToggle(root, redraw) {
+  root.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => {
+    ui.view = b.dataset.view;
+    try { localStorage.setItem('music-log:view', ui.view); } catch {}
+    root.querySelectorAll('[data-view]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+    redraw();
+  }));
 }
 
 function renderYear(year, tab) {
@@ -219,13 +289,14 @@ function renderListened(year) {
         <option value="artist">Artist A–Z</option>
         <option value="favs">Favourites first</option>
       </select>
+      ${viewToggleHtml()}
     </div>
-    <div class="grid" id="grid"></div>`;
+    <div id="grid"></div>`;
   $('#sort').value = ui.sort;
   const draw = () => {
     const list = sortedAlbums(y);
     $('#grid').innerHTML = list.length
-      ? list.map((a) => cardHtml(a, y)).join('')
+      ? albumsHtml(list, y)
       : y.albums.length
         ? `<p class="muted pad">Nothing in ${year} matches “${esc(ui.filter)}”.</p>`
         : `<div class="empty"><h2>Nothing logged for ${year} yet</h2><p>Add the first album you listen to.</p><button class="btn primary" data-add="${year}">${ICON.plus} Add album</button></div>`;
@@ -233,6 +304,7 @@ function renderListened(year) {
   };
   $('#filter').addEventListener('input', (e) => { ui.filter = e.target.value; draw(); });
   $('#sort').addEventListener('change', (e) => { ui.sort = e.target.value; draw(); });
+  bindViewToggle(body, draw);
   draw();
 }
 
@@ -640,6 +712,7 @@ function renderSearch(initial) {
     <section class="hero"><div><p class="eyebrow">every year</p><h1>search</h1></div></section>
     <label class="search-field big"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="gq" type="search" placeholder="Artist, album or song…" value="${esc(initial)}" autocomplete="off"></label>
+    <div class="search-tools">${viewToggleHtml()}</div>
     <div id="gres"></div>`;
   const input = $('#gq');
   const draw = () => {
@@ -651,12 +724,13 @@ function renderSearch(initial) {
       const yd = data.years[y];
       const hits = yd.albums.filter((a) => norm(`${a.artist} ${a.title} ${(a.songs || []).join(' ')}`).includes(q));
       total += hits.length;
-      return hits.length ? `<h3 class="group-title"><a href="#/year/${y}">${y}</a></h3><div class="grid">${hits.map((a) => cardHtml(a, yd)).join('')}</div>` : '';
+      return hits.length ? `<h3 class="group-title"><a href="#/year/${y}">${y}</a></h3>${albumsHtml(hits, yd)}` : '';
     }).join('');
     $('#gres').innerHTML = total ? html : `<p class="muted pad">No albums match “${esc(input.value)}”.</p>`;
     watchCovers();
   };
   input.addEventListener('input', draw);
+  bindViewToggle(app, draw);
   draw();
   input.focus();
 }

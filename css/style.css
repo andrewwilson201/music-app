@@ -91,7 +91,7 @@ main { max-width: 1240px; margin: 0 auto; padding: 0 16px 120px; outline: none; 
 .seg a.on svg { fill: var(--accent); stroke: var(--accent); }
 
 .toolbar { display: flex; gap: 10px; margin-bottom: 20px; }
-.search-field { flex: 1; display: flex; align-items: center; gap: 10px; padding: 0 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; transition: border-color .15s; }
+.search-field { flex: 1; min-width: 0; display: flex; align-items: center; gap: 10px; padding: 0 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; transition: border-color .15s; }
 .search-field:focus-within { border-color: var(--faint); }
 .search-field svg { color: var(--faint); width: 18px; height: 18px; }
 .search-field input { flex: 1; min-width: 0; border: 0; background: none; padding: 11px 0; outline: none; }
@@ -228,6 +228,28 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .pick-state { color: var(--faint); flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); }
 .pick.chosen .pick-state { background: var(--accent); border-color: var(--accent); color: #1b0d07; }
 
+/* view toggle + list view */
+.view-toggle { display: inline-flex; padding: 3px; gap: 2px; background: var(--surface); border: 1px solid var(--line); border-radius: 12px; flex: none; }
+.view-toggle button { display: grid; place-items: center; width: 38px; height: 36px; border-radius: 9px; color: var(--faint); transition: .15s; }
+.view-toggle button svg { width: 19px; height: 19px; }
+.view-toggle button:hover { color: var(--text); }
+.view-toggle button.on { background: var(--surface-2); color: var(--text); }
+.search-tools { display: flex; justify-content: flex-end; margin: -4px 0 8px; }
+.toolbar select { flex: none; min-width: 0; }
+.rows { display: flex; flex-direction: column; }
+.row-item { display: flex; align-items: center; gap: 4px; border-bottom: 1px solid var(--line); }
+.row-item:last-child { border-bottom: 0; }
+.row-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 14px; padding: 10px 6px; text-align: left; border-radius: 10px; transition: background .12s; }
+.row-open:hover { background: var(--bg-2); }
+.row-open .cover.sm { width: 52px; }
+.row-meta { flex: 1; min-width: 0; display: flex; flex-direction: column; }
+.row-title { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-artist { color: var(--muted); font-size: 14px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-artist i { color: var(--faint); }
+.row-songs { color: var(--accent); font-size: 13px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; margin-top: 1px; }
+.row-rank { display: inline-flex; align-items: center; gap: 4px; color: var(--accent); font-weight: 700; font-size: 14px; font-variant-numeric: tabular-nums; flex: none; }
+.row-rank svg { width: 15px; height: 15px; fill: var(--accent); stroke: var(--accent); }
+
 /* spotify login box in settings */
 .spotify-box { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 0 0 12px; border-radius: 12px; background: rgba(30, 215, 96, .08); border: 1px solid rgba(30, 215, 96, .25); }
 .spotify-box > svg { color: var(--spotify); width: 28px; height: 28px; }
@@ -281,11 +303,16 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   .brand span:last-child { display: none; }
   .years { order: 3; flex-basis: 100%; margin: 0 -16px; padding: 0 12px; }
   .top-actions { margin-left: auto; }
-  .hero { padding: 24px 0 18px; }
+  .hero { padding: 18px 0 14px; gap: 14px; }
+  .hero h1 { font-size: 64px; }
+  .hero .eyebrow { display: none; }
+  .hero-stats { margin-top: 6px; font-size: 14px; }
+  .toolbar { flex-wrap: wrap; gap: 8px; margin-bottom: 16px; }
+  .toolbar .search-field { flex-basis: 100%; }
+  .toolbar select { flex: 1; max-width: none; }
   .seg { width: 100%; }
   .seg a { flex: 1; justify-content: center; }
   .grid { grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 22px 14px; }
-  .toolbar select { max-width: 42%; }
   .fab { padding: 0; width: 58px; justify-content: center; }
   .fab span { display: none; }
   .fab svg { width: 26px; height: 26px; }
