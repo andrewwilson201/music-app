@@ -1,6 +1,6 @@
-import * as store from './store.js?v=6';
-import * as spotify from './spotify.js?v=6';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=6';
+import * as store from './store.js?v=7';
+import * as spotify from './spotify.js?v=7';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=7';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
