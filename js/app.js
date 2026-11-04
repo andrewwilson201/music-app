@@ -1,5 +1,5 @@
-import * as store from './store.js?v=3';
-import { queueArt, prioritise, searchAlbums, findArt, spotifyUrl, spotifyArtistUrl, placeholder, norm } from './art.js?v=3';
+import * as store from './store.js?v=4';
+import { queueArt, prioritise, searchAlbums, findArt, spotifyUrl, spotifyArtistUrl, placeholder, norm, ART_VERSION } from './art.js?v=4';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -95,9 +95,14 @@ const artCacheKey = 'music-log:art';
 let artCache = {};
 try { artCache = JSON.parse(localStorage.getItem(artCacheKey) || '{}'); } catch {}
 
+// URL, '' (looked and found nothing) or undefined (not looked yet, or an
+// older, stricter lookup missed it and it's worth another try).
 function artFor(album) {
-  if (album.art !== undefined) return album.art;
-  return artCache[album.id];
+  if (album.art) return album.art;
+  if (album.art === '' && (album.artTry || 1) >= ART_VERSION) return '';
+  const c = artCache[album.id];
+  if (c) return c === `miss:${ART_VERSION}` ? '' : c.startsWith('miss:') ? undefined : c;
+  return undefined;
 }
 
 function coverHtml(album, cls = '') {
@@ -135,10 +140,11 @@ async function requestArt(album) {
 function setArt(album, url) {
   if (store.canSync()) {
     album.art = url;
+    if (url) delete album.artTry; else album.artTry = ART_VERSION;
     delete artCache[album.id];
     store.commit({ quiet: true, delay: 6000 });
   } else {
-    artCache[album.id] = url;
+    artCache[album.id] = url || `miss:${ART_VERSION}`;
     try { localStorage.setItem(artCacheKey, JSON.stringify(artCache)); } catch {}
   }
   $$(`.cover[data-art-id="${album.id}"]`).forEach((el) => {

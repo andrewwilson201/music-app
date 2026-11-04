@@ -38,31 +38,50 @@ export async function searchAlbums(term, limit = 10) {
   }));
 }
 
+// Similarity 0..1 that tolerates typos, "the", punctuation and extra words
+// ("fontaines dc" ~ "Fontaines D.C.", "vol ii" ~ "Vol. II (Deluxe)").
+function sim(x, y) {
+  x = norm(x); y = norm(y);
+  if (!x || !y) return 0;
+  if (x === y) return 1;
+  if (x.includes(y) || y.includes(x)) return 0.9;
+  const grams = (s) => { const m = new Map(); for (let i = 0; i < s.length - 1; i++) { const g = s.slice(i, i + 2); m.set(g, (m.get(g) || 0) + 1); } return m; };
+  const gx = grams(x), gy = grams(y);
+  let hit = 0;
+  for (const [g, n] of gx) hit += Math.min(n, gy.get(g) || 0);
+  return (2 * hit) / (x.length - 1 + y.length - 1);
+}
+const stripEdition = (t) => t.replace(/\s*[([].*?(deluxe|edition|remaster|expanded|version|bonus).*?[)\]]/gi, '');
+
 function score(album, r) {
-  const a = norm(album.artist), ra = norm(r.artist);
-  const t = norm(album.title), rt = norm(r.title);
-  let s = 0;
-  if (a && (ra === a)) s += 3;
-  else if (a && (ra.includes(a) || a.includes(ra))) s += 2;
-  if (t) {
-    if (rt === t) s += 3;
-    else if (rt.startsWith(t) || t.startsWith(rt) || rt.includes(t)) s += 2;
-  }
-  return s;
+  const as = sim(album.artist, r.artist);
+  if (as < 0.6) return 0;
+  if (!album.title) return as;
+  const ts = Math.max(sim(album.title, r.title), sim(album.title, stripEdition(r.title)));
+  if (ts < 0.55) return 0;
+  return (as + ts) / 2;
 }
 
 // Best-guess artwork for a stored album. Resolves to a URL or '' (not found).
+// Tries "artist album", then the album name alone, then the artist alone.
 export async function findArt(album) {
-  const term = `${album.artist} ${album.title || ''}`.trim();
-  const results = await searchAlbums(term, 8);
-  let best = null, bestScore = 0;
-  for (const r of results) {
-    const s = score(album, r);
-    if (s > bestScore) { best = r; bestScore = s; }
+  const terms = [`${album.artist} ${album.title || ''}`.trim()];
+  if (album.title && album.title.length > 3) terms.push(album.title);
+  terms.push(album.artist);
+  for (const term of [...new Set(terms)]) {
+    const results = await searchAlbums(term, term === album.artist ? 50 : 15);
+    let best = null, bestScore = 0;
+    for (const r of results) {
+      const s = score(album, r);
+      if (s > bestScore) { best = r; bestScore = s; }
+    }
+    if (best && bestScore >= 0.7) return best.art;
   }
-  const needed = album.title ? 4 : 3; // artist + title, or artist alone when no title
-  return best && bestScore >= needed ? best.art : '';
+  return '';
 }
+
+// Bump when matching improves so earlier misses get another try.
+export const ART_VERSION = 2;
 
 // ---- throttled queue so we stay well under the API's rate limit ----
 const queue = [];
