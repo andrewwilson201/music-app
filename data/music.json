@@ -3632,19 +3632,25 @@
      "id": "ac7a6355f10",
      "artist": "the moth",
      "title": "cancer house",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a4dfb741994",
      "artist": "the thinking of the world began pounding in our ears the moment we hit shore",
      "title": "the thinking of the world began pounding in our ears the moment we hit shore",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273daea6e4f5c2d0cfbb4844699",
+     "spotify": "https://open.spotify.com/album/2GlAK5ZGWlzIzvLv1XSIoZ"
     },
     {
      "id": "a5be727b641",
      "artist": "white fence",
      "title": "orange",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27305991fcacb612ce3704e370a",
+     "spotify": "https://open.spotify.com/album/2ZL2pKtN0WwpKHgOgifsds"
     },
     {
      "id": "afcee56f0dc",
@@ -3658,7 +3664,8 @@
      "id": "ab6cd56eef3",
      "artist": "quentin tolimieri",
      "title": "monochromes II",
-     "songs": []
+     "songs": [],
+     "art": "https://is1-ssl.mzstatic.com/image/thumb/Music221/v4/5a/1c/81/5a1c8170-06e0-9503-69ff-451f704f7636/840526506644_cover.jpg/600x600bb.jpg"
     },
     {
      "id": "aad3cdec22f",
@@ -3688,7 +3695,9 @@
      "id": "afd48cc615c",
      "artist": "yu su",
      "title": "foundry",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2738f9951145f1572c8bcb62e3d",
+     "spotify": "https://open.spotify.com/album/2LSjROSfgkmtXqaGWMZdcb"
     },
     {
      "id": "a24a8e9c4ba",
@@ -3736,7 +3745,9 @@
      "id": "ac6aadb9616",
      "artist": "visible cloaks",
      "title": "paradessence",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c2d419750ae6691b9a6b7301",
+     "spotify": "https://open.spotify.com/album/42FhMWVYSCGaHoNZgGb7YS"
     },
     {
      "id": "ae0a35bbd7c",
@@ -3758,19 +3769,25 @@
      "id": "a5fbb770162",
      "artist": "tara clerkin trio",
      "title": "somewhere good",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273eca1b78d8aa6be72c94ba0a8",
+     "spotify": "https://open.spotify.com/album/4dGGdBotbFZuEYfuTdtFB6"
     },
     {
      "id": "a835561c43a",
      "artist": "ynwh nailgun",
      "title": "magazine",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27312cfd53ea78f73ebe2d299c7",
+     "spotify": "https://open.spotify.com/album/5nT9mBH0yosh5yRuCqpKW3"
     },
     {
      "id": "ae8d4e287e4",
      "artist": "jeff parker",
      "title": "happy today",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27386823611df896e2f08642e8f",
+     "spotify": "https://open.spotify.com/album/1kHIfy3OzO6LiVmilaxre1"
     },
     {
      "id": "a6f73d61ddc",
@@ -3778,7 +3795,9 @@
      "title": "profound",
      "songs": [
       "nothing and everything"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27310ac405d49068e5fa1db7d1f",
+     "spotify": "https://open.spotify.com/album/08NmkFu1rWiXZk9ZblZ959"
     },
     {
      "id": "a39b3f14b37",
