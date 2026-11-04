@@ -1,0 +1,4093 @@
+{
+ "version": 1,
+ "years": {
+  "2020": {
+   "albums": [
+    {
+     "id": "a2d4d195435",
+     "artist": "gil scott heron",
+     "title": "we're new again",
+     "songs": []
+    },
+    {
+     "id": "a202e68f060",
+     "artist": "destroyer",
+     "title": "have we met",
+     "songs": []
+    },
+    {
+     "id": "a48211b51c4",
+     "artist": "polica",
+     "title": "when we stay alive",
+     "songs": []
+    },
+    {
+     "id": "a2682afe2ea",
+     "artist": "beatrice dillon",
+     "title": "workaround",
+     "songs": []
+    },
+    {
+     "id": "a50b73c7ffc",
+     "artist": "moses sumney",
+     "title": "grae",
+     "songs": []
+    },
+    {
+     "id": "aabcb9b9eb1",
+     "artist": "eluvium",
+     "title": "virga i",
+     "songs": []
+    },
+    {
+     "id": "a3354552fc9",
+     "artist": "grimes",
+     "title": "miss antropocene",
+     "songs": []
+    },
+    {
+     "id": "a9407ce0c75",
+     "artist": "king krule",
+     "title": "man alive!",
+     "songs": []
+    },
+    {
+     "id": "a11849ec6f1",
+     "artist": "u.s. girls",
+     "title": "heavy light",
+     "songs": []
+    },
+    {
+     "id": "ae2c4e290d3",
+     "artist": "caribou",
+     "title": "suddenly",
+     "songs": []
+    },
+    {
+     "id": "ad0caf08966",
+     "artist": "hilary woods",
+     "title": "birthmarks",
+     "songs": []
+    },
+    {
+     "id": "a175efdd35e",
+     "artist": "house lords",
+     "title": "the common task",
+     "songs": []
+    },
+    {
+     "id": "a5d901f9b96",
+     "artist": "jay electronica",
+     "title": "a written testimony",
+     "songs": []
+    },
+    {
+     "id": "a89604ef541",
+     "artist": "ian william craig",
+     "title": "red sun through smoke",
+     "songs": []
+    },
+    {
+     "id": "a13e29b5a8f",
+     "artist": "lyra pramuk",
+     "title": "fountain",
+     "songs": []
+    },
+    {
+     "id": "a2dc141052c",
+     "artist": "yves tumor",
+     "title": "heaven to a tortured mind",
+     "songs": []
+    },
+    {
+     "id": "a931868e366",
+     "artist": "andy shauf",
+     "title": "the neon skyline",
+     "songs": []
+    },
+    {
+     "id": "acbc1706989",
+     "artist": "the mountain goats",
+     "title": "songs for pierre chuvin",
+     "songs": []
+    },
+    {
+     "id": "a5d8b69915b",
+     "artist": "blake mills",
+     "title": "mutable set",
+     "songs": []
+    },
+    {
+     "id": "a0d4b676258",
+     "artist": "handle",
+     "title": "in threes",
+     "songs": []
+    },
+    {
+     "id": "a5ab2bdec47",
+     "artist": "nine inch nails",
+     "title": "ghosts v:together",
+     "songs": []
+    },
+    {
+     "id": "abe35bf080d",
+     "artist": "johanna warren",
+     "title": "chaotic good",
+     "songs": []
+    },
+    {
+     "id": "a650a677f35",
+     "artist": "fiona apple",
+     "title": "fetch the bolt cutters",
+     "songs": []
+    },
+    {
+     "id": "a9f66780af0",
+     "artist": "perfume genius",
+     "title": "set my heart on fire immediately",
+     "songs": []
+    },
+    {
+     "id": "ac032831c12",
+     "artist": "nick hakm",
+     "title": "will this make me good",
+     "songs": []
+    },
+    {
+     "id": "ab8f2de1fc1",
+     "artist": "kaitlyn aurelia smith",
+     "title": "the mosaic of transformation",
+     "songs": []
+    },
+    {
+     "id": "a8e5c000723",
+     "artist": "mary lattimore, mac mccaughan",
+     "title": "avl",
+     "songs": []
+    },
+    {
+     "id": "a44e4e71bf7",
+     "artist": "christian lee hutson",
+     "title": "beginners",
+     "songs": []
+    },
+    {
+     "id": "a46532c1a5e",
+     "artist": "the 1975",
+     "title": "notes on a conditional form",
+     "songs": []
+    },
+    {
+     "id": "aeb32242262",
+     "artist": "kate nv",
+     "title": "room for the moon",
+     "songs": []
+    },
+    {
+     "id": "a1f62c630ae",
+     "artist": "phoebe bridgers",
+     "title": "punisher",
+     "songs": []
+    },
+    {
+     "id": "a46223f2b9f",
+     "artist": "bob dylan",
+     "title": "rough and rowdy ways",
+     "songs": []
+    },
+    {
+     "id": "afa52700d7b",
+     "artist": "jim white, marisa anderson",
+     "title": "the quickening",
+     "songs": []
+    },
+    {
+     "id": "adb289c6b72",
+     "artist": "julianna barwick",
+     "title": "healing is a miracle",
+     "songs": []
+    },
+    {
+     "id": "a1beebcfd14",
+     "artist": "the soft pink truth",
+     "title": "shall we go on sinning so that grace may in…",
+     "songs": []
+    },
+    {
+     "id": "a2bdeee7ac0",
+     "artist": "fontaines dc",
+     "title": "a hero's death",
+     "songs": []
+    },
+    {
+     "id": "a40552026ed",
+     "artist": "haim",
+     "title": "women in music pt iii",
+     "songs": []
+    },
+    {
+     "id": "aca684c789c",
+     "artist": "kelly lee owens",
+     "title": "inner song",
+     "songs": []
+    },
+    {
+     "id": "a39d9693679",
+     "artist": "angel olsen",
+     "title": "whole new mess",
+     "songs": []
+    },
+    {
+     "id": "a9196b39a6a",
+     "artist": "lianne la havas",
+     "title": "lianne la havas",
+     "songs": []
+    },
+    {
+     "id": "aac58697598",
+     "artist": "lomelda",
+     "title": "hannah",
+     "songs": []
+    },
+    {
+     "id": "a4c6c48c80d",
+     "artist": "sarah davachi",
+     "title": "cantus, descant",
+     "songs": []
+    },
+    {
+     "id": "a5157b62e4d",
+     "artist": "fleet foxes",
+     "title": "shore",
+     "songs": []
+    },
+    {
+     "id": "a80fc2ad1c9",
+     "artist": "sufjan stevens",
+     "title": "the ascension",
+     "songs": []
+    },
+    {
+     "id": "aa8c4b3cdc0",
+     "artist": "idles",
+     "title": "ultra mono",
+     "songs": []
+    },
+    {
+     "id": "a4a9ca1798f",
+     "artist": "tim heidecker",
+     "title": "fear of death",
+     "songs": []
+    },
+    {
+     "id": "a4b9fc16be3",
+     "artist": "alexia avina",
+     "title": "unearth",
+     "songs": []
+    },
+    {
+     "id": "a0f8ce0a283",
+     "artist": "mary lattimore",
+     "title": "silver ladders",
+     "songs": []
+    },
+    {
+     "id": "a7c494562db",
+     "artist": "future islands",
+     "title": "as long as you are",
+     "songs": []
+    },
+    {
+     "id": "a739b7c15bf",
+     "artist": "kevin morby",
+     "title": "sundowner",
+     "songs": []
+    },
+    {
+     "id": "a5688f0bff2",
+     "artist": "matt berninger",
+     "title": "serpentine prison",
+     "songs": []
+    },
+    {
+     "id": "a98b3761777",
+     "artist": "oliver coates",
+     "title": "skins n slime",
+     "songs": []
+    },
+    {
+     "id": "affe7ace618",
+     "artist": "autechre",
+     "title": "sign",
+     "songs": []
+    },
+    {
+     "id": "a876a3a193b",
+     "artist": "adrianne lenker",
+     "title": "songs",
+     "songs": []
+    },
+    {
+     "id": "ae9126a614c",
+     "artist": "adrianne lenker",
+     "title": "instrumentals",
+     "songs": []
+    },
+    {
+     "id": "a8ca56f83a6",
+     "artist": "loma",
+     "title": "don't shy away",
+     "songs": []
+    },
+    {
+     "id": "a26c50caf75",
+     "artist": "tina",
+     "title": "positive mental health music",
+     "songs": []
+    },
+    {
+     "id": "a3f2f16ce9d",
+     "artist": "ana roxanne",
+     "title": "because of a flower",
+     "songs": []
+    },
+    {
+     "id": "a83e608adfe",
+     "artist": "ian william craig, daniel lentz",
+     "title": "frkwys vol 16",
+     "songs": []
+    },
+    {
+     "id": "a83eb703d41",
+     "artist": "dehd",
+     "title": "flower of devotion",
+     "songs": []
+    },
+    {
+     "id": "a63a02d72a4",
+     "artist": "waxahatchee",
+     "title": "saint cloud",
+     "songs": []
+    },
+    {
+     "id": "ab80c384236",
+     "artist": "sparkle division",
+     "title": "to feel embraced",
+     "songs": []
+    },
+    {
+     "id": "a2944ff7c3d",
+     "artist": "mica levi",
+     "title": "ruff dog",
+     "songs": []
+    },
+    {
+     "id": "a7de835e9aa",
+     "artist": "oneheotrix point never",
+     "title": "magic oneheotrix point never",
+     "songs": []
+    }
+   ],
+   "favourites": []
+  },
+  "2021": {
+   "albums": [
+    {
+     "id": "acff38aa51f",
+     "artist": "shame",
+     "title": "drunk tank pink",
+     "songs": []
+    },
+    {
+     "id": "aedc747ee7f",
+     "artist": "goat girl",
+     "title": "on all fours",
+     "songs": []
+    },
+    {
+     "id": "a4f76f64275",
+     "artist": "madlib",
+     "title": "sound ancestors",
+     "songs": []
+    },
+    {
+     "id": "ad841444090",
+     "artist": "the besnard lakes",
+     "title": "the besnard lakes are the last of the great….",
+     "songs": []
+    },
+    {
+     "id": "af900adad88",
+     "artist": "arlo parks",
+     "title": "collapsed in sunbeams",
+     "songs": []
+    },
+    {
+     "id": "a6fd7d2203c",
+     "artist": "terry gross",
+     "title": "soft opening",
+     "songs": []
+    },
+    {
+     "id": "a9e4c3fdb4d",
+     "artist": "black country new road",
+     "title": "for the first time",
+     "songs": []
+    },
+    {
+     "id": "a490111d5d1",
+     "artist": "the weather station",
+     "title": "ignorance",
+     "songs": []
+    },
+    {
+     "id": "ade159449c6",
+     "artist": "virginia wing",
+     "title": "private life",
+     "songs": []
+    },
+    {
+     "id": "a4771c7433a",
+     "artist": "maria bc",
+     "title": "devil's rain",
+     "songs": []
+    },
+    {
+     "id": "ab88a52e4a6",
+     "artist": "cassandra jenkins",
+     "title": "an overview on phenomenal nature",
+     "songs": []
+    },
+    {
+     "id": "ab229dd0820",
+     "artist": "roy montgomery",
+     "title": "island of lost souls",
+     "songs": []
+    },
+    {
+     "id": "a45ce879428",
+     "artist": "indigo sparke",
+     "title": "echo",
+     "songs": []
+    },
+    {
+     "id": "abc2214e777",
+     "artist": "nick cave",
+     "title": "carnage",
+     "songs": []
+    },
+    {
+     "id": "a3f9e0c32cd",
+     "artist": "julien baker",
+     "title": "little oblivions",
+     "songs": []
+    },
+    {
+     "id": "a2864a6147c",
+     "artist": "smerz",
+     "title": "believer",
+     "songs": []
+    },
+    {
+     "id": "a1a66d33093",
+     "artist": "yasmin williams",
+     "title": "urban driftwood",
+     "songs": []
+    },
+    {
+     "id": "ab02bd7ad10",
+     "artist": "irena and vojtech havlovi",
+     "title": "melodies in the sand",
+     "songs": []
+    },
+    {
+     "id": "a1e7e6602e1",
+     "artist": "clap your hands say yeah",
+     "title": "new fragility",
+     "songs": []
+    },
+    {
+     "id": "a465d2d83ba",
+     "artist": "lana del ray",
+     "title": "chemtrails over the country club",
+     "songs": []
+    },
+    {
+     "id": "ac2b455ca42",
+     "artist": "jane weaver",
+     "title": "flock",
+     "songs": []
+    },
+    {
+     "id": "a22b381944d",
+     "artist": "floating points",
+     "title": "promises",
+     "songs": []
+    },
+    {
+     "id": "a1b5a3ef59f",
+     "artist": "floatie",
+     "title": "voyage out",
+     "songs": []
+    },
+    {
+     "id": "af6bb172299",
+     "artist": "lost girls",
+     "title": "menneskekollektivet",
+     "songs": []
+    },
+    {
+     "id": "a530d6a5d86",
+     "artist": "serpent with feet",
+     "title": "deacon",
+     "songs": []
+    },
+    {
+     "id": "a2a60793af4",
+     "artist": "the antlers",
+     "title": "green to gold",
+     "songs": []
+    },
+    {
+     "id": "af961302b3f",
+     "artist": "xiu xiu",
+     "title": "oh no",
+     "songs": []
+    },
+    {
+     "id": "a3f60dc3162",
+     "artist": "spirit of the beehive",
+     "title": "entertainment, death",
+     "songs": []
+    },
+    {
+     "id": "a5592bbe548",
+     "artist": "arooj aftab",
+     "title": "vulture prince",
+     "songs": []
+    },
+    {
+     "id": "a9f9f4687de",
+     "artist": "squid",
+     "title": "bright green field",
+     "songs": []
+    },
+    {
+     "id": "a7d84db6206",
+     "artist": "iceage",
+     "title": "seek shelter",
+     "songs": []
+    },
+    {
+     "id": "ac58141c8ab",
+     "artist": "leon vynehall",
+     "title": "rare, forever",
+     "songs": []
+    },
+    {
+     "id": "a89734ce427",
+     "artist": "black midi",
+     "title": "cavalcade",
+     "songs": []
+    },
+    {
+     "id": "a852fa36f44",
+     "artist": "japanese breakfast",
+     "title": "jubilee",
+     "songs": []
+    },
+    {
+     "id": "a3bb350824c",
+     "artist": "wolf alice",
+     "title": "blue weekend",
+     "songs": []
+    },
+    {
+     "id": "a33acca7937",
+     "artist": "rostam",
+     "title": "changephobia",
+     "songs": []
+    },
+    {
+     "id": "a0d415cfee4",
+     "artist": "hildegard",
+     "title": "hildegard",
+     "songs": []
+    },
+    {
+     "id": "a9ed9dfa4ff",
+     "artist": "l'rain",
+     "title": "fatigue",
+     "songs": []
+    },
+    {
+     "id": "a6a9151a294",
+     "artist": "lightning bug",
+     "title": "a color of the sky",
+     "songs": []
+    },
+    {
+     "id": "afcc358c894",
+     "artist": "eli keszler",
+     "title": "icons",
+     "songs": []
+    },
+    {
+     "id": "a8b0a2dfed0",
+     "artist": "lucy gooch",
+     "title": "rain's break",
+     "songs": []
+    },
+    {
+     "id": "a0475fa026a",
+     "artist": "stephen fretwell",
+     "title": "busy guy",
+     "songs": []
+    },
+    {
+     "id": "a963097c9e3",
+     "artist": "clairo",
+     "title": "sling",
+     "songs": []
+    },
+    {
+     "id": "aa2019272c6",
+     "artist": "liars",
+     "title": "the apple drop",
+     "songs": []
+    },
+    {
+     "id": "ac3e276166d",
+     "artist": "moritz von oswald trio",
+     "title": "dissent",
+     "songs": []
+    },
+    {
+     "id": "a2e93c0c9c9",
+     "artist": "rachika nayar",
+     "title": "our hands against the dusk",
+     "songs": []
+    },
+    {
+     "id": "a9c132cdc97",
+     "artist": "walt mcclements",
+     "title": "a hole in the fence",
+     "songs": []
+    },
+    {
+     "id": "a5258397507",
+     "artist": "alpha maid",
+     "title": "chuckle",
+     "songs": []
+    },
+    {
+     "id": "a56374173f7",
+     "artist": "joy orbison",
+     "title": "still slipping vol. 1",
+     "songs": []
+    },
+    {
+     "id": "a57e25228a1",
+     "artist": "deafheaven",
+     "title": "infinite granite",
+     "songs": []
+    },
+    {
+     "id": "af2360b1bd2",
+     "artist": "steve gunn",
+     "title": "other you",
+     "songs": []
+    },
+    {
+     "id": "af592049d41",
+     "artist": "quickly, quickly",
+     "title": "the long and short of it",
+     "songs": []
+    },
+    {
+     "id": "a57815c0534",
+     "artist": "low",
+     "title": "hey what",
+     "songs": []
+    },
+    {
+     "id": "a2b521c8449",
+     "artist": "htrk",
+     "title": "rhinestones",
+     "songs": []
+    },
+    {
+     "id": "ab95646b636",
+     "artist": "nala sinephro",
+     "title": "space 1.8",
+     "songs": []
+    },
+    {
+     "id": "a025edd7ad7",
+     "artist": "andy shauf",
+     "title": "wilds",
+     "songs": []
+    },
+    {
+     "id": "a0522deafb6",
+     "artist": "tirzah",
+     "title": "colourgrade",
+     "songs": []
+    },
+    {
+     "id": "a05ea844c45",
+     "artist": "claire rosay",
+     "title": "an afternoon whine",
+     "songs": []
+    },
+    {
+     "id": "a0e15ba6d30",
+     "artist": "w.h. lung",
+     "title": "vanities",
+     "songs": []
+    },
+    {
+     "id": "ac9ca7ca440",
+     "artist": "grouper",
+     "title": "shade",
+     "songs": []
+    },
+    {
+     "id": "a9b9eb99fa5",
+     "artist": "the war on drugs",
+     "title": "I don't live here anymore",
+     "songs": []
+    },
+    {
+     "id": "a9ad60060d8",
+     "artist": "lana del ray",
+     "title": "blue bannisters",
+     "songs": []
+    },
+    {
+     "id": "a653b8ee161",
+     "artist": "helado negro",
+     "title": "far in",
+     "songs": []
+    },
+    {
+     "id": "ab1063cad7c",
+     "artist": "snail mail",
+     "title": "valentine",
+     "songs": []
+    },
+    {
+     "id": "a794f85738c",
+     "artist": "jon hopkins",
+     "title": "music for psychedelic therapy",
+     "songs": []
+    },
+    {
+     "id": "a6f024f9d39",
+     "artist": "damon albarn",
+     "title": "the nearer the fountain, the more pure the stream flows",
+     "songs": []
+    },
+    {
+     "id": "a9c7260c99a",
+     "artist": "self esteem",
+     "title": "prioritise pleasure",
+     "songs": []
+    },
+    {
+     "id": "ace653d05a7",
+     "artist": "sarah davachi, sean mcann",
+     "title": "mother of pearl",
+     "songs": []
+    },
+    {
+     "id": "a09ffe11064",
+     "artist": "tomaga",
+     "title": "intimate instensity",
+     "songs": []
+    },
+    {
+     "id": "a77a96f0ea4",
+     "artist": "dry cleaning",
+     "title": "new long leg",
+     "songs": []
+    },
+    {
+     "id": "ae49dfcd13e",
+     "artist": "aaron dilloway & lucrecia dalt",
+     "title": "lucy and aaron",
+     "songs": []
+    },
+    {
+     "id": "a3f100a03fa",
+     "artist": "car culture",
+     "title": "dead rock",
+     "songs": []
+    },
+    {
+     "id": "af2aa66abfb",
+     "artist": "maxwell stirling",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a79f082de4d",
+     "artist": "Felicia Atkinson",
+     "title": "Un Hiver En Plein Ete",
+     "songs": []
+    },
+    {
+     "id": "a1cea1f4c15",
+     "artist": "art school girlfriend",
+     "title": "is is light where you are",
+     "songs": []
+    },
+    {
+     "id": "a3f3b214f55",
+     "artist": "hypnotic brass ensemble",
+     "title": "this is a mindfulness drill",
+     "songs": []
+    },
+    {
+     "id": "a253148c211",
+     "artist": "Lingua Ignota",
+     "title": "Sinner get ready",
+     "songs": []
+    },
+    {
+     "id": "a7cfe6df5b0",
+     "artist": "Mdou Mocctar",
+     "title": "Afrique Victime",
+     "songs": []
+    },
+    {
+     "id": "a5fefb7089d",
+     "artist": "Richard Dawson and Circle",
+     "title": "Henki",
+     "songs": []
+    },
+    {
+     "id": "a291f7f4038",
+     "artist": "Space Afrika",
+     "title": "Honest Labour",
+     "songs": []
+    },
+    {
+     "id": "a2bc2257b69",
+     "artist": "kafari",
+     "title": "blanket of black",
+     "songs": []
+    },
+    {
+     "id": "ab32445ecd0",
+     "artist": "magdenela bay",
+     "title": "",
+     "songs": []
+    }
+   ],
+   "favourites": [
+    {
+     "albumId": "a5592bbe548",
+     "song": ""
+    },
+    {
+     "albumId": "a9ed9dfa4ff",
+     "song": ""
+    },
+    {
+     "albumId": "a9e4c3fdb4d",
+     "song": ""
+    },
+    {
+     "albumId": "a89734ce427",
+     "song": ""
+    },
+    {
+     "albumId": "a852fa36f44",
+     "song": ""
+    },
+    {
+     "albumId": "a2b521c8449",
+     "song": ""
+    },
+    {
+     "albumId": "a57815c0534",
+     "song": ""
+    },
+    {
+     "albumId": "a291f7f4038",
+     "song": ""
+    },
+    {
+     "albumId": "a1cea1f4c15",
+     "song": ""
+    },
+    {
+     "albumId": "ab32445ecd0",
+     "song": ""
+    },
+    {
+     "albumId": "ab88a52e4a6",
+     "song": ""
+    },
+    {
+     "albumId": "a22b381944d",
+     "song": ""
+    },
+    {
+     "albumId": "af6bb172299",
+     "song": ""
+    },
+    {
+     "albumId": "ac9ca7ca440",
+     "song": ""
+    },
+    {
+     "albumId": "ae49dfcd13e",
+     "song": ""
+    },
+    {
+     "albumId": "ab95646b636",
+     "song": ""
+    }
+   ]
+  },
+  "2022": {
+   "albums": [
+    {
+     "id": "a1a34ddba4c",
+     "artist": "burial",
+     "title": "antidawn",
+     "songs": []
+    },
+    {
+     "id": "a1fa810766f",
+     "artist": "yard act",
+     "title": "the overload",
+     "songs": []
+    },
+    {
+     "id": "a417fcc0aae",
+     "artist": "shinichi atobe",
+     "title": "love of plastic",
+     "songs": []
+    },
+    {
+     "id": "a1da6c37d60",
+     "artist": "pan daijing",
+     "title": "tissues",
+     "songs": []
+    },
+    {
+     "id": "ae7158a1c6b",
+     "artist": "jana horn",
+     "title": "optimism",
+     "songs": []
+    },
+    {
+     "id": "ad8234f8e5c",
+     "artist": "caroline",
+     "title": "caroline",
+     "songs": []
+    },
+    {
+     "id": "a5ef8299291",
+     "artist": "black country new road",
+     "title": "ants from up here",
+     "songs": [
+      "the place where he inserted the blade"
+     ]
+    },
+    {
+     "id": "a72b041ff63",
+     "artist": "animal collective",
+     "title": "time skiffs",
+     "songs": []
+    },
+    {
+     "id": "ac63de595cb",
+     "artist": "big thief",
+     "title": "dragon new warm mountain I believe in you",
+     "songs": []
+    },
+    {
+     "id": "a9cf4c98fb7",
+     "artist": "modern nature",
+     "title": "island of noise",
+     "songs": []
+    },
+    {
+     "id": "aee7c00ec54",
+     "artist": "alt-J",
+     "title": "the dream",
+     "songs": [
+      "get better"
+     ]
+    },
+    {
+     "id": "a7f4d8ce7fd",
+     "artist": "beach house",
+     "title": "one twice melody",
+     "songs": []
+    },
+    {
+     "id": "ae1c0abe4f4",
+     "artist": "binker and moses",
+     "title": "feeding the machine",
+     "songs": []
+    },
+    {
+     "id": "a780cff6cde",
+     "artist": "nilufer yanya",
+     "title": "painless",
+     "songs": [
+      "midnight sun"
+     ]
+    },
+    {
+     "id": "a7764cad90c",
+     "artist": "tom rogerson",
+     "title": "retreat to bliss",
+     "songs": [
+      "oath"
+     ]
+    },
+    {
+     "id": "a05c92ab10a",
+     "artist": "destroyer",
+     "title": "labryinthitis",
+     "songs": []
+    },
+    {
+     "id": "ae8d3602f2d",
+     "artist": "aldous harding",
+     "title": "warm chris",
+     "songs": []
+    },
+    {
+     "id": "a996d47f6e6",
+     "artist": "walter martin",
+     "title": "the bear",
+     "songs": []
+    },
+    {
+     "id": "a427516f750",
+     "artist": "benedicte maurseth",
+     "title": "harr",
+     "songs": [
+      "heilo"
+     ]
+    },
+    {
+     "id": "a0d268834e0",
+     "artist": "king hannah",
+     "title": "I'm not sorry I was just being me",
+     "songs": []
+    },
+    {
+     "id": "a4dd4829b59",
+     "artist": "cate le bon",
+     "title": "pompeii",
+     "songs": []
+    },
+    {
+     "id": "aafe14d512f",
+     "artist": "the reds, pinks and purples",
+     "title": "summer at land's end",
+     "songs": [
+      "don't come home too soon",
+      "I'd rather not go your way"
+     ]
+    },
+    {
+     "id": "a0f6ca4c9d1",
+     "artist": "huerco s",
+     "title": "plonk",
+     "songs": []
+    },
+    {
+     "id": "a144e42836f",
+     "artist": "christian lee hutson",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a56fe1e23a4",
+     "artist": "jenny hval",
+     "title": "classic objects",
+     "songs": [
+      "american coffee"
+     ]
+    },
+    {
+     "id": "ac3dff6bbcb",
+     "artist": "sault",
+     "title": "air",
+     "songs": []
+    },
+    {
+     "id": "a3d9307733c",
+     "artist": "fonatines dc",
+     "title": "skinty fia",
+     "songs": []
+    },
+    {
+     "id": "a09dd779eb8",
+     "artist": "claire rousay",
+     "title": "everything perfect is already here",
+     "songs": []
+    },
+    {
+     "id": "a324df91648",
+     "artist": "whatever the weather",
+     "title": "whatever the weather",
+     "songs": []
+    },
+    {
+     "id": "a15505f9b38",
+     "artist": "kathryn joseph",
+     "title": "for you who are the wronged",
+     "songs": []
+    },
+    {
+     "id": "a2778c0f73f",
+     "artist": "horsegirl",
+     "title": "versions of modern performance",
+     "songs": []
+    },
+    {
+     "id": "adbfc6d19e0",
+     "artist": "angel olsen",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ad29d8cc454",
+     "artist": "the smile",
+     "title": "a light for attracting attention",
+     "songs": []
+    },
+    {
+     "id": "a8eada9176d",
+     "artist": "mj lenderman",
+     "title": "boat songs",
+     "songs": [
+      "toontown",
+      "TLC …."
+     ]
+    },
+    {
+     "id": "a624938fbb5",
+     "artist": "perfume genius",
+     "title": "ugly season",
+     "songs": [
+      "eye in the wall"
+     ]
+    },
+    {
+     "id": "a7c88925f91",
+     "artist": "emily wells",
+     "title": "regards to the end",
+     "songs": [
+      "blood brother"
+     ]
+    },
+    {
+     "id": "afe77c5755f",
+     "artist": "soccer mummy",
+     "title": "sometimes, forever",
+     "songs": []
+    },
+    {
+     "id": "a1f8f5200b9",
+     "artist": "kelly lee owens",
+     "title": "lp.8",
+     "songs": [
+      "nana's piano"
+     ]
+    },
+    {
+     "id": "ac117d6f549",
+     "artist": "felicia atkinson",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a99dce8f935",
+     "artist": "kali malone",
+     "title": "living torch",
+     "songs": []
+    },
+    {
+     "id": "a32596b952e",
+     "artist": "marina herlop",
+     "title": "pripyat",
+     "songs": []
+    },
+    {
+     "id": "ab58f4075ba",
+     "artist": "florist",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ac78cc62a99",
+     "artist": "gavilan rayna russom",
+     "title": "trans feminist symphonic music",
+     "songs": []
+    },
+    {
+     "id": "a72f66e075f",
+     "artist": "cloakroom",
+     "title": "dissolution wave",
+     "songs": []
+    },
+    {
+     "id": "a1306520ab9",
+     "artist": "leila bordreuil",
+     "title": "not an elegy",
+     "songs": []
+    },
+    {
+     "id": "ac3e0e254fc",
+     "artist": "panda bear and sonic boom",
+     "title": "reset",
+     "songs": [
+      "go on",
+      "whirpool"
+     ]
+    },
+    {
+     "id": "a3de3c169e9",
+     "artist": "elaine howley",
+     "title": "the distance between my heart and mouth",
+     "songs": []
+    },
+    {
+     "id": "a4d46cb8615",
+     "artist": "jockstrap",
+     "title": "I love you jennifer b",
+     "songs": [
+      "glasgow"
+     ]
+    },
+    {
+     "id": "a62ae45aa4b",
+     "artist": "maria chiara argiro",
+     "title": "forest city",
+     "songs": [
+      "greenarp"
+     ]
+    },
+    {
+     "id": "afdc20bbc25",
+     "artist": "sarah davachi",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "abfeed589af",
+     "artist": "oliver sim",
+     "title": "hideous bastard",
+     "songs": [
+      "gmt"
+     ]
+    },
+    {
+     "id": "a3a6a2dd754",
+     "artist": "beth orton",
+     "title": "weather alive",
+     "songs": []
+    },
+    {
+     "id": "a88b80c2740",
+     "artist": "ellen arkbro",
+     "title": "I get along without you very well",
+     "songs": [
+      "out of luck"
+     ]
+    },
+    {
+     "id": "a7786f203e2",
+     "artist": "rachika nayar",
+     "title": "heaven come crashing",
+     "songs": []
+    },
+    {
+     "id": "a79206f2a57",
+     "artist": "bjork",
+     "title": "fossora",
+     "songs": []
+    },
+    {
+     "id": "ad1240ffbab",
+     "artist": "lambchop",
+     "title": "the bible",
+     "songs": []
+    },
+    {
+     "id": "ac62da42bdd",
+     "artist": "oren ambarchi",
+     "title": "shebang",
+     "songs": []
+    },
+    {
+     "id": "a14e0b78c06",
+     "artist": "sofia birch & antonina nowacka",
+     "title": "languoria",
+     "songs": []
+    },
+    {
+     "id": "abde72f3ed8",
+     "artist": "sorry",
+     "title": "anywhere but here",
+     "songs": []
+    },
+    {
+     "id": "a112d422386",
+     "artist": "maxine funk",
+     "title": "pieces of driftwood",
+     "songs": []
+    },
+    {
+     "id": "a01491b5e1f",
+     "artist": "gilla band",
+     "title": "most normal",
+     "songs": []
+    },
+    {
+     "id": "a7c32772f75",
+     "artist": "lucrecia dalt",
+     "title": "!ay!",
+     "songs": []
+    },
+    {
+     "id": "a66441f6b9b",
+     "artist": "plains",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ad481e3d4bb",
+     "artist": "arctic monkeys",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a8abc5de4c0",
+     "artist": "brian eno",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a1cc0fb9693",
+     "artist": "the 1975",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ae8ae81e35c",
+     "artist": "dry cleaning",
+     "title": "stumpwork",
+     "songs": []
+    },
+    {
+     "id": "a1a86bdc305",
+     "artist": "tom skinner",
+     "title": "voices of bishara",
+     "songs": []
+    },
+    {
+     "id": "a0fed6e41d0",
+     "artist": "makaya mccraven",
+     "title": "in these times",
+     "songs": []
+    },
+    {
+     "id": "a09db031773",
+     "artist": "weyes blood",
+     "title": "and in the darkness, hearts aglow",
+     "songs": []
+    },
+    {
+     "id": "a5538dcc8ce",
+     "artist": "duval timothy",
+     "title": "meeting with a judas tree",
+     "songs": [
+      "up"
+     ]
+    },
+    {
+     "id": "a33c8efbf2c",
+     "artist": "moor mother",
+     "title": "jazz codes",
+     "songs": []
+    },
+    {
+     "id": "a68a15aa6ce",
+     "artist": "jeff parker",
+     "title": "mondays at the enfield tennis academy",
+     "songs": []
+    },
+    {
+     "id": "a3fb772378b",
+     "artist": "anadol - felicita",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "aed5983a545",
+     "artist": "cola",
+     "title": "deep in view",
+     "songs": [
+      "gossamer"
+     ]
+    },
+    {
+     "id": "ad7eede214d",
+     "artist": "alex g",
+     "title": "god save the animals",
+     "songs": []
+    },
+    {
+     "id": "aebfaf06a5f",
+     "artist": "akusmi",
+     "title": "fleeting future",
+     "songs": []
+    },
+    {
+     "id": "a816447fc7a",
+     "artist": "today",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ab607d35d56",
+     "artist": "smidley",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a1296b299e0",
+     "artist": "maxine funke",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a3055de60a3",
+     "artist": "valentina magaletti",
+     "title": "a queer anthology of drums",
+     "songs": [
+      "a queer anthology of drums"
+     ]
+    }
+   ],
+   "favourites": [
+    {
+     "albumId": "a5ef8299291",
+     "song": "the place where he inserted the blade"
+    },
+    {
+     "albumId": "ad29d8cc454",
+     "song": "open the floodgates"
+    },
+    {
+     "albumId": "a4d46cb8615",
+     "song": "glasgow"
+    },
+    {
+     "albumId": "ac63de595cb",
+     "song": "spud infinity"
+    },
+    {
+     "albumId": "a0fed6e41d0",
+     "song": "the knew untitled"
+    },
+    {
+     "albumId": "a624938fbb5",
+     "song": "eye in the wall"
+    },
+    {
+     "albumId": "aafe14d512f",
+     "song": "don't come home too soon"
+    },
+    {
+     "albumId": "ad8234f8e5c",
+     "song": "dark blue"
+    },
+    {
+     "albumId": "a5538dcc8ce",
+     "song": "up"
+    },
+    {
+     "albumId": "a3a6a2dd754",
+     "song": "weather alive"
+    },
+    {
+     "albumId": "ac3e0e254fc",
+     "song": "go on"
+    },
+    {
+     "albumId": "a68a15aa6ce",
+     "song": ""
+    },
+    {
+     "albumId": "a88b80c2740",
+     "song": "out of luck"
+    },
+    {
+     "albumId": "a56fe1e23a4",
+     "song": "american coffee"
+    },
+    {
+     "albumId": "a09dd779eb8",
+     "song": ""
+    },
+    {
+     "albumId": "a8eada9176d",
+     "song": "toontown"
+    },
+    {
+     "albumId": "a7786f203e2",
+     "song": "heaven come crashing"
+    },
+    {
+     "albumId": "a3055de60a3",
+     "song": "a queer anthology of drums"
+    },
+    {
+     "albumId": "a780cff6cde",
+     "song": "midnight sun"
+    },
+    {
+     "albumId": "ac62da42bdd",
+     "song": ""
+    },
+    {
+     "albumId": "a62ae45aa4b",
+     "song": "green arp"
+    },
+    {
+     "albumId": "a1f8f5200b9",
+     "song": "nana's piano"
+    },
+    {
+     "albumId": "a9cf4c98fb7",
+     "song": "masque"
+    },
+    {
+     "albumId": "ad7eede214d",
+     "song": "after all"
+    },
+    {
+     "albumId": "a2778c0f73f",
+     "song": "anti-glory"
+    },
+    {
+     "albumId": "aebfaf06a5f",
+     "song": "fleeting future",
+     "note": "would have been higher but discovered in 2023"
+    },
+    {
+     "albumId": "a01491b5e1f",
+     "song": ""
+    }
+   ]
+  },
+  "2023": {
+   "albums": [
+    {
+     "id": "a3bc81fa353",
+     "artist": "parannoul",
+     "title": "after the magic",
+     "songs": []
+    },
+    {
+     "id": "a52f7fd54e7",
+     "artist": "kali malone",
+     "title": "does spring hide its joy",
+     "songs": []
+    },
+    {
+     "id": "a6f51f9789c",
+     "artist": "ryuichi sakamoto",
+     "title": "12",
+     "songs": []
+    },
+    {
+     "id": "a3e71d4f0bf",
+     "artist": "andy shauf",
+     "title": "norm",
+     "songs": []
+    },
+    {
+     "id": "a5711f50f3e",
+     "artist": "kelela",
+     "title": "raven",
+     "songs": []
+    },
+    {
+     "id": "aa3f7b031b7",
+     "artist": "young fathers",
+     "title": "heavy heavy",
+     "songs": [
+      "rice"
+     ]
+    },
+    {
+     "id": "a650d281eba",
+     "artist": "caroline polachek",
+     "title": "desire, I want to turn into you",
+     "songs": [
+      "bunny is a rider"
+     ]
+    },
+    {
+     "id": "a68982aed93",
+     "artist": "black country, new road",
+     "title": "live at bush hall",
+     "songs": [
+      "dancers"
+     ]
+    },
+    {
+     "id": "a3cc26d6e14",
+     "artist": "the necks",
+     "title": "travel",
+     "songs": []
+    },
+    {
+     "id": "a39d19bc878",
+     "artist": "kate nv",
+     "title": "wow",
+     "songs": []
+    },
+    {
+     "id": "a2b5724d80e",
+     "artist": "mark william lewis",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a0a6ff2c9d9",
+     "artist": "lonnie holley",
+     "title": "oh me oh my",
+     "songs": []
+    },
+    {
+     "id": "ad7ca5b2dbc",
+     "artist": "fever ray",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "af2c555d845",
+     "artist": "yves tumor",
+     "title": "praise a lord who chews but which does not consume",
+     "songs": []
+    },
+    {
+     "id": "a014dd60001",
+     "artist": "lana del ray",
+     "title": "did you know there's a tunnel under ocean boulevard",
+     "songs": [
+      "a&w"
+     ]
+    },
+    {
+     "id": "a254d923f96",
+     "artist": "arroj aftab etc",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a4799ea9883",
+     "artist": "the reds, pinks & purples",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a15ead36d79",
+     "artist": "angel bat dawid",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "afa3dbdfb07",
+     "artist": "lankum",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a37d9c690dc",
+     "artist": "ben sloan",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a17c026679f",
+     "artist": "boygenius",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a2cd5554cdc",
+     "artist": "yaeji",
+     "title": "with a hammer",
+     "songs": []
+    },
+    {
+     "id": "a3bf92e3c7a",
+     "artist": "john beltran",
+     "title": "the peninsula",
+     "songs": [
+      "peninsula"
+     ]
+    },
+    {
+     "id": "afdbd263216",
+     "artist": "kassem mosse",
+     "title": "workshop 32",
+     "songs": []
+    },
+    {
+     "id": "ab260f9a278",
+     "artist": "fred again, brian eno",
+     "title": "secret life",
+     "songs": []
+    },
+    {
+     "id": "a9f04d52003",
+     "artist": "colin stetson",
+     "title": "when we were that what wept for the sea",
+     "songs": []
+    },
+    {
+     "id": "aaff58d6f3a",
+     "artist": "mandy, indiana",
+     "title": "I've seen a way",
+     "songs": [
+      "pinking shears"
+     ]
+    },
+    {
+     "id": "a010c99aaf7",
+     "artist": "water from your eyes",
+     "title": "everyone's crushed",
+     "songs": [
+      "barley"
+     ]
+    },
+    {
+     "id": "a6484ae1e9a",
+     "artist": "clark",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a97cc9a8b5b",
+     "artist": "king krule",
+     "title": "space heavy",
+     "songs": [
+      "seaforth"
+     ]
+    },
+    {
+     "id": "a46cd91c9c4",
+     "artist": "squid",
+     "title": "o monolith",
+     "songs": []
+    },
+    {
+     "id": "a9d6cd625c8",
+     "artist": "youth lagoon",
+     "title": "heaven is a junkyard",
+     "songs": [
+      "prizefighter"
+     ]
+    },
+    {
+     "id": "a906f699ee3",
+     "artist": "jess williamson",
+     "title": "time ain't accidental",
+     "songs": []
+    },
+    {
+     "id": "a07d198a508",
+     "artist": "avalon emerson",
+     "title": "& the Charm",
+     "songs": [
+      "astrology poisoning"
+     ]
+    },
+    {
+     "id": "a6ae3e00a5f",
+     "artist": "gia margaret",
+     "title": "romantic piano",
+     "songs": [
+      "a dream will always divide"
+     ]
+    },
+    {
+     "id": "ad48d1b377b",
+     "artist": "beach fossils",
+     "title": "bunny",
+     "songs": []
+    },
+    {
+     "id": "a0dcaa7ae92",
+     "artist": "arthur russell",
+     "title": "picture of bunny rabbit",
+     "songs": []
+    },
+    {
+     "id": "a91cef47a65",
+     "artist": "billy woods",
+     "title": "maps",
+     "songs": [
+      "soft landing"
+     ]
+    },
+    {
+     "id": "ad04d8d9290",
+     "artist": "julie byrne",
+     "title": "the greater wings",
+     "songs": [
+      "portrait of a clear day"
+     ]
+    },
+    {
+     "id": "adbfc3cf118",
+     "artist": "pj harvey",
+     "title": "I inside the old year dying",
+     "songs": []
+    },
+    {
+     "id": "a73b1d5c1df",
+     "artist": "joanna sternberg",
+     "title": "I've got me",
+     "songs": [
+      "stockholm syndrome"
+     ]
+    },
+    {
+     "id": "af903fc6a50",
+     "artist": "grian chatten",
+     "title": "chaos for the fly",
+     "songs": []
+    },
+    {
+     "id": "ad125ff2afe",
+     "artist": "blue lake",
+     "title": "sun arcs",
+     "songs": []
+    },
+    {
+     "id": "a971d8586a3",
+     "artist": "anohi and the johnsons",
+     "title": "my back was a bridge for you to cross",
+     "songs": []
+    },
+    {
+     "id": "a75d7c6eee1",
+     "artist": "blake mills",
+     "title": "jelly road",
+     "songs": []
+    },
+    {
+     "id": "a5191f53395",
+     "artist": "blur",
+     "title": "the ballad of darren",
+     "songs": [
+      "the narcisist"
+     ]
+    },
+    {
+     "id": "a1274354ebd",
+     "artist": "bonnie prince billy",
+     "title": "keeping secrets will destroy you",
+     "songs": []
+    },
+    {
+     "id": "aa91e4a60df",
+     "artist": "lawrence english and lea bertucci",
+     "title": "chthonic",
+     "songs": []
+    },
+    {
+     "id": "a0adcb1301b",
+     "artist": "cut worms",
+     "title": "cut worms",
+     "songs": [
+      "I'll never make it"
+     ]
+    },
+    {
+     "id": "a49af620d5b",
+     "artist": "slowdive",
+     "title": "slowdive",
+     "songs": [
+      "kisses"
+     ]
+    },
+    {
+     "id": "a633cc11592",
+     "artist": "jaimie branch",
+     "title": "fly or die",
+     "songs": []
+    },
+    {
+     "id": "ab0438095bf",
+     "artist": "sparklehorse",
+     "title": "bird machine",
+     "songs": [
+      "falling down"
+     ]
+    },
+    {
+     "id": "a2db6b0dc2c",
+     "artist": "laurel halo",
+     "title": "atlas",
+     "songs": []
+    },
+    {
+     "id": "ab514330ce7",
+     "artist": "animal collective",
+     "title": "isn't it now",
+     "songs": []
+    },
+    {
+     "id": "aff7755b893",
+     "artist": "modern nature",
+     "title": "no fixed point in space",
+     "songs": []
+    },
+    {
+     "id": "af2ed80dbc5",
+     "artist": "sufjan stevens",
+     "title": "javelin",
+     "songs": []
+    },
+    {
+     "id": "a569d815c49",
+     "artist": "helena deland",
+     "title": "goodnight summerland",
+     "songs": []
+    },
+    {
+     "id": "a6ccb5812ff",
+     "artist": "l'rain",
+     "title": "I killed your dog",
+     "songs": [
+      "pet rock"
+     ]
+    },
+    {
+     "id": "a1b4e4330c3",
+     "artist": "mitski",
+     "title": "the land is inhospitable and so are we",
+     "songs": [
+      "bug like an angel"
+     ]
+    },
+    {
+     "id": "abae022ab06",
+     "artist": "vanishing twin",
+     "title": "afternoon x",
+     "songs": [
+      "marbles"
+     ]
+    },
+    {
+     "id": "a7b2727a6a2",
+     "artist": "ml buch",
+     "title": "suntub",
+     "songs": []
+    },
+    {
+     "id": "a24644734cf",
+     "artist": "beirut",
+     "title": "hadsel",
+     "songs": [
+      "arctic forest",
+      "the tern"
+     ]
+    },
+    {
+     "id": "a9882826b85",
+     "artist": "titanic",
+     "title": "vidrio",
+     "songs": [
+      "anonima"
+     ]
+    },
+    {
+     "id": "aecf99a1c99",
+     "artist": "yo la tengo",
+     "title": "this stupid world",
+     "songs": []
+    }
+   ],
+   "favourites": [
+    {
+     "albumId": "a6ccb5812ff",
+     "song": "pet rock"
+    },
+    {
+     "albumId": "af2ed80dbc5",
+     "song": "shit talk"
+    },
+    {
+     "albumId": "a2db6b0dc2c",
+     "song": "belleville"
+    },
+    {
+     "albumId": "a014dd60001",
+     "song": "a&w"
+    },
+    {
+     "albumId": "a010c99aaf7",
+     "song": "barley"
+    },
+    {
+     "albumId": "a650d281eba",
+     "song": "bunny is a rider"
+    },
+    {
+     "albumId": "aa3f7b031b7",
+     "song": "rice"
+    },
+    {
+     "albumId": "ad04d8d9290",
+     "song": "portrait of a clear day"
+    },
+    {
+     "albumId": "a24644734cf",
+     "song": "arctic forest"
+    },
+    {
+     "albumId": "adbfc3cf118",
+     "song": "a child's question, august"
+    },
+    {
+     "albumId": "a68982aed93",
+     "song": "turbines/pigs"
+    },
+    {
+     "albumId": "a07d198a508",
+     "song": "astrology poisoning"
+    },
+    {
+     "albumId": "a9d6cd625c8",
+     "song": "prizefighter"
+    },
+    {
+     "albumId": "a73b1d5c1df",
+     "song": "stockholm syndrome"
+    },
+    {
+     "albumId": "aaff58d6f3a",
+     "song": "pinking shears"
+    },
+    {
+     "albumId": "aecf99a1c99",
+     "song": "this stupid world"
+    },
+    {
+     "albumId": "a1b4e4330c3",
+     "song": "bug like an angel"
+    },
+    {
+     "albumId": "a52f7fd54e7",
+     "song": ""
+    },
+    {
+     "albumId": "ab0438095bf",
+     "song": "falling down"
+    },
+    {
+     "albumId": "a49af620d5b",
+     "song": "kisses"
+    }
+   ]
+  },
+  "2024": {
+   "albums": [
+    {
+     "id": "acdba28865e",
+     "artist": "acopia",
+     "title": "acopia",
+     "songs": []
+    },
+    {
+     "id": "afb70756a2a",
+     "artist": "astrid sonne",
+     "title": "boost",
+     "songs": [
+      "do you wanna"
+     ]
+    },
+    {
+     "id": "a2c3b66f1ef",
+     "artist": "the smile",
+     "title": "wall of eyes",
+     "songs": [
+      "all of them"
+     ]
+    },
+    {
+     "id": "a6b0ba2d492",
+     "artist": "cowboy sadness",
+     "title": "selected jambient works",
+     "songs": []
+    },
+    {
+     "id": "a1f9cf7981f",
+     "artist": "nailah hunter",
+     "title": "lovegaze",
+     "songs": [
+      "into the sun"
+     ]
+    },
+    {
+     "id": "a794ac6443f",
+     "artist": "mk.gee",
+     "title": "two star & the dream police",
+     "songs": [
+      "I want",
+      "alesis"
+     ]
+    },
+    {
+     "id": "aad711faef0",
+     "artist": "helado negro",
+     "title": "phasor",
+     "songs": [
+      "I just want to wake up with you"
+     ]
+    },
+    {
+     "id": "af9c5e9d4f6",
+     "artist": "friko",
+     "title": "where we've been, where we go from here",
+     "songs": [
+      "for ella"
+     ]
+    },
+    {
+     "id": "ad203376579",
+     "artist": "kali malone",
+     "title": "all life long",
+     "songs": []
+    },
+    {
+     "id": "a9110c815b9",
+     "artist": "blemishes",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a9da11f0ceb",
+     "artist": "four tet",
+     "title": "three",
+     "songs": [
+      "daydream repeat",
+      "three drums"
+     ]
+    },
+    {
+     "id": "a686a0f9a31",
+     "artist": "hannah frances",
+     "title": "keeper of the shepherd",
+     "songs": [
+      "vacant intimacies"
+     ]
+    },
+    {
+     "id": "aea4f6e38e9",
+     "artist": "rafael toral",
+     "title": "spectral evolution",
+     "songs": [
+      "spectral evolution"
+     ]
+    },
+    {
+     "id": "a952ebb4b50",
+     "artist": "adrienne lenker",
+     "title": "bright future",
+     "songs": [
+      "vampire empire",
+      "evol"
+     ]
+    },
+    {
+     "id": "aafcd7f2f7c",
+     "artist": "waxahatchee",
+     "title": "tigers blood",
+     "songs": [
+      "right back to it"
+     ]
+    },
+    {
+     "id": "a395525bd15",
+     "artist": "julia holter",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a9fb5a7c93f",
+     "artist": "roma zuckerman",
+     "title": "the phenomenon of provincial mentality",
+     "songs": []
+    },
+    {
+     "id": "aedb90f4c3f",
+     "artist": "vampire weekend",
+     "title": "only god was above us",
+     "songs": [
+      "hope"
+     ]
+    },
+    {
+     "id": "aa5a2486782",
+     "artist": "phosphorescent",
+     "title": "revelator",
+     "songs": [
+      "revelator"
+     ]
+    },
+    {
+     "id": "a14ff184f38",
+     "artist": "fabiano palladino",
+     "title": "fabiano palladino",
+     "songs": [
+      "I care"
+     ]
+    },
+    {
+     "id": "a3a7b5a7578",
+     "artist": "yard act",
+     "title": "where's my utopia",
+     "songs": [
+      "blackpool illuminations"
+     ]
+    },
+    {
+     "id": "a81422805a2",
+     "artist": "beatenbergg",
+     "title": "the great fire of beatenberg",
+     "songs": []
+    },
+    {
+     "id": "a1a6ef13feb",
+     "artist": "cindy lee",
+     "title": "diamond jubilee",
+     "songs": [
+      "diamond jubilee",
+      "flesh and blood"
+     ]
+    },
+    {
+     "id": "a93e8686016",
+     "artist": "jess ribeiro",
+     "title": "summer of love",
+     "songs": [
+      "summer of love"
+     ]
+    },
+    {
+     "id": "adc2201c6b3",
+     "artist": "still house plants",
+     "title": "if I don't make it, I love u",
+     "songs": []
+    },
+    {
+     "id": "a387e6796cf",
+     "artist": "claire rousay",
+     "title": "sentiment",
+     "songs": [
+      "iii"
+     ]
+    },
+    {
+     "id": "a115586569e",
+     "artist": "iron and wine",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a501dd24b98",
+     "artist": "lightning bug",
+     "title": "no paradise",
+     "songs": []
+    },
+    {
+     "id": "ae96db0fa53",
+     "artist": "jessica pratt",
+     "title": "here in the pitch",
+     "songs": [
+      "the last year"
+     ]
+    },
+    {
+     "id": "af82185e5ab",
+     "artist": "amen dunes",
+     "title": "death jokes",
+     "songs": []
+    },
+    {
+     "id": "acdb4694628",
+     "artist": "jim white and marissa taylor",
+     "title": "swallowtail",
+     "songs": []
+    },
+    {
+     "id": "a8ae86e77f9",
+     "artist": "adrienne lenker",
+     "title": "bancamp palestine thing",
+     "songs": []
+    },
+    {
+     "id": "a96aea76585",
+     "artist": "beth gibbons",
+     "title": "lives outgrown",
+     "songs": []
+    },
+    {
+     "id": "a5d072d0611",
+     "artist": "chanel beads",
+     "title": "your day will come",
+     "songs": []
+    },
+    {
+     "id": "a24aad2f7cd",
+     "artist": "ducks ltd.",
+     "title": "harm's way",
+     "songs": []
+    },
+    {
+     "id": "a7942664b51",
+     "artist": "nourished by time",
+     "title": "catching chickens ep",
+     "songs": []
+    },
+    {
+     "id": "aa894a4573c",
+     "artist": "homeshake",
+     "title": "cd wallet",
+     "songs": []
+    },
+    {
+     "id": "adde356adfe",
+     "artist": "diiv",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "af620afbb6f",
+     "artist": "arooj aftab",
+     "title": "night reign",
+     "songs": []
+    },
+    {
+     "id": "a6f1acccd34",
+     "artist": "bat for lashes",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ab58d474d00",
+     "artist": "joanne robertson and dean blunt",
+     "title": "backstage raver",
+     "songs": []
+    },
+    {
+     "id": "a07cbc53434",
+     "artist": "actress",
+     "title": "statik",
+     "songs": []
+    },
+    {
+     "id": "af91fe163fc",
+     "artist": "tashi wada",
+     "title": "what is not strange?",
+     "songs": []
+    },
+    {
+     "id": "a0db63baa97",
+     "artist": "ezra feinber",
+     "title": "soft power",
+     "songs": []
+    },
+    {
+     "id": "a5a48ac93bb",
+     "artist": "cola",
+     "title": "the gloss",
+     "songs": [
+      "keys down if you stay"
+     ]
+    },
+    {
+     "id": "a4be2c0abe2",
+     "artist": "skee mask",
+     "title": "resort",
+     "songs": []
+    },
+    {
+     "id": "a9365fb405f",
+     "artist": "king krule",
+     "title": "SHHHHHHH!",
+     "songs": []
+    },
+    {
+     "id": "ae8fa79b812",
+     "artist": "mabbe fratti",
+     "title": "sentir que no sabes",
+     "songs": []
+    },
+    {
+     "id": "a8bc35c873e",
+     "artist": "dirty three",
+     "title": "love changes everything",
+     "songs": []
+    },
+    {
+     "id": "a9e3b8d3ad3",
+     "artist": "kopy",
+     "title": "heart fresh",
+     "songs": []
+    },
+    {
+     "id": "aa7f741756a",
+     "artist": "kelly moran",
+     "title": "moves in the field",
+     "songs": [
+      "sodalis (II)"
+     ]
+    },
+    {
+     "id": "a1c937d15f2",
+     "artist": "small medium large",
+     "title": "sml",
+     "songs": []
+    },
+    {
+     "id": "a8443f938d1",
+     "artist": "cassandra jenkins",
+     "title": "my light, my destroyer",
+     "songs": [
+      "omakase"
+     ]
+    },
+    {
+     "id": "a3b435bf67e",
+     "artist": "martha sky murphy",
+     "title": "um",
+     "songs": [
+      "forgive"
+     ]
+    },
+    {
+     "id": "a598b176372",
+     "artist": "jasmine wood",
+     "title": "piano reverb",
+     "songs": []
+    },
+    {
+     "id": "ad9841c83d7",
+     "artist": "moses sumney",
+     "title": "sophcore",
+     "songs": [
+      "love's refrain"
+     ]
+    },
+    {
+     "id": "ad65a679e53",
+     "artist": "font",
+     "title": "strange burden",
+     "songs": [
+      "hey kekule"
+     ]
+    },
+    {
+     "id": "a25f874aace",
+     "artist": "nick cave",
+     "title": "wild god",
+     "songs": [
+      "o wow o wow"
+     ]
+    },
+    {
+     "id": "ac49ebee7c4",
+     "artist": "jake xerxes fussell",
+     "title": "when I'm called",
+     "songs": [
+      "who killed poor robin?"
+     ]
+    },
+    {
+     "id": "ab1edcb0c9a",
+     "artist": "princ$ss",
+     "title": "princ$ss",
+     "songs": [
+      "point of view"
+     ]
+    },
+    {
+     "id": "a2ad3bfce00",
+     "artist": "dummy",
+     "title": "free energy",
+     "songs": []
+    },
+    {
+     "id": "a0466aba2ea",
+     "artist": "nala sinephro",
+     "title": "endlessness",
+     "songs": []
+    },
+    {
+     "id": "acdd84c16a9",
+     "artist": "floating points",
+     "title": "cascade",
+     "songs": []
+    },
+    {
+     "id": "a1c158691b5",
+     "artist": "colin stetson",
+     "title": "the love it took to leave you",
+     "songs": []
+    },
+    {
+     "id": "a8f094a2101",
+     "artist": "nilufer yanya",
+     "title": "my method actor",
+     "songs": []
+    },
+    {
+     "id": "a47939b434b",
+     "artist": "jamie xx",
+     "title": "in waves",
+     "songs": [
+      "still summer"
+     ]
+    },
+    {
+     "id": "a7a2d4cfe0f",
+     "artist": "alan sparhawk",
+     "title": "white roses, my god",
+     "songs": [
+      "brother"
+     ]
+    },
+    {
+     "id": "aa9116b48dd",
+     "artist": "patrick shiroishi",
+     "title": "glass house",
+     "songs": []
+    },
+    {
+     "id": "a1d0c413fb0",
+     "artist": "nidia & valentina",
+     "title": "estradas",
+     "songs": []
+    },
+    {
+     "id": "a345a174ebe",
+     "artist": "wendy eisenberg",
+     "title": "viewfinder",
+     "songs": []
+    },
+    {
+     "id": "ad06c0580ff",
+     "artist": "the smile",
+     "title": "cutouts",
+     "songs": []
+    },
+    {
+     "id": "a79683f57fe",
+     "artist": "sarah hennies",
+     "title": "motor tapes",
+     "songs": []
+    },
+    {
+     "id": "a2216f57786",
+     "artist": "haley heynderickx",
+     "title": "seed of a seed",
+     "songs": []
+    },
+    {
+     "id": "a35a902921c",
+     "artist": "porridge radio",
+     "title": "clouds in the sky they will always be there for me",
+     "songs": []
+    },
+    {
+     "id": "a885d41d898",
+     "artist": "claire rousay",
+     "title": "the bloody lady",
+     "songs": []
+    },
+    {
+     "id": "ac0b7ddd913",
+     "artist": "anne butterss",
+     "title": "mighty vertebrate",
+     "songs": []
+    },
+    {
+     "id": "a232c4d0546",
+     "artist": "jeff parker",
+     "title": "the way out of easy",
+     "songs": []
+    },
+    {
+     "id": "a347773e361",
+     "artist": "father john misty",
+     "title": "mahashmashana",
+     "songs": [
+      "mahashmashana"
+     ]
+    },
+    {
+     "id": "ad36be7a6c5",
+     "artist": "mj lenderman",
+     "title": "manning fireworks",
+     "songs": []
+    },
+    {
+     "id": "a64d49f20a8",
+     "artist": "amen dunes",
+     "title": "death jokes ii",
+     "songs": []
+    },
+    {
+     "id": "a33ee32b8fd",
+     "artist": "rosali",
+     "title": "bite down",
+     "songs": []
+    },
+    {
+     "id": "ab2fcb725fa",
+     "artist": "wh lung",
+     "title": "every inch of earth pulsates",
+     "songs": []
+    },
+    {
+     "id": "af1fdbba488",
+     "artist": "kim deal",
+     "title": "",
+     "songs": []
+    }
+   ],
+   "favourites": [
+    {
+     "albumId": "a1a6ef13feb",
+     "song": "diamond jubilee"
+    },
+    {
+     "albumId": "a952ebb4b50",
+     "song": "vampire empire"
+    },
+    {
+     "albumId": "a2c3b66f1ef",
+     "song": "teleharmonic"
+    },
+    {
+     "albumId": "ae96db0fa53",
+     "song": "the last year"
+    },
+    {
+     "albumId": "a794ac6443f",
+     "song": "I want"
+    },
+    {
+     "albumId": "af9c5e9d4f6",
+     "song": "for ella"
+    },
+    {
+     "albumId": "ab1edcb0c9a",
+     "song": "point of view"
+    },
+    {
+     "albumId": "a347773e361",
+     "song": "screamland"
+    },
+    {
+     "albumId": "aedb90f4c3f",
+     "song": "hope"
+    },
+    {
+     "albumId": "a9da11f0ceb",
+     "song": "daydream repeat"
+    },
+    {
+     "albumId": "a232c4d0546",
+     "song": "easy way out"
+    },
+    {
+     "albumId": "a33ee32b8fd",
+     "song": "my kind"
+    },
+    {
+     "albumId": "a0466aba2ea",
+     "song": "continuum 1"
+    },
+    {
+     "albumId": "aea4f6e38e9",
+     "song": "spectral evolution"
+    },
+    {
+     "albumId": "adc2201c6b3",
+     "song": "M M M"
+    },
+    {
+     "albumId": "aa5a2486782",
+     "song": "revelator"
+    },
+    {
+     "albumId": "a5d072d0611",
+     "song": "police scanner"
+    },
+    {
+     "albumId": "a5a48ac93bb",
+     "song": "keys down if you stay"
+    },
+    {
+     "albumId": "a1c937d15f2",
+     "song": "window sill song"
+    },
+    {
+     "albumId": "a14ff184f38",
+     "song": "I care"
+    },
+    {
+     "albumId": "a24aad2f7cd",
+     "song": "hollowed out"
+    },
+    {
+     "albumId": "a25f874aace",
+     "song": ""
+    }
+   ]
+  },
+  "2025": {
+   "albums": [
+    {
+     "id": "ae47191546f",
+     "artist": "ethel cain",
+     "title": "perverts",
+     "songs": []
+    },
+    {
+     "id": "ae604dd6152",
+     "artist": "cameron winter",
+     "title": "heavy metal",
+     "songs": [
+      "drinking age"
+     ]
+    },
+    {
+     "id": "a65fd93bb9a",
+     "artist": "lots of hands",
+     "title": "into a pretty room",
+     "songs": [
+      "the rain"
+     ]
+    },
+    {
+     "id": "aa4b62861e5",
+     "artist": "fka twigs",
+     "title": "eusexua",
+     "songs": []
+    },
+    {
+     "id": "a8f3af6d12a",
+     "artist": "kathryn mohr",
+     "title": "waiting room",
+     "songs": []
+    },
+    {
+     "id": "a445b72fa42",
+     "artist": "dean blunt & elias ronnenfelt",
+     "title": "lucre",
+     "songs": [
+      "elevator"
+     ]
+    },
+    {
+     "id": "a8d0e439c8b",
+     "artist": "klein",
+     "title": "thirteen sense",
+     "songs": []
+    },
+    {
+     "id": "ae421ac1b6e",
+     "artist": "squid",
+     "title": "cowards",
+     "songs": []
+    },
+    {
+     "id": "ae65eb5f2a4",
+     "artist": "civilistjavel",
+     "title": "foljd",
+     "songs": []
+    },
+    {
+     "id": "a9e1a71b218",
+     "artist": "richard dawson",
+     "title": "end of the middle",
+     "songs": []
+    },
+    {
+     "id": "a585ae9e2e2",
+     "artist": "venturing",
+     "title": "ghostholding",
+     "songs": []
+    },
+    {
+     "id": "a2989b5c194",
+     "artist": "panda bear",
+     "title": "sinister grift",
+     "songs": [
+      "defense"
+     ]
+    },
+    {
+     "id": "ae74c1727c8",
+     "artist": "youth lagoon",
+     "title": "",
+     "songs": [
+      "lucy takes a picture"
+     ]
+    },
+    {
+     "id": "a6a60609670",
+     "artist": "justin walter",
+     "title": "bird higher than cloud",
+     "songs": [
+      "bird higher than cloud"
+     ]
+    },
+    {
+     "id": "a9799cab069",
+     "artist": "hamilton leithauser",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a39a2c65ccb",
+     "artist": "alexander deplume",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a34b22e945c",
+     "artist": "horse vision",
+     "title": "another life",
+     "songs": []
+    },
+    {
+     "id": "af1b12ccb72",
+     "artist": "whatever the weather",
+     "title": "whatever the weather II",
+     "songs": []
+    },
+    {
+     "id": "abad917c809",
+     "artist": "claire rousay & more eaze",
+     "title": "no floor",
+     "songs": []
+    },
+    {
+     "id": "a8a75d1064f",
+     "artist": "YNWH Nailgun",
+     "title": "45 pounds",
+     "songs": [
+      "animal death already breathing"
+     ]
+    },
+    {
+     "id": "a1d2275b0ac",
+     "artist": "destroyer",
+     "title": "dan's boogie",
+     "songs": []
+    },
+    {
+     "id": "afb39287c8f",
+     "artist": "perfume genius",
+     "title": "glory",
+     "songs": []
+    },
+    {
+     "id": "ae77f1646eb",
+     "artist": "great grandpa",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a5f9c3d9bf1",
+     "artist": "aya",
+     "title": "hexed!",
+     "songs": []
+    },
+    {
+     "id": "aabe30ffc4b",
+     "artist": "ichiko aoba",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ac7ebcc53d7",
+     "artist": "vijay iyer",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a26320fc067",
+     "artist": "alabaster deplume",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a03e687dce7",
+     "artist": "maria somerville",
+     "title": "luster",
+     "songs": [
+      "trip"
+     ]
+    },
+    {
+     "id": "ae6da1a4888",
+     "artist": "adrienne lenker",
+     "title": "live at revolution hall",
+     "songs": []
+    },
+    {
+     "id": "ab70f0219e5",
+     "artist": "william tyler",
+     "title": "time indefinite",
+     "songs": [
+      "held"
+     ]
+    },
+    {
+     "id": "a511b408673",
+     "artist": "quade",
+     "title": "the foel tower",
+     "songs": []
+    },
+    {
+     "id": "a34ae0cc895",
+     "artist": "beirut",
+     "title": "a study of losses",
+     "songs": []
+    },
+    {
+     "id": "a9f29725ef7",
+     "artist": "bon iver",
+     "title": "Sable, Fable",
+     "songs": []
+    },
+    {
+     "id": "a7002974576",
+     "artist": "tv on the radio guy",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a0837ea8922",
+     "artist": "salami rose jose luis",
+     "title": "lorings",
+     "songs": []
+    },
+    {
+     "id": "abd2ecdbeae",
+     "artist": "eliana glass",
+     "title": "E",
+     "songs": []
+    },
+    {
+     "id": "a71b3e3fbd4",
+     "artist": "Djrum",
+     "title": "Under Tangled Silence",
+     "songs": []
+    },
+    {
+     "id": "a8615573135",
+     "artist": "emma jean thackray",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a5bbf40fc99",
+     "artist": "model/acrtriz",
+     "title": "pirouette",
+     "songs": [
+      "Acide Rain"
+     ]
+    },
+    {
+     "id": "a7b088af4d8",
+     "artist": "stereolab",
+     "title": "instant holograms on metal film",
+     "songs": [
+      "melodie is a wound"
+     ]
+    },
+    {
+     "id": "ab1f4514fae",
+     "artist": "caroline",
+     "title": "caroline 2",
+     "songs": [
+      "coldplay cover"
+     ]
+    },
+    {
+     "id": "ae14650cfb3",
+     "artist": "cole pultice",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ac2867301b6",
+     "artist": "smerz",
+     "title": "big city life",
+     "songs": [
+      "you got time and I got money"
+     ]
+    },
+    {
+     "id": "a3da583702c",
+     "artist": "smerz",
+     "title": "big city life (edits)",
+     "songs": [
+      "you got time and I got money"
+     ]
+    },
+    {
+     "id": "a5baaced037",
+     "artist": "hayden pedigo",
+     "title": "I'll be waving as you drive away",
+     "songs": []
+    },
+    {
+     "id": "a23233a1aa6",
+     "artist": "lyra pramuk",
+     "title": "hymnal",
+     "songs": []
+    },
+    {
+     "id": "a0a8e4ce26d",
+     "artist": "horsegirl",
+     "title": "phonetics on and on",
+     "songs": []
+    },
+    {
+     "id": "a9ebf8476d1",
+     "artist": "shinetiac",
+     "title": "infiltrating roku city",
+     "songs": []
+    },
+    {
+     "id": "a3aaf9ab33a",
+     "artist": "sharp pins",
+     "title": "radio ddr",
+     "songs": []
+    },
+    {
+     "id": "a0df787337e",
+     "artist": "water damage",
+     "title": "instruments",
+     "songs": []
+    },
+    {
+     "id": "a05abe5bbdb",
+     "artist": "dutch interior",
+     "title": "moneyball",
+     "songs": []
+    },
+    {
+     "id": "aa7b2a14de8",
+     "artist": "alex g",
+     "title": "headlights",
+     "songs": [
+      "afterlife"
+     ]
+    },
+    {
+     "id": "acac95c4322",
+     "artist": "goon",
+     "title": "dream 3",
+     "songs": []
+    },
+    {
+     "id": "a7f5f76a516",
+     "artist": "radiohead",
+     "title": "hail to the thief live recordings",
+     "songs": []
+    },
+    {
+     "id": "ab38d450634",
+     "artist": "dijon",
+     "title": "baby",
+     "songs": [
+      "rewind",
+      "another baby!"
+     ]
+    },
+    {
+     "id": "a8a334194b5",
+     "artist": "ryan davis & the roadhouse band",
+     "title": "new threats from the soul",
+     "songs": [
+      "mutliation falls"
+     ]
+    },
+    {
+     "id": "abb92e68832",
+     "artist": "moneyball",
+     "title": "dutch interior",
+     "songs": []
+    },
+    {
+     "id": "ad1c9b084dc",
+     "artist": "ghayoom",
+     "title": "nabeel",
+     "songs": []
+    },
+    {
+     "id": "ae93a1ef7f5",
+     "artist": "moin",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a0d2997559a",
+     "artist": "valentina magaletti",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a6f00c408c3",
+     "artist": "water from your eyes",
+     "title": "it's a beautiful place",
+     "songs": []
+    },
+    {
+     "id": "a426a9c0a09",
+     "artist": "blake mills and palladino",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "aff04fc62af",
+     "artist": "hand habits",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ae8015a5012",
+     "artist": "nourished by time",
+     "title": "the passionate ones",
+     "songs": []
+    },
+    {
+     "id": "ab4b7633da5",
+     "artist": "djon",
+     "title": "baby",
+     "songs": []
+    },
+    {
+     "id": "a9c99c1be59",
+     "artist": "cass mccombs",
+     "title": "interior live oak",
+     "songs": []
+    },
+    {
+     "id": "a108fa13262",
+     "artist": "golden apples",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a5fef46dcb3",
+     "artist": "titanic",
+     "title": "hagen",
+     "songs": []
+    },
+    {
+     "id": "a594973306f",
+     "artist": "greg freeman",
+     "title": "burnover",
+     "songs": []
+    },
+    {
+     "id": "ab1e3623dc5",
+     "artist": "big thief",
+     "title": "double infinity",
+     "songs": [
+      "los angeles"
+     ]
+    },
+    {
+     "id": "ab4ff4c7f9a",
+     "artist": "the berries",
+     "title": "the berries",
+     "songs": []
+    },
+    {
+     "id": "a89a24ec129",
+     "artist": "duval timothy",
+     "title": "wishful thinking",
+     "songs": []
+    },
+    {
+     "id": "ae7d85800e1",
+     "artist": "mark william lewis",
+     "title": "mark william lewis",
+     "songs": [
+      "tomorrow is perfect"
+     ]
+    },
+    {
+     "id": "a3f2a3cb224",
+     "artist": "blood orange",
+     "title": "essex honey",
+     "songs": []
+    },
+    {
+     "id": "ac5d147ab00",
+     "artist": "kieran hebdan and william tyler",
+     "title": "41 longield street late '80s",
+     "songs": [
+      "spider ballad"
+     ]
+    },
+    {
+     "id": "ac41da80bd9",
+     "artist": "joanne robertson",
+     "title": "blurrr",
+     "songs": [
+      "gown"
+     ]
+    },
+    {
+     "id": "a19dfbb12bf",
+     "artist": "geese",
+     "title": "getting killed",
+     "songs": [
+      "au pays du cocaine"
+     ]
+    },
+    {
+     "id": "ac01dee9f45",
+     "artist": "cate le bon",
+     "title": "michelangelo dying",
+     "songs": []
+    },
+    {
+     "id": "a38e2945761",
+     "artist": "m sage",
+     "title": "tender / wading",
+     "songs": []
+    },
+    {
+     "id": "ad98a8bc642",
+     "artist": "feeo",
+     "title": "goodness",
+     "songs": []
+    },
+    {
+     "id": "a2b410e5248",
+     "artist": "jenny hval",
+     "title": "iris silver mist",
+     "songs": []
+    },
+    {
+     "id": "af41af94a0b",
+     "artist": "sorry",
+     "title": "cosplay",
+     "songs": []
+    },
+    {
+     "id": "a06346c8a34",
+     "artist": "claire rousay",
+     "title": "a little death",
+     "songs": []
+    },
+    {
+     "id": "a5ebaae19a2",
+     "artist": "anna von hausswolff",
+     "title": "iconoclasts",
+     "songs": []
+    },
+    {
+     "id": "a7dd5649af1",
+     "artist": "makaya mccraven",
+     "title": "off the record",
+     "songs": []
+    },
+    {
+     "id": "a272fc6f1bb",
+     "artist": "hilary woods",
+     "title": "night CRIU",
+     "songs": [
+      "endgames"
+     ]
+    },
+    {
+     "id": "af221762b50",
+     "artist": "brighde chaimbeul",
+     "title": "sunwise",
+     "songs": []
+    },
+    {
+     "id": "a1e42c01205",
+     "artist": "rosalia",
+     "title": "lux",
+     "songs": []
+    },
+    {
+     "id": "af15c8004b4",
+     "artist": "oneheotrix point never",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ae2033f5563",
+     "artist": "annahstasia",
+     "title": "tether",
+     "songs": []
+    },
+    {
+     "id": "a57b8652ae7",
+     "artist": "james k",
+     "title": "friend",
+     "songs": []
+    },
+    {
+     "id": "a2a165a7840",
+     "artist": "blawan",
+     "title": "SickElixir",
+     "songs": []
+    },
+    {
+     "id": "acf0e5904fa",
+     "artist": "oklou",
+     "title": "choke enough",
+     "songs": [
+      "ict",
+      "take me by the hand"
+     ]
+    },
+    {
+     "id": "a5bba20daa4",
+     "artist": "los thuthanaka",
+     "title": "los thuthanaka",
+     "songs": []
+    },
+    {
+     "id": "ae716e40802",
+     "artist": "sharp pins",
+     "title": "balloon balloon balloon",
+     "songs": [
+      "(in a while) you'll be mine"
+     ]
+    },
+    {
+     "id": "a7740358bd6",
+     "artist": "dove ellis",
+     "title": "blizzard",
+     "songs": []
+    },
+    {
+     "id": "ae28cbb751b",
+     "artist": "billy woods",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ab601596308",
+     "artist": "these new puritans",
+     "title": "",
+     "songs": []
+    }
+   ],
+   "favourites": [
+    {
+     "albumId": "a19dfbb12bf",
+     "song": "Au Pays Du Cocaine"
+    },
+    {
+     "albumId": "ae604dd6152",
+     "song": "Drinking Age"
+    },
+    {
+     "albumId": "ab1e3623dc5",
+     "song": "Los Angeles"
+    },
+    {
+     "albumId": "aa7b2a14de8",
+     "song": "Afterlife"
+    },
+    {
+     "albumId": "ab70f0219e5",
+     "song": "Held"
+    },
+    {
+     "albumId": "ab1f4514fae",
+     "song": "Coldplay Cover"
+    },
+    {
+     "albumId": "a8a334194b5",
+     "song": "Mutiliation Falls"
+    },
+    {
+     "albumId": "ac2867301b6",
+     "song": "You Got Time And I Got Money"
+    },
+    {
+     "albumId": "ab38d450634",
+     "song": "Rewind"
+    },
+    {
+     "albumId": "acf0e5904fa",
+     "song": "Take Me By The Hand"
+    },
+    {
+     "albumId": "a03e687dce7",
+     "song": "Trip"
+    },
+    {
+     "albumId": "a2989b5c194",
+     "song": "Defense"
+    },
+    {
+     "albumId": "ac41da80bd9",
+     "song": "Gown"
+    },
+    {
+     "albumId": "a71b3e3fbd4",
+     "song": "A Tune For Us"
+    },
+    {
+     "albumId": "a7b088af4d8",
+     "song": "Melodie Is a Wound"
+    },
+    {
+     "albumId": "a3f2a3cb224",
+     "song": "The Field"
+    },
+    {
+     "albumId": "a8a75d1064f",
+     "song": ""
+    },
+    {
+     "albumId": "a9c99c1be59",
+     "song": ""
+    },
+    {
+     "albumId": "a7740358bd6",
+     "song": ""
+    },
+    {
+     "albumId": "abd2ecdbeae",
+     "song": ""
+    },
+    {
+     "albumId": "a6f00c408c3",
+     "song": ""
+    },
+    {
+     "albumId": "ae93a1ef7f5",
+     "song": ""
+    },
+    {
+     "albumId": "a5fef46dcb3",
+     "song": ""
+    },
+    {
+     "albumId": "ae7d85800e1",
+     "song": ""
+    },
+    {
+     "albumId": "a7dd5649af1",
+     "song": ""
+    },
+    {
+     "albumId": "a3aaf9ab33a",
+     "song": ""
+    },
+    {
+     "albumId": "a65fd93bb9a",
+     "song": ""
+    },
+    {
+     "albumId": "a9e1a71b218",
+     "song": ""
+    },
+    {
+     "albumId": "ae74c1727c8",
+     "song": ""
+    },
+    {
+     "albumId": "a34b22e945c",
+     "song": ""
+    },
+    {
+     "albumId": "ae77f1646eb",
+     "song": ""
+    }
+   ]
+  },
+  "2026": {
+   "albums": [
+    {
+     "id": "af1cb69112c",
+     "artist": "mandy indiana",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a887e4d8da6",
+     "artist": "david moore",
+     "title": "graze the bell",
+     "songs": []
+    },
+    {
+     "id": "ade6a9e9d3e",
+     "artist": "kin",
+     "title": "kmru",
+     "songs": []
+    },
+    {
+     "id": "a44d5aa4a79",
+     "artist": "maria bc",
+     "title": "marathon",
+     "songs": [
+      "peacemaking"
+     ]
+    },
+    {
+     "id": "adecf1b35f9",
+     "artist": "mitski",
+     "title": "nothing's about to happen to me",
+     "songs": [
+      "I'll change for you"
+     ]
+    },
+    {
+     "id": "a3d72880d63",
+     "artist": "twisted teens",
+     "title": "blame the clown",
+     "songs": []
+    },
+    {
+     "id": "a511546dd84",
+     "artist": "wendy eisenberg",
+     "title": "wendy eisenberg",
+     "songs": []
+    },
+    {
+     "id": "af198f05d29",
+     "artist": "my new band believe",
+     "title": "my new band believe",
+     "songs": [
+      "in the blink of an eye",
+      "love story"
+     ]
+    },
+    {
+     "id": "adb87cdd475",
+     "artist": "avalon emerson",
+     "title": "written into changes",
+     "songs": []
+    },
+    {
+     "id": "ac72d0699f5",
+     "artist": "bon iver",
+     "title": "volumes: one",
+     "songs": []
+    },
+    {
+     "id": "ac7a6355f10",
+     "artist": "the moth",
+     "title": "cancer house",
+     "songs": []
+    },
+    {
+     "id": "a4dfb741994",
+     "artist": "the thinking of the world began pounding in our ears the moment we hit shore",
+     "title": "the thinking of the world began pounding in our ears the moment we hit shore",
+     "songs": []
+    },
+    {
+     "id": "a5be727b641",
+     "artist": "white fence",
+     "title": "orange",
+     "songs": []
+    },
+    {
+     "id": "afcee56f0dc",
+     "artist": "friko",
+     "title": "something worth waiting for",
+     "songs": []
+    },
+    {
+     "id": "ab6cd56eef3",
+     "artist": "quentin tolimieri",
+     "title": "monochromes II",
+     "songs": []
+    },
+    {
+     "id": "aad3cdec22f",
+     "artist": "eliana glass",
+     "title": "eat home",
+     "songs": []
+    },
+    {
+     "id": "ae0e424f146",
+     "artist": "angine de poitrine",
+     "title": "vol II",
+     "songs": []
+    },
+    {
+     "id": "af7f2aa3da4",
+     "artist": "ana roxanne",
+     "title": "poem 1",
+     "songs": []
+    },
+    {
+     "id": "afd48cc615c",
+     "artist": "yu su",
+     "title": "foundry",
+     "songs": []
+    },
+    {
+     "id": "a24a8e9c4ba",
+     "artist": "american football",
+     "title": "lp4",
+     "songs": []
+    },
+    {
+     "id": "a2ac1d3f919",
+     "artist": "frkse",
+     "title": "through the slow dusk",
+     "songs": []
+    },
+    {
+     "id": "a683034c46b",
+     "artist": "greg mendez",
+     "title": "beauty land",
+     "songs": [
+      "frog"
+     ]
+    },
+    {
+     "id": "ad0cc80395f",
+     "artist": "boards of canada",
+     "title": "inferno",
+     "songs": []
+    },
+    {
+     "id": "af8a450be17",
+     "artist": "broken social scene",
+     "title": "remember the humans",
+     "songs": []
+    },
+    {
+     "id": "ac6aadb9616",
+     "artist": "visible cloaks",
+     "title": "paradessence",
+     "songs": []
+    },
+    {
+     "id": "ae0a35bbd7c",
+     "artist": "ed o brien",
+     "title": "blue morpho",
+     "songs": []
+    },
+    {
+     "id": "ab84c30e9d2",
+     "artist": "duval timothy",
+     "title": "rain music",
+     "songs": []
+    },
+    {
+     "id": "a5fbb770162",
+     "artist": "tara clerkin trio",
+     "title": "somewhere good",
+     "songs": []
+    },
+    {
+     "id": "a835561c43a",
+     "artist": "ynwh nailgun",
+     "title": "magazine",
+     "songs": []
+    },
+    {
+     "id": "ae8d4e287e4",
+     "artist": "jeff parker",
+     "title": "happy today",
+     "songs": []
+    },
+    {
+     "id": "a6f73d61ddc",
+     "artist": "ruth garbus",
+     "title": "profound",
+     "songs": [
+      "nothing and everything"
+     ]
+    },
+    {
+     "id": "a39b3f14b37",
+     "artist": "horse lords",
+     "title": "demand to be taken to heaven alive!",
+     "songs": []
+    },
+    {
+     "id": "af7650de3ff",
+     "artist": "tujiko noriko",
+     "title": "pon",
+     "songs": []
+    },
+    {
+     "id": "a18df1c9cd8",
+     "artist": "BASIC",
+     "title": "BASIC",
+     "songs": []
+    },
+    {
+     "id": "a3102b884ff",
+     "artist": "ear",
+     "title": "rumspringa",
+     "songs": []
+    },
+    {
+     "id": "ab561c3a98d",
+     "artist": "beth orton",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "ab0cc6a18fd",
+     "artist": "channel beads",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a4e6decaea3",
+     "artist": "tasha",
+     "title": "you are spring!",
+     "songs": [
+      "promise",
+      "ending"
+     ]
+    },
+    {
+     "id": "a3a66f409fe",
+     "artist": "sml",
+     "title": "spontaneous music live",
+     "songs": []
+    },
+    {
+     "id": "aaeeb69ef55",
+     "artist": "john andrews & the yawns",
+     "title": "streetsweeper",
+     "songs": []
+    },
+    {
+     "id": "a59aedc1db4",
+     "artist": "topdown dialetic",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a302da59694",
+     "artist": "twisted teens",
+     "title": "florida water blues",
+     "songs": []
+    },
+    {
+     "id": "a9f43522bef",
+     "artist": "adrian rew",
+     "title": "slot machine music, vol1 & 2",
+     "songs": []
+    },
+    {
+     "id": "a20fff1a93a",
+     "artist": "thomas dolbaum",
+     "title": "birds of paradise",
+     "songs": [
+      "dozen roses",
+      "coyote"
+     ]
+    },
+    {
+     "id": "acd41c2668a",
+     "artist": "nirosta steel",
+     "title": "my skyscraper",
+     "songs": []
+    },
+    {
+     "id": "a11ddd5f29e",
+     "artist": "strokes",
+     "title": "reality awakes",
+     "songs": [
+      "going shopping"
+     ]
+    },
+    {
+     "id": "a3058f3aee3",
+     "artist": "l'rain",
+     "title": "fata morgana",
+     "songs": []
+    },
+    {
+     "id": "a29129fd2ca",
+     "artist": "phoebe bridgers",
+     "title": "lost weekend",
+     "songs": []
+    },
+    {
+     "id": "a2f45817769",
+     "artist": "roy montgomery and martha sky murphy",
+     "title": "nebular",
+     "songs": []
+    },
+    {
+     "id": "a52c69a4a84",
+     "artist": "hanna stretton",
+     "title": "tiarn",
+     "songs": []
+    },
+    {
+     "id": "aeb7f7d9a17",
+     "artist": "westside cowboy",
+     "title": "it goes on",
+     "songs": [
+      "kick stones",
+      "worried age"
+     ]
+    },
+    {
+     "id": "a145498a6e2",
+     "artist": "gb",
+     "title": "herzsprung",
+     "songs": []
+    },
+    {
+     "id": "a35e4bfb992",
+     "artist": "julia holter",
+     "title": "materia",
+     "songs": []
+    },
+    {
+     "id": "acc84ec121d",
+     "artist": "lambchop",
+     "title": "punching the clown",
+     "songs": []
+    },
+    {
+     "id": "a55871348ce",
+     "artist": "wild pink",
+     "title": "still coming down",
+     "songs": []
+    },
+    {
+     "id": "a7d925b2c80",
+     "artist": "djrum",
+     "title": "I wander",
+     "songs": []
+    },
+    {
+     "id": "a8f4956552a",
+     "artist": "maya ongaku",
+     "title": "nothing space music",
+     "songs": []
+    },
+    {
+     "id": "a36cafe6bdd",
+     "artist": "oen sujet",
+     "title": "the friendliest fight we know",
+     "songs": []
+    },
+    {
+     "id": "a4e3149c742",
+     "artist": "lex walton",
+     "title": "ultimate love forever",
+     "songs": [
+      "ultimate love 4ever"
+     ]
+    },
+    {
+     "id": "a2c5fc1a544",
+     "artist": "helen",
+     "title": "linda's head",
+     "songs": [
+      "faraway"
+     ]
+    },
+    {
+     "id": "aba73ae26ec",
+     "artist": "emily a sprague",
+     "title": "cyano",
+     "songs": []
+    },
+    {
+     "id": "a8c62ae7cd0",
+     "artist": "gilla band",
+     "title": "pugnello",
+     "songs": []
+    },
+    {
+     "id": "a254b92a86a",
+     "artist": "jake xerxes fussell",
+     "title": "the old beloved path",
+     "songs": []
+    },
+    {
+     "id": "a5f2faf94f9",
+     "artist": "richard",
+     "title": "loving you to death",
+     "songs": []
+    },
+    {
+     "id": "a6980d0e153",
+     "artist": "curbside lambsear",
+     "title": "put rings on all my fingers to weigh down my hands",
+     "songs": []
+    },
+    {
+     "id": "a12f55b6b8a",
+     "artist": "cameron winter",
+     "title": "live at carniege hall",
+     "songs": []
+    },
+    {
+     "id": "a3655f0a577",
+     "artist": "loidis",
+     "title": "from the toolkit of lovers",
+     "songs": []
+    },
+    {
+     "id": "a182e4359a6",
+     "artist": "@",
+     "title": "autosmile",
+     "songs": []
+    },
+    {
+     "id": "a4020c2b407",
+     "artist": "william basinski",
+     "title": "passing the cup of sorrows",
+     "songs": []
+    },
+    {
+     "id": "ac5e125f2fd",
+     "artist": "fine",
+     "title": "jazz dreams",
+     "songs": []
+    },
+    {
+     "id": "aea593fff87",
+     "artist": "kali malone",
+     "title": "burning song",
+     "songs": []
+    },
+    {
+     "id": "a8d33010701",
+     "artist": "more eaze",
+     "title": "valley and structure",
+     "songs": []
+    },
+    {
+     "id": "a805dd4da1d",
+     "artist": "water damage",
+     "title": "repair",
+     "songs": []
+    },
+    {
+     "id": "ae95bf023ad",
+     "artist": "heavensouls",
+     "title": "cantu of the sower",
+     "songs": []
+    },
+    {
+     "id": "a0698b14f9b",
+     "artist": "sophia stel",
+     "title": "the greatest album of all time",
+     "songs": []
+    },
+    {
+     "id": "a0879a95e9c",
+     "artist": "worldpeace DMT",
+     "title": "stick around for tea",
+     "songs": []
+    },
+    {
+     "id": "a63950fc044",
+     "artist": "djrum",
+     "title": "dj kicks",
+     "songs": []
+    },
+    {
+     "id": "a23ab637732",
+     "artist": "marina herlop",
+     "title": "dja dja",
+     "songs": []
+    },
+    {
+     "id": "ad8f41596d5",
+     "artist": "jess williamson",
+     "title": "a mile south of heaven",
+     "songs": []
+    },
+    {
+     "id": "afdaf616ad6",
+     "artist": "fontaines dc",
+     "title": "dopamine chamber",
+     "songs": []
+    }
+   ],
+   "favourites": []
+  }
+ },
+ "toListen": [
+  "Yard Act",
+  "Martha Skye Murphy & Maxwell Sterling",
+  "william doyle",
+  "magdelena bay",
+  "Aeon station",
+  "Alpha Maid",
+  "Aaron Dillaway",
+  "Hattie Cooke",
+  "Art School Girlfriend's \"Is it Light Where You Are.\"",
+  "martha sky murphy",
+  "space afrika",
+  "gas",
+  "the bug",
+  "richard dawson",
+  "liars",
+  "lorraine james",
+  "dean blunt",
+  "car culture",
+  "cfcf",
+  "aaron dilloway & lucrecia dalt",
+  "koreless",
+  "yellow swans",
+  "maxwell sterling",
+  "autechre",
+  "kelly lee ownes",
+  "sufjan",
+  "tina",
+  "doss"
+ ],
+ "always": [
+  "sparklehorse",
+  "this heat",
+  "talk talk",
+  "jai paul",
+  "frank ocean",
+  "disco inferno",
+  "interpol - turn on the bright lights"
+ ]
+}
