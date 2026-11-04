@@ -3938,13 +3938,17 @@
      "id": "a8c62ae7cd0",
      "artist": "gilla band",
      "title": "pugnello",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739816a8a78822e098f7f4458e",
+     "spotify": "https://open.spotify.com/album/5pTvVhdMVV24CQep4GA38F"
     },
     {
      "id": "a254b92a86a",
      "artist": "jake xerxes fussell",
      "title": "the old beloved path",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2732f9c0addcd505d1953a93667",
+     "spotify": "https://open.spotify.com/album/4Tq4yvQltbgUUoEPHa8MQk"
     },
     {
      "id": "a5f2faf94f9",
@@ -3965,20 +3969,24 @@
      "artist": "cameron winter",
      "title": "live at carniege hall",
      "songs": [],
-     "art": "",
-     "artTry": 2
+     "art": "https://i.scdn.co/image/ab67616d0000b2739f7045289e0dc19f1d45aa5d",
+     "spotify": "https://open.spotify.com/album/5FjFRlo7diqzHNpVz5wJCt"
     },
     {
      "id": "a3655f0a577",
      "artist": "loidis",
      "title": "from the toolkit of lovers",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27369b2f787671f3c81e0b3ec4a",
+     "spotify": "https://open.spotify.com/album/6dbpTliEiGiQF6qphsDv2F"
     },
     {
      "id": "a182e4359a6",
      "artist": "@",
      "title": "autosmile",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a4020c2b407",
@@ -4027,8 +4035,8 @@
      "artist": "sophia stel",
      "title": "the greatest album of all time",
      "songs": [],
-     "art": "",
-     "artTry": 2
+     "art": "https://i.scdn.co/image/ab67616d0000b2738d778398be51399568ec7528",
+     "spotify": "https://open.spotify.com/album/604KxCjle0KCw0VXdoMNgj"
     },
     {
      "id": "a0879a95e9c",
@@ -4053,16 +4061,16 @@
      "artist": "jess williamson",
      "title": "a mile south of heaven",
      "songs": [],
-     "art": "",
-     "artTry": 2
+     "art": "https://i.scdn.co/image/ab67616d0000b27316554b313159ddc71db1bdc1",
+     "spotify": "https://open.spotify.com/album/5gtnnY39j0QRzGXqAVJbd7"
     },
     {
      "id": "afdaf616ad6",
      "artist": "fontaines dc",
      "title": "dopamine chamber",
      "songs": [],
-     "art": "",
-     "artTry": 2
+     "art": "https://i.scdn.co/image/ab67616d0000b273fbecc7ddcbffd09181ce01ba",
+     "spotify": "https://open.spotify.com/album/0JICUfSKOdGqzE9FJSrNci"
     }
    ],
    "favourites": []
