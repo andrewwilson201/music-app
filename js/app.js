@@ -1,5 +1,5 @@
-import * as store from './store.js?v=4';
-import { queueArt, prioritise, searchAlbums, findArt, spotifyUrl, spotifyArtistUrl, placeholder, norm, ART_VERSION } from './art.js?v=4';
+import * as store from './store.js?v=5';
+import { queueArt, prioritise, searchAlbums, findArt, spotifyUrl, spotifyArtistUrl, placeholder, norm, ART_VERSION } from './art.js?v=5';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -394,7 +394,8 @@ function editAlbum(id) {
   const m = openModal(`
     <div class="modal-head"><h2>Edit album</h2>${closeBtn()}</div>
     <form id="editForm" class="form">
-      <div class="form-cover">${coverHtml(album, 'md')}<button type="button" class="link-btn" id="refetch">Find artwork again</button></div>
+      <div class="form-cover"><div id="editCover">${coverHtml(album, 'md')}</div><button type="button" class="btn small" id="refetch">Choose artwork</button></div>
+      <div class="art-picker" id="artPicker" hidden></div>
       <label class="field"><span>Artist</span><input name="artist" value="${esc(album.artist)}" required></label>
       <label class="field"><span>Album</span><input name="title" value="${esc(album.title)}"></label>
       <label class="field"><span>Standout songs <small>comma separated</small></span><input name="songs" value="${esc((album.songs || []).join(', '))}"></label>
@@ -405,13 +406,35 @@ function editAlbum(id) {
       <label class="field"><span>Artwork URL <small>optional</small></span><input name="art" value="${esc(artFor(album) || '')}"></label>
       <div class="form-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Save</button></div>
     </form>`);
-  $('#refetch', m).addEventListener('click', async (e) => {
-    e.target.textContent = 'Searching…';
+  $('#refetch', m).addEventListener('click', async () => {
+    const picker = $('#artPicker', m);
+    const artist = $('[name=artist]', m).value.trim();
+    const title = $('[name=title]', m).value.trim();
+    picker.hidden = false;
+    picker.innerHTML = '<p class="muted pad-sm"><span class="spin"></span> Looking for covers…</p>';
     try {
-      const url = await findArt({ artist: $('[name=artist]', m).value, title: $('[name=title]', m).value });
-      $('[name=art]', m).value = url;
-      e.target.textContent = url ? 'Found it' : 'No match found';
-    } catch { e.target.textContent = 'Search failed'; }
+      const seen = new Set();
+      const list = [];
+      for (const term of [`${artist} ${title}`.trim(), artist, title].filter(Boolean)) {
+        for (const r of await searchAlbums(term, 25)) {
+          if (r.art && !seen.has(r.art)) { seen.add(r.art); list.push(r); }
+        }
+        if (list.length >= 24) break;
+      }
+      picker.innerHTML = list.length
+        ? `<p class="muted pick-hint">Tap the right cover</p><div class="art-grid">${list.slice(0, 24).map((r) => `
+            <button type="button" class="art-opt" data-art="${esc(r.art)}" title="${esc(`${r.title} · ${r.artist}`)}">
+              <img src="${esc(r.art.replace('600x600', '200x200'))}" alt="" loading="lazy">
+              <span>${esc(r.title)}</span><small>${esc(r.artist)}</small></button>`).join('')}</div>`
+        : '<p class="muted pad-sm">Apple Music has nothing under that name. You can paste an image link in Artwork URL below.</p>';
+    } catch { picker.innerHTML = '<p class="muted pad-sm">Artwork search is unavailable right now.</p>'; }
+  });
+  $('#artPicker', m).addEventListener('click', (e) => {
+    const b = e.target.closest('.art-opt');
+    if (!b) return;
+    $('[name=art]', m).value = b.dataset.art;
+    m.querySelectorAll('.art-opt').forEach((x) => x.classList.toggle('chosen', x === b));
+    $('#editCover', m).innerHTML = coverHtml({ ...album, art: b.dataset.art }, 'md');
   });
   $('#editForm', m).addEventListener('submit', (e) => {
     e.preventDefault();

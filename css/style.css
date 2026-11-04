@@ -228,6 +228,17 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .pick-state { color: var(--faint); flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); }
 .pick.chosen .pick-state { background: var(--accent); border-color: var(--accent); color: #1b0d07; }
 
+/* artwork picker */
+.art-picker { margin: -4px 0 4px; }
+.pick-hint { margin: 0 0 8px; font-size: 13px; }
+.art-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(96px, 1fr)); gap: 10px; max-height: 320px; overflow-y: auto; padding: 2px; }
+.art-opt { display: flex; flex-direction: column; gap: 4px; text-align: left; border-radius: 8px; padding: 4px; min-width: 0; }
+.art-opt img { width: 100%; aspect-ratio: 1; object-fit: cover; border-radius: 6px; background: var(--surface-2); }
+.art-opt span, .art-opt small { font-size: 12px; line-height: 1.25; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.art-opt small { color: var(--muted); }
+.art-opt:hover { background: var(--surface); }
+.art-opt.chosen { background: var(--accent-soft); box-shadow: inset 0 0 0 2px var(--accent); }
+
 /* ---------------- to listen / always ---------------- */
 .inline-add { display: flex; gap: 10px; margin-bottom: 20px; }
 .inline-add input { flex: 1; padding: 0 14px; height: 44px; background: var(--surface); }
