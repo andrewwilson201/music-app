@@ -3831,19 +3831,25 @@
      "songs": [
       "promise",
       "ending"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f34ab74abbddffe84d00aaca",
+     "spotify": "https://open.spotify.com/album/10FoDGoTLJ1fmOwpLbJRjT"
     },
     {
      "id": "a3a66f409fe",
      "artist": "sml",
      "title": "spontaneous music live",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273bdb3cbc395a63f88f2b93342",
+     "spotify": "https://open.spotify.com/album/4ctCltFFLPvlvlRkdzB5ND"
     },
     {
      "id": "aaeeb69ef55",
      "artist": "john andrews & the yawns",
      "title": "streetsweeper",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27384400eddbcbb6b0293cd0450",
+     "spotify": "https://open.spotify.com/album/2ncjH9rLhnNIwveao7jtpA"
     },
     {
      "id": "a59aedc1db4",
@@ -3886,25 +3892,33 @@
      "title": "reality awakes",
      "songs": [
       "going shopping"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736b458d1409d938dad4e3ba2c",
+     "spotify": "https://open.spotify.com/album/6x0nmCMjHeuN3rYBmI5Bor"
     },
     {
      "id": "a3058f3aee3",
      "artist": "l'rain",
      "title": "fata morgana",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739ea5a26ce4370090fc6698f4",
+     "spotify": "https://open.spotify.com/album/6jqiV5zozY66Gaw6YiFW2g"
     },
     {
      "id": "a29129fd2ca",
      "artist": "phoebe bridgers",
      "title": "lost weekend",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27325a647ace83ba32770ab5d0f",
+     "spotify": "https://open.spotify.com/album/2NSzwyYvQvdOQAoEjrlw9c"
     },
     {
      "id": "a2f45817769",
      "artist": "roy montgomery and martha sky murphy",
      "title": "nebular",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273344773a3393e05da3634b908",
+     "spotify": "https://open.spotify.com/album/1dv09O3lu7XgJ5Y6rUFfLp"
     },
     {
      "id": "a52c69a4a84",
@@ -3921,7 +3935,9 @@
      "songs": [
       "kick stones",
       "worried age"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c47bc6b78c668cd0e62d09a1",
+     "spotify": "https://open.spotify.com/album/3KA5QA2o7yMkCAbMQNq0oL"
     },
     {
      "id": "a145498a6e2",
@@ -3935,19 +3951,25 @@
      "id": "a35e4bfb992",
      "artist": "julia holter",
      "title": "materia",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27392ecc684b66e024ce255d58c",
+     "spotify": "https://open.spotify.com/album/4N18onGeiRu5uj3H7bSOl3"
     },
     {
      "id": "acc84ec121d",
      "artist": "lambchop",
      "title": "punching the clown",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739e938c9a43d7bdc1b8b3c905",
+     "spotify": "https://open.spotify.com/album/4rcilPF4UhNyu09ahQt5zM"
     },
     {
      "id": "a55871348ce",
      "artist": "wild pink",
      "title": "still coming down",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27302d95ee148485aaa7b24e594",
+     "spotify": "https://open.spotify.com/album/6wN3opJqvIFV7g3snV9DzR"
     },
     {
      "id": "a7d925b2c80",
@@ -3961,13 +3983,17 @@
      "id": "a8f4956552a",
      "artist": "maya ongaku",
      "title": "nothing space music",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273a8a1beadfdce1b1b078c9ef9",
+     "spotify": "https://open.spotify.com/album/0LVls3YIcjSXh0Mv08HYep"
     },
     {
      "id": "a36cafe6bdd",
      "artist": "oen sujet",
      "title": "the friendliest fight we know",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273d89b0be1f96295d8b3ef4bbd",
+     "spotify": "https://open.spotify.com/album/5iHC3c9CJNRnYx3B3W9RO9"
     },
     {
      "id": "a4e3149c742",
@@ -3975,7 +4001,9 @@
      "title": "ultimate love forever",
      "songs": [
       "ultimate love 4ever"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ebca125e12390615f8a725ac",
+     "spotify": "https://open.spotify.com/album/1HAX0TGlTlX3OPC3itekn7"
     },
     {
      "id": "a2c5fc1a544",
