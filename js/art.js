@@ -1,7 +1,7 @@
 // Album artwork and album search. Uses Spotify when you're logged in to it,
 // and the iTunes Search API (no key needed, via JSONP) otherwise or as a fallback.
 
-import * as spotify from './spotify.js?v=7';
+import * as spotify from './spotify.js?v=8';
 
 let seq = 0;
 function jsonp(url, timeout = 8000) {
@@ -170,7 +170,7 @@ async function run() {
 // ---- Spotify ----
 export function spotifyUrl(album) {
   if (album.spotify) return album.spotify;
-  return `https://open.spotify.com/search/${encodeURIComponent(`${album.artist} ${album.title || ''}`.trim())}/albums`;
+  return `https://open.spotify.com/search/${encodeURIComponent(`${album.artist} ${album.title || ''}`.trim())}`;
 }
 export function spotifyArtistUrl(name) {
   return `https://open.spotify.com/search/${encodeURIComponent(name)}`;

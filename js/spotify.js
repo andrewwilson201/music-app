@@ -1,7 +1,7 @@
 // Spotify Web API with the PKCE login flow (no client secret, safe for a static site).
 // Only search is used, so no special scopes are requested.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=7';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=8';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
@@ -18,6 +18,7 @@ function ls(key, value) {
 let tokens = null;
 try { tokens = JSON.parse(ls(TOKEN_KEY) || 'null'); } catch {}
 
+export let lastError = '';
 export const configured = () => !!SPOTIFY_CLIENT_ID;
 export const connected = () => configured() && !!tokens?.refresh_token;
 
@@ -83,12 +84,18 @@ async function accessToken() {
 }
 
 export async function searchAlbums(term, limit = 10) {
-  const res = await fetch(`https://api.spotify.com/v1/search?type=album&limit=${Math.min(limit, 50)}&q=${encodeURIComponent(term)}`, {
+  const res = await fetch(`https://api.spotify.com/v1/search?type=album&limit=${Math.min(limit, 10)}&q=${encodeURIComponent(term)}`, {
     headers: { Authorization: `Bearer ${await accessToken()}` },
   });
-  if (res.status === 401) { tokens.expires_at = 0; throw new Error('Spotify session expired'); }
-  if (res.status === 429) throw new Error('rate limited');
-  if (!res.ok) throw new Error(`Spotify said ${res.status}`);
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({}));
+    lastError = `${res.status} ${body.error?.message || res.statusText}`.trim();
+    console.warn('Spotify search failed:', lastError);
+    if (res.status === 401) { tokens.expires_at = 0; throw new Error('Spotify session expired'); }
+    if (res.status === 429) throw new Error('rate limited');
+    throw new Error(`Spotify said ${lastError}`);
+  }
+  lastError = '';
   const json = await res.json();
   return (json.albums?.items || []).filter(Boolean).map((a) => ({
     artist: a.artists.map((x) => x.name).join(', '),

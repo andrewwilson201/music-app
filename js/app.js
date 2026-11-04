@@ -1,6 +1,6 @@
-import * as store from './store.js?v=7';
-import * as spotify from './spotify.js?v=7';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=7';
+import * as store from './store.js?v=8';
+import * as spotify from './spotify.js?v=8';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=8';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -436,7 +436,7 @@ function editAlbum(id) {
       }
       picker.innerHTML = list.length
         ? `<p class="muted pick-hint">Tap the right cover</p><div class="art-grid">${list.slice(0, 24).map((r) => `
-            <button type="button" class="art-opt" data-art="${esc(r.art)}" title="${esc(`${r.title} · ${r.artist}`)}">
+            <button type="button" class="art-opt" data-art="${esc(r.art)}" data-spotify="${esc(r.spotify || '')}" title="${esc(`${r.title} · ${r.artist}`)}">
               <img src="${esc(r.art.replace('600x600', '200x200'))}" alt="" loading="lazy">
               <span>${esc(r.title)}</span><small>${esc(r.artist)}</small></button>`).join('')}</div>`
         : '<p class="muted pad-sm">Apple Music has nothing under that name. You can paste an image link in Artwork URL below.</p>';
@@ -446,6 +446,7 @@ function editAlbum(id) {
     const b = e.target.closest('.art-opt');
     if (!b) return;
     $('[name=art]', m).value = b.dataset.art;
+    if (b.dataset.spotify) $('[name=spotify]', m).value = b.dataset.spotify;
     m.querySelectorAll('.art-opt').forEach((x) => x.classList.toggle('chosen', x === b));
     $('#editCover', m).innerHTML = coverHtml({ ...album, art: b.dataset.art }, 'md');
   });
@@ -676,7 +677,7 @@ function openSettings() {
       ${ICON.spotify}
       <div><b>Spotify</b><small>${spotify.connected()
         ? 'Logged in. Artwork and exact album links come from Spotify.'
-        : 'Log in so artwork and exact album links come from Spotify.'}</small></div>
+        : 'Log in so artwork and exact album links come from Spotify.'}${spotify.lastError ? `<br>Last Spotify error: ${esc(spotify.lastError)}` : ''}</small></div>
       <button type="button" class="btn ${spotify.connected() ? '' : 'spotify'} small" id="spotifyBtn">${spotify.connected() ? 'Log out' : 'Log in'}</button>
     </div>` : ''}
     <p class="status-line ${status}"><span class="sync-dot ${status}"></span>${esc(statusText)}</p>
