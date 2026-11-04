@@ -228,6 +228,12 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .pick-state { color: var(--faint); flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); }
 .pick.chosen .pick-state { background: var(--accent); border-color: var(--accent); color: #1b0d07; }
 
+/* spotify login box in settings */
+.spotify-box { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 0 0 12px; border-radius: 12px; background: rgba(30, 215, 96, .08); border: 1px solid rgba(30, 215, 96, .25); }
+.spotify-box > svg { color: var(--spotify); width: 28px; height: 28px; }
+.spotify-box > div { flex: 1; display: flex; flex-direction: column; min-width: 0; }
+.spotify-box small { color: var(--muted); font-size: 13px; }
+
 /* artwork picker */
 .art-picker { margin: -4px 0 4px; }
 .pick-hint { margin: 0 0 8px; font-size: 13px; }

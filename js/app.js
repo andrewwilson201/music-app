@@ -1,5 +1,6 @@
-import * as store from './store.js?v=5';
-import { queueArt, prioritise, searchAlbums, findArt, spotifyUrl, spotifyArtistUrl, placeholder, norm, ART_VERSION } from './art.js?v=5';
+import * as store from './store.js?v=6';
+import * as spotify from './spotify.js?v=6';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=6';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -27,6 +28,9 @@ let sortable = null;
 
 async function boot() {
   app.innerHTML = '<div class="loading"><span class="spin"></span>Loading your records…</div>';
+  let spotifyMsg = '';
+  try { if (await spotify.handleRedirect()) spotifyMsg = 'Logged in to Spotify'; }
+  catch (e) { spotifyMsg = `Spotify login failed: ${e.message}`; }
   try {
     data = await store.load();
   } catch (e) {
@@ -35,6 +39,7 @@ async function boot() {
   }
   store.subscribe(onStoreChange);
   onStoreChange();
+  if (spotifyMsg) setTimeout(() => toast(spotifyMsg, spotifyMsg.includes('failed') ? 'error' : ''), 300);
   window.addEventListener('hashchange', () => {
     [...modalRoot.children].forEach((w) => closeModal(w, true));
     ui.filter = '';
@@ -99,9 +104,9 @@ try { artCache = JSON.parse(localStorage.getItem(artCacheKey) || '{}'); } catch 
 // older, stricter lookup missed it and it's worth another try).
 function artFor(album) {
   if (album.art) return album.art;
-  if (album.art === '' && (album.artTry || 1) >= ART_VERSION) return '';
+  if (album.art === '' && (album.artTry || 1) >= artVersion()) return '';
   const c = artCache[album.id];
-  if (c) return c === `miss:${ART_VERSION}` ? '' : c.startsWith('miss:') ? undefined : c;
+  if (c) return c.startsWith('miss:') ? (+c.slice(5) >= artVersion() ? '' : undefined) : c;
   return undefined;
 }
 
@@ -132,19 +137,20 @@ function watchCovers(root = app) {
 
 async function requestArt(album) {
   if (artFor(album) !== undefined) return;
-  const url = await queueArt(album);
-  if (url === null) return; // lookup failed (network), try another time
-  setArt(album, url);
+  const found = await queueArt(album);
+  if (!found) return; // lookup failed (network), try another time
+  setArt(album, found.art, found.spotify);
 }
 
-function setArt(album, url) {
+function setArt(album, url, spotifyLink = '') {
   if (store.canSync()) {
     album.art = url;
-    if (url) delete album.artTry; else album.artTry = ART_VERSION;
+    if (url) delete album.artTry; else album.artTry = artVersion();
+    if (spotifyLink && !album.spotify) album.spotify = spotifyLink;
     delete artCache[album.id];
     store.commit({ quiet: true, delay: 6000 });
   } else {
-    artCache[album.id] = url || `miss:${ART_VERSION}`;
+    artCache[album.id] = url || `miss:${artVersion()}`;
     try { localStorage.setItem(artCacheKey, JSON.stringify(artCache)); } catch {}
   }
   $$(`.cover[data-art-id="${album.id}"]`).forEach((el) => {
@@ -366,6 +372,13 @@ function openAlbum(id) {
     </div>`, 'detail-modal');
   watchCovers(m);
   requestArt(album);
+  if (!album.spotify && spotify.connected()) {
+    findSpotifyLink(album).then((link) => {
+      if (!link) return;
+      $('.btn.spotify', m)?.setAttribute('href', link);
+      if (store.canSync()) { album.spotify = link; store.commit({ quiet: true, delay: 6000 }); }
+    }).catch(() => {});
+  }
   $('#favToggle', m).addEventListener('click', () => {
     toggleFavourite(year, album, !rank);
     toast(rank ? 'Removed from favourites' : `Added to your ${year} favourites`);
@@ -549,6 +562,7 @@ function addAlbum({ year, query = '', onSaved } = {}) {
     const y = store.ensureYear(F.year.value);
     const album = { id: store.uid(), artist: F.artist.value.trim(), title: F.title.value.trim(), songs: splitSongs(F.songs.value) };
     if (chosen?.art) album.art = chosen.art;
+    if (chosen?.spotify) album.spotify = chosen.spotify;
     y.albums.push(album);
     if (F.fav.checked) y.favourites.push({ albumId: album.id, song: album.songs[0] || '' });
     store.commit();
@@ -658,6 +672,13 @@ function openSettings() {
   }[status] || 'Not connected. You can browse everything, and edits stay on this device until you connect.';
   const m = openModal(`
     <div class="modal-head"><h2>Sync with GitHub</h2>${closeBtn()}</div>
+    ${spotify.configured() ? `<div class="spotify-box">
+      ${ICON.spotify}
+      <div><b>Spotify</b><small>${spotify.connected()
+        ? 'Logged in. Artwork and exact album links come from Spotify.'
+        : 'Log in so artwork and exact album links come from Spotify.'}</small></div>
+      <button type="button" class="btn ${spotify.connected() ? '' : 'spotify'} small" id="spotifyBtn">${spotify.connected() ? 'Log out' : 'Log in'}</button>
+    </div>` : ''}
     <p class="status-line ${status}"><span class="sync-dot ${status}"></span>${esc(statusText)}</p>
     <form class="form" id="cfgForm">
       <div class="row">
@@ -681,6 +702,10 @@ function openSettings() {
       </div>
     </form>`);
   $('#export', m).addEventListener('click', store.exportJson);
+  $('#spotifyBtn', m)?.addEventListener('click', () => {
+    if (spotify.connected()) { spotify.logout(); closeModal(m); toast('Logged out of Spotify'); }
+    else spotify.login();
+  });
   $('#disconnect', m)?.addEventListener('click', () => {
     store.setConfig({ ...cfg, token: '' });
     closeModal(m);

@@ -1,5 +1,7 @@
-// Album artwork and album search through the iTunes Search API (no key needed).
-// Uses JSONP so it works from any static host regardless of CORS.
+// Album artwork and album search. Uses Spotify when you're logged in to it,
+// and the iTunes Search API (no key needed, via JSONP) otherwise or as a fallback.
+
+import * as spotify from './spotify.js?v=6';
 
 let seq = 0;
 function jsonp(url, timeout = 8000) {
@@ -27,6 +29,20 @@ export const norm = (t = '') =>
 const big = (u) => (u || '').replace(/\/\d+x\d+bb\./, '/600x600bb.');
 
 export async function searchAlbums(term, limit = 10) {
+  if (spotify.connected()) {
+    try {
+      const list = await spotify.searchAlbums(term, limit);
+      if (list.length) return list;
+    } catch (e) {
+      if (e.message === 'rate limited') throw e;
+    }
+  }
+  return searchItunes(term, limit);
+}
+
+export const searchSpotify = (term, limit) => spotify.searchAlbums(term, limit);
+
+async function searchItunes(term, limit = 10) {
   const q = encodeURIComponent(term.trim());
   const json = await jsonp(`https://itunes.apple.com/search?term=${q}&media=music&entity=album&limit=${limit}`);
   return (json.results || []).map((r) => ({
@@ -62,26 +78,56 @@ function score(album, r) {
   return (as + ts) / 2;
 }
 
-// Best-guess artwork for a stored album. Resolves to a URL or '' (not found).
-// Tries "artist album", then the album name alone, then the artist alone.
-export async function findArt(album) {
+function bestMatch(album, results) {
+  let best = null, bestScore = 0;
+  for (const r of results) {
+    const s = score(album, r);
+    if (s > bestScore) { best = r; bestScore = s; }
+  }
+  return best && bestScore >= 0.7 ? best : null;
+}
+
+function searchTerms(album) {
   const terms = [`${album.artist} ${album.title || ''}`.trim()];
   if (album.title && album.title.length > 3) terms.push(album.title);
   terms.push(album.artist);
-  for (const term of [...new Set(terms)]) {
-    const results = await searchAlbums(term, term === album.artist ? 50 : 15);
-    let best = null, bestScore = 0;
-    for (const r of results) {
-      const s = score(album, r);
-      if (s > bestScore) { best = r; bestScore = s; }
+  return [...new Set(terms)];
+}
+
+// Best match for a stored album: { art, spotify } (empty strings when not found).
+// Tries Spotify first when connected, then iTunes; for each it searches
+// "artist album", then the album name alone, then the artist alone.
+export async function findArt(album) {
+  const sources = [];
+  if (spotify.connected()) sources.push((term, n) => spotify.searchAlbums(term, n));
+  sources.push(searchItunes);
+  let found = null;
+  for (const search of sources) {
+    for (const term of searchTerms(album)) {
+      let results;
+      try { results = await search(term, term === album.artist ? 50 : 15); }
+      catch (e) { if (search === searchItunes || e.message === 'rate limited') throw e; break; }
+      const hit = bestMatch(album, results);
+      if (hit) { found = hit; break; }
     }
-    if (best && bestScore >= 0.7) return best.art;
+    if (found) break;
+  }
+  return { art: found?.art || '', spotify: found?.spotify || '' };
+}
+
+// Exact Spotify album link for an album, or '' if none matches.
+export async function findSpotifyLink(album) {
+  if (!spotify.connected()) return '';
+  for (const term of searchTerms(album)) {
+    const hit = bestMatch(album, await spotify.searchAlbums(term, term === album.artist ? 50 : 15));
+    if (hit) return hit.spotify;
   }
   return '';
 }
 
 // Bump when matching improves so earlier misses get another try.
-export const ART_VERSION = 2;
+// Logging in to Spotify counts as an improvement.
+export const artVersion = () => (spotify.connected() ? 3 : 2);
 
 // ---- throttled queue so we stay well under the API's rate limit ----
 const queue = [];
@@ -109,8 +155,7 @@ async function run() {
   while (queue.length) {
     const job = queue.shift();
     try {
-      const url = await findArt(job.album);
-      job.resolve(url);
+      job.resolve(await findArt(job.album));
       gap = Math.max(450, gap * 0.9);
     } catch {
       job.resolve(null); // unknown; try again another time
