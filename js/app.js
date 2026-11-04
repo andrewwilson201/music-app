@@ -641,7 +641,7 @@ function openSettings() {
         <ol>
           <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub › New fine-grained token</a>.</li>
           <li>Under <b>Repository access</b> choose <i>Only select repositories</i> and pick <b>${esc(cfg.repo)}</b>.</li>
-          <li>Under <b>Permissions › Repository › Contents</b> choose <i>Read and write</i>.</li>
+          <li>Under <b>Permissions</b>, tap <b>+</b> next to Repositories, add <b>Contents</b> and set it to <i>Read and write</i>.</li>
           <li>Generate it, copy it and paste it above. It stays in this browser only.</li>
         </ol></details>
       <p class="warn" id="cfgErr" hidden></p>
