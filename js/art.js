@@ -1,7 +1,7 @@
 // Album artwork and album search. Uses Spotify when you're logged in to it,
 // and the iTunes Search API (no key needed, via JSONP) otherwise or as a fallback.
 
-import * as spotify from './spotify.js?v=10';
+import * as spotify from './spotify.js?v=11';
 
 let seq = 0;
 function jsonp(url, timeout = 8000) {
