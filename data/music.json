@@ -3324,7 +3324,9 @@
      "id": "a7dd5649af1",
      "artist": "makaya mccraven",
      "title": "off the record",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27314fca71af0e4a3b483fb5dff",
+     "spotify": "https://open.spotify.com/album/4FsBZxffmLNyXfTccy3GV2"
     },
     {
      "id": "a272fc6f1bb",
@@ -3332,43 +3334,57 @@
      "title": "night CRIU",
      "songs": [
       "endgames"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c27fb6ef2a734ab20dd2ff5e",
+     "spotify": "https://open.spotify.com/album/3K7rM1AulxmE0HxwnF7aFU"
     },
     {
      "id": "af221762b50",
      "artist": "brighde chaimbeul",
      "title": "sunwise",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e274c526aed2a5c569d3bdf2",
+     "spotify": "https://open.spotify.com/album/42xUwjm0LOF9A0TjONtuII"
     },
     {
      "id": "a1e42c01205",
      "artist": "rosalia",
      "title": "lux",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27393ee2e2f2dfb7de9befcc164",
+     "spotify": "https://open.spotify.com/album/3SUEJULSGgBDG1j4GQhfYY"
     },
     {
      "id": "af15c8004b4",
      "artist": "oneheotrix point never",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736963e098c52733db9753031c",
+     "spotify": "https://open.spotify.com/album/4nOjUCw5rOroJp1JHcLZau"
     },
     {
      "id": "ae2033f5563",
      "artist": "annahstasia",
      "title": "tether",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27383e938b90eede703dc07dc52",
+     "spotify": "https://open.spotify.com/album/3SBuk7ZuXQCJQ6IfrOPfyz"
     },
     {
      "id": "a57b8652ae7",
      "artist": "james k",
      "title": "friend",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2735c239c56bb5610eff490354b",
+     "spotify": "https://open.spotify.com/album/1TwmkxFywYn6qn4PFTejOe"
     },
     {
      "id": "a2a165a7840",
      "artist": "blawan",
      "title": "SickElixir",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2733adb65a355a758c2ccf4b8fc",
+     "spotify": "https://open.spotify.com/album/59aRCCtOb1yMhdN9TM53zR"
     },
     {
      "id": "acf0e5904fa",
@@ -3377,13 +3393,17 @@
      "songs": [
       "ict",
       "take me by the hand"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2738a768dc5957aa00702b1d251",
+     "spotify": "https://open.spotify.com/album/1TaVbSLBnUQwfcld3tDAUI"
     },
     {
      "id": "a5bba20daa4",
      "artist": "los thuthanaka",
      "title": "los thuthanaka",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "ae716e40802",
@@ -3391,25 +3411,33 @@
      "title": "balloon balloon balloon",
      "songs": [
       "(in a while) you'll be mine"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2731e473d5619505a7b9b82b40c",
+     "spotify": "https://open.spotify.com/album/4rCduWuK1sHdM4TNILadHp"
     },
     {
      "id": "a7740358bd6",
      "artist": "dove ellis",
      "title": "blizzard",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273305780793d5f230df33937b6",
+     "spotify": "https://open.spotify.com/album/3Brw2Xdmo6VRPWwOBNye0i"
     },
     {
      "id": "ae28cbb751b",
      "artist": "billy woods",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273d4982c9de464beb7561e5087",
+     "spotify": "https://open.spotify.com/album/6YjoANrjcsf17p1OmWESfo"
     },
     {
      "id": "ab601596308",
      "artist": "these new puritans",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2732047b10b692e670bcfcf4b15",
+     "spotify": "https://open.spotify.com/album/1P3rILuVtbxpBG4hKuGtpB"
     }
    ],
    "favourites": [
@@ -3803,13 +3831,17 @@
      "id": "a39b3f14b37",
      "artist": "horse lords",
      "title": "demand to be taken to heaven alive!",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27323570e26e0127a674bd6b14a",
+     "spotify": "https://open.spotify.com/album/3q8CQdpq57Xi0zXn5qlauk"
     },
     {
      "id": "af7650de3ff",
      "artist": "tujiko noriko",
      "title": "pon",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2731300e12b2c0868895d141b0c",
+     "spotify": "https://open.spotify.com/album/4iJuZL0LJgvFnbzze5WaBz"
     },
     {
      "id": "a18df1c9cd8",
@@ -3874,13 +3906,17 @@
      "id": "a59aedc1db4",
      "artist": "topdown dialetic",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f62e019a91013abe13fbc838",
+     "spotify": "https://open.spotify.com/album/1R570SkqASVYyKJJQAzV5v"
     },
     {
      "id": "a302da59694",
      "artist": "twisted teens",
      "title": "florida water blues",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739dbda16a455f45e9b9ba6321",
+     "spotify": "https://open.spotify.com/album/2Gyxm1N8hGyBgVdApmpm4I"
     },
     {
      "id": "a9f43522bef",
@@ -3897,13 +3933,17 @@
      "songs": [
       "dozen roses",
       "coyote"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2738613f037327a9a2a2eb89580",
+     "spotify": "https://open.spotify.com/album/7Lib6qYBmpQCGyh1W8L4S3"
     },
     {
      "id": "acd41c2668a",
      "artist": "nirosta steel",
      "title": "my skyscraper",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ee4d016041b30616091da153",
+     "spotify": "https://open.spotify.com/album/0yZchhNCCIzegjc1ElL5Em"
     },
     {
      "id": "a11ddd5f29e",
