@@ -1,6 +1,6 @@
-import * as store from './store.js?v=13';
-import * as spotify from './spotify.js?v=13';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=13';
+import * as store from './store.js?v=14';
+import * as spotify from './spotify.js?v=14';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=14';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1149,3 +1149,7 @@ document.addEventListener('keydown', (e) => {
 });
 
 boot();
+
+if ('serviceWorker' in navigator) {
+  window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
+}
