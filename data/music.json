@@ -2783,7 +2783,9 @@
      "title": "heavy metal",
      "songs": [
       "drinking age"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2734738aa171569052376f162fe",
+     "spotify": "https://open.spotify.com/album/7mOrnQqDad3RgYQsJGaaqk"
     },
     {
      "id": "a65fd93bb9a",
@@ -2909,43 +2911,57 @@
      "id": "a1d2275b0ac",
      "artist": "destroyer",
      "title": "dan's boogie",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2731527209e0689450791ef5ca8",
+     "spotify": "https://open.spotify.com/album/2YIkLbQhqoKqTxQl4m93KV"
     },
     {
      "id": "afb39287c8f",
      "artist": "perfume genius",
      "title": "glory",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273da3ac2dfbbc486dfddc736d8",
+     "spotify": "https://open.spotify.com/album/2Y5e4etT3wCXoyllnQ0aAD"
     },
     {
      "id": "ae77f1646eb",
      "artist": "great grandpa",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736a6f49361bd91bb7a00961c1",
+     "spotify": "https://open.spotify.com/album/0cEVL87PbprdLn7E8Fs8ct"
     },
     {
      "id": "a5f9c3d9bf1",
      "artist": "aya",
      "title": "hexed!",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e94b35296f8eb88e3f1921b6",
+     "spotify": "https://open.spotify.com/album/0g5va5QKeZyF4XwRSgfNbh"
     },
     {
      "id": "aabe30ffc4b",
      "artist": "ichiko aoba",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273a418a2de48cddb00f761af20",
+     "spotify": "https://open.spotify.com/album/2mLrmtSEmIWLO6sLAq4lNH"
     },
     {
      "id": "ac7ebcc53d7",
      "artist": "vijay iyer",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273a6b49f0ad890875bc6d9a1fb",
+     "spotify": "https://open.spotify.com/album/2FaaNlVFsJ74lmrOazjZFF"
     },
     {
      "id": "a26320fc067",
      "artist": "alabaster deplume",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273d025a331be68053b892dfb81",
+     "spotify": "https://open.spotify.com/album/3r7uewN5Gf2WEqeZh7F5af"
     },
     {
      "id": "a03e687dce7",
@@ -2953,13 +2969,17 @@
      "title": "luster",
      "songs": [
       "trip"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27304b68ce8d1c168b9d8a97867",
+     "spotify": "https://open.spotify.com/album/6vRCwr31pNFnURP8mj53KP"
     },
     {
      "id": "ae6da1a4888",
      "artist": "adrienne lenker",
      "title": "live at revolution hall",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2731e08ca407b4d7275e7da6320",
+     "spotify": "https://open.spotify.com/album/75we1a6BxIFyoUrmW6fhdu"
     },
     {
      "id": "ab70f0219e5",
