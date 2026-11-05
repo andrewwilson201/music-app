@@ -1,6 +1,6 @@
-import * as store from './store.js?v=16';
-import * as spotify from './spotify.js?v=16';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=16';
+import * as store from './store.js?v=17';
+import * as spotify from './spotify.js?v=17';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=17';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -24,7 +24,14 @@ const ICON = {
   trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   check: '<svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg>',
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
+  share: '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/></svg>',
+  copy: '<svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
 };
+
+// True while a friend's library is on screen: everything is read only.
+const ro = () => !!store.viewingFriend();
+const friendName = () => store.viewingFriend()?.name || 'A friend';
+const possessive = (name) => `${name}’${/s$/i.test(name) ? '' : 's'}`;
 
 let data;
 let ui = { sort: 'latest', filter: '', view: 'grid' };
@@ -81,7 +88,10 @@ function started() {
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); store.flush(); return; }
     if (Date.now() - hiddenAt < 30000 || modalRoot.children.length) return;
-    try { if (await store.refresh()) { data = store.getData(); render(); } } catch {}
+    try {
+      if (ro()) { await store.viewFriend(store.viewingFriend().uid); render(); }
+      else if (await store.refresh()) { data = store.getData(); render(); }
+    } catch {}
   });
   render();
 }
@@ -213,6 +223,14 @@ function onStoreChange() {
     idle: 'Settings and account',
   }[status] || 'Settings';
   if (status === 'error') toast(`Couldn't save: ${lastError}`, 'error');
+  const friend = store.viewingFriend();
+  document.body.classList.toggle('viewing', !!friend);
+  const bar = $('#viewBar');
+  bar.hidden = !friend;
+  if (friend) {
+    bar.innerHTML = `<span>You're looking at <b>${esc(possessive(friend.name))}</b> library</span>
+      <button type="button" class="btn small" data-view-own>Back to mine</button>`;
+  }
 }
 
 // ------------------------------------------------------------------ routing
@@ -230,8 +248,9 @@ function render() {
   navActive = page === 'year' ? a : page ? page : years[0];
   if (!page) return renderYear(years[0], 'listened');
   if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
-  if (page === 'up-next' || page === 'to-listen') return renderUpNext();
+  if ((page === 'up-next' || page === 'to-listen') && !ro()) return renderUpNext();
   if (page === 'search') return renderSearch(a || '');
+  if (page === 'friend' && a) return acceptCode(a);
   location.hash = '#/';
 }
 
@@ -258,7 +277,7 @@ function openYearMenu(btn) {
   menu.innerHTML = shownYears().map((y) => {
     const n = data.years[y]?.albums.length || 0;
     return `<a href="#/year/${y}" class="${y === navActive ? 'on' : ''}"><b>${y}</b><small>${n ? `${n} album${n === 1 ? '' : 's'}` : y === now ? 'nothing yet' : ''}</small></a>`;
-  }).join('') + `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`;
+  }).join('') + (ro() ? '' : `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`);
   document.body.appendChild(menu);
   const r = btn.getBoundingClientRect();
   menu.style.top = `${r.bottom + scrollY + 8}px`;
@@ -338,7 +357,7 @@ function migrateArtCache() {
 // When synced and logged in to Spotify, quietly fetch covers for every album
 // still missing one (newest years first), so they're saved once for good.
 function backfillArt() {
-  if (!store.canSync() || !spotify.connected()) return;
+  if (!store.canSync() || !spotify.connected() || ro()) return;
   for (const y of store.years()) {
     for (const album of data.years[y].albums.slice().reverse()) {
       if (artFor(album) === undefined) requestArt(album);
@@ -354,7 +373,9 @@ async function requestArt(album) {
 }
 
 function setArt(album, url, spotifyLink = '') {
-  if (store.canSync()) {
+  if (ro()) {
+    album.art = url; // this visit only; a friend's library is never saved from here
+  } else if (store.canSync()) {
     album.art = url;
     if (url) delete album.artTry; else album.artTry = artVersion();
     if (spotifyLink && !album.spotify) album.spotify = spotifyLink;
@@ -443,7 +464,7 @@ function renderYear(year, tab) {
   app.innerHTML = `
     <section class="hero">
       <div>
-        <p class="eyebrow">albums released in</p>
+        <p class="eyebrow">${ro() ? `${esc(possessive(friendName()))} albums from` : 'albums released in'}</p>
         <h1>${yearMenuBtn(year)}</h1>
       </div>
     </section>
@@ -477,7 +498,7 @@ function renderListened(year) {
       ${viewToggleHtml()}
     </div>
     <div id="grid"></div>`;
-  if (year === store.years()[0] && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
+  if (!ro() && year === store.years()[0] && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
   $('#sort').value = ui.sort;
   const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
   sortTitle();
@@ -487,7 +508,9 @@ function renderListened(year) {
       ? albumsHtml(list, y)
       : y.albums.length
         ? `<p class="muted pad">Nothing in ${year} matches “${esc(ui.filter)}”.</p>`
-        : `<div class="empty"><h2>Nothing logged for ${year} yet</h2><p>Add the first album you listen to.</p><button class="btn primary" data-add="${year}">${ICON.plus} Add album</button></div>`;
+        : ro()
+          ? `<div class="empty"><h2>Nothing logged for ${year} yet</h2><p>${esc(friendName())} hasn't added any albums from ${year}.</p></div>`
+          : `<div class="empty"><h2>Nothing logged for ${year} yet</h2><p>Add the first album you listen to.</p><button class="btn primary" data-add="${year}">${ICON.plus} Add album</button></div>`;
     watchCovers();
   };
   $('#filter').addEventListener('input', (e) => { ui.filter = e.target.value; draw(); });
@@ -501,6 +524,13 @@ function renderFavourites(year) {
   const body = $('#yearBody');
   const byId = Object.fromEntries(y.albums.map((a) => [a.id, a]));
   const favs = y.favourites.filter((f) => byId[f.albumId]);
+  if (ro()) {
+    body.innerHTML = favs.length
+      ? `<ol class="favs read-only" id="favList">${favs.map((f, i) => favRowHtml(byId[f.albumId], f, i)).join('')}</ol>`
+      : `<div class="empty"><h2>No favourites for ${year} yet</h2><p>${esc(friendName())} hasn't picked any yet.</p></div>`;
+    watchCovers();
+    return;
+  }
   body.innerHTML = `
     <div class="fav-head">
       <p class="muted">${favs.length ? 'Drag to reorder' : ''}</p>
@@ -542,6 +572,18 @@ function renderFavourites(year) {
 }
 
 function favRowHtml(album, fav, i) {
+  if (ro()) {
+    return `<li class="fav" data-id="${album.id}">
+    <span class="fav-rank">${i + 1}</span>
+    <button class="fav-cover" data-open="${album.id}">${coverHtml(album)}</button>
+    <div class="fav-main">
+      <button class="fav-title" data-open="${album.id}">${esc(album.title || album.artist)}</button>
+      <span class="fav-artist">${esc(album.artist)}</span>
+      ${fav.song ? `<span class="song-text">♪ ${esc(fav.song)}</span>` : ''}
+    </div>
+    <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify">${ICON.spotify}</a>
+  </li>`;
+  }
   return `<li class="fav" data-id="${album.id}">
     <span class="grip" title="Drag to reorder">${ICON.grip}</span>
     <span class="fav-rank">${i + 1}</span>
@@ -603,6 +645,7 @@ function pickFavourite(year) {
 // ------------------------------------------------------------------ album detail
 
 function openAlbum(id) {
+  if (ro()) return openFriendAlbum(id);
   const found = store.findAlbum(id);
   if (!found) return;
   const { year, album, yearData } = found;
@@ -678,6 +721,59 @@ function openAlbum(id) {
     toast('Album deleted');
   });
   m.onClose = () => render();
+}
+
+// An album in a friend's library: look, play, or queue it in your own Up next.
+function openFriendAlbum(id) {
+  const found = store.findAlbum(id);
+  if (!found) return;
+  const { year, album, yearData } = found;
+  const rank = store.favRank(yearData, id);
+  const fav = yearData.favourites.find((f) => f.albumId === id);
+  const mine = store.ownData();
+  const inQueue = () => mine.toListen.find((x) => queueMatches(x, album));
+  const m = openModal(`
+    ${closeBtn('floating')}
+    <div class="detail">
+      ${coverHtml(album, 'xl')}
+      <div class="detail-info">
+        <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">${esc(possessive(friendName()))} #${rank}</span>` : ''}</p>
+        <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
+        <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted'}</p>
+        ${(album.songs || []).length ? `<div class="chips">${album.songs.map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
+        ${fav?.song ? `<p class="best-song"><span>Best song</span>${esc(fav.song)}</p>` : ''}
+        <div class="detail-actions">
+          <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
+          <button class="btn queue" id="queueMine"></button>
+        </div>
+      </div>
+    </div>`, 'detail-modal');
+  watchCovers(m);
+  requestArt(album);
+  const btn = $('#queueMine', m);
+  const paint = () => {
+    const on = !!inQueue();
+    btn.classList.toggle('on', on);
+    btn.setAttribute('aria-pressed', on);
+    btn.innerHTML = `${on ? ICON.check : ICON.queue}<span>${on ? 'In your Up next' : 'Add to my Up next'}</span>`;
+  };
+  paint();
+  btn.addEventListener('click', () => {
+    const existing = inQueue();
+    if (existing) {
+      mine.toListen = mine.toListen.filter((x) => x !== existing);
+      toast('Taken off your Up next');
+    } else {
+      const item = { id: store.uid(), artist: album.artist, title: album.title, added: new Date().toISOString().slice(0, 10) };
+      const art = artFor(album);
+      if (art) item.art = art;
+      if (album.spotify) item.spotify = album.spotify;
+      mine.toListen.unshift(item);
+      toast('Added to your Up next');
+    }
+    store.commit({ quiet: true });
+    paint();
+  });
 }
 
 function editAlbum(id) {
@@ -1057,6 +1153,14 @@ function openSettings() {
         : 'Connect for better artwork and album links'}${spotify.lastError ? `<br>Last Spotify error: ${esc(spotify.lastError)}` : ''}</small></div>
       <button type="button" class="btn ${spotify.connected() ? '' : 'spotify'} small" id="spotifyBtn">${spotify.connected() ? 'Log out' : 'Log in'}</button>
     </div>` : ''}
+    <div class="share-box" id="shareBox">
+      <div class="share-head">
+        ${ICON.share}
+        <div><b>Share my library</b><small>Friends with your code can browse your years, favourites and best songs. They can't change anything, and your Up next stays private.</small></div>
+        <label class="switch" title="Share my library"><input type="checkbox" id="shareToggle" disabled aria-label="Share my library"><span></span></label>
+      </div>
+      <div class="share-body" id="shareBody" hidden></div>
+    </div>
     <p class="warn" id="cfgErr" hidden></p>
     <div class="backup-row">
       <span class="muted">Backup</span>
@@ -1064,6 +1168,7 @@ function openSettings() {
       <label class="link-btn" id="restore">Restore<input type="file" accept="application/json,.json" hidden></label>
     </div>`);
   $('#export', m).addEventListener('click', store.exportJson);
+  setUpShareBox(m);
   $('#spotifyBtn', m)?.addEventListener('click', () => {
     if (spotify.connected()) { spotify.logout(); closeModal(m); toast('Logged out of Spotify'); }
     else spotify.login();
@@ -1088,6 +1193,171 @@ function openSettings() {
       render();
     } catch (ex) { err.hidden = false; err.textContent = ex.message; }
   });
+}
+
+// ------------------------------------------------------------------ sharing
+
+function setUpShareBox(m) {
+  const toggle = $('#shareToggle', m);
+  const body = $('#shareBody', m);
+  const err = $('#cfgErr', m);
+  let share = null;
+  const fail = (ex) => {
+    err.hidden = false;
+    err.textContent = ex.code === 'permission-denied'
+      ? 'Firestore refused that. The sharing rules need publishing in the Firebase console first.'
+      : ex.message;
+  };
+  const draw = () => {
+    toggle.checked = !!share;
+    body.hidden = !share;
+    if (!share) { body.innerHTML = ''; return; }
+    const link = store.shareLink(share.token);
+    const people = share.viewers.map((v) => esc(v.name || 'Someone')).join(', ');
+    body.innerHTML = `
+      <div class="share-code">
+        <div><small>Your code</small><b>${esc(store.formatCode(share.token))}</b></div>
+        <button type="button" class="btn small" id="copyLink">${ICON.copy} Copy link</button>
+        ${navigator.share ? `<button type="button" class="btn small" id="sendLink">${ICON.share} Send</button>` : ''}
+      </div>
+      <label class="field"><span>Your name, as friends see it</span><input id="shareName" value="${esc(share.name || '')}" maxlength="60" autocomplete="name"></label>
+      <p class="muted share-people">${people ? `Added by ${people}` : 'Nobody has added your code yet.'}</p>
+      <button type="button" class="link" id="newCode">Make a new code</button>
+      <small class="muted share-note">A new code stops everyone who has the old one until you send it again.</small>`;
+    $('#copyLink', body).addEventListener('click', async () => {
+      try { await navigator.clipboard.writeText(link); toast('Link copied'); }
+      catch { prompt('Copy this link', link); }
+    });
+    $('#sendLink', body)?.addEventListener('click', () => {
+      navigator.share({ title: 'My music library', text: `See the albums I've been listening to. My code is ${store.formatCode(share.token)}.`, url: link }).catch(() => {});
+    });
+    $('#shareName', body).addEventListener('change', async (e) => {
+      const name = e.target.value.trim() || store.defaultShareName();
+      e.target.value = name;
+      try { await store.renameShare(share.token, name); share.name = name; toast('Name saved'); }
+      catch (ex) { fail(ex); }
+    });
+    $('#newCode', body).addEventListener('click', async (e) => {
+      if (!confirm('Make a new code? Anyone with the old one loses access until you send them the new one.')) return;
+      e.target.disabled = true;
+      try { share = await store.newShareCode(share.name); draw(); toast('New code made'); }
+      catch (ex) { fail(ex); e.target.disabled = false; }
+    });
+  };
+  store.getShare().then((s) => { share = s; toggle.disabled = false; draw(); }).catch((ex) => { toggle.disabled = false; fail(ex); });
+  toggle.addEventListener('change', async () => {
+    err.hidden = true;
+    toggle.disabled = true;
+    try {
+      if (toggle.checked) { share = await store.startSharing(); toast('Sharing is on. Send your code to a friend.'); }
+      else {
+        if (share?.viewers.length && !confirm('Stop sharing? Friends who added your code will lose access.')) { toggle.checked = true; return; }
+        await store.stopSharing(); share = null; toast('Your library is private again');
+      }
+      draw();
+    } catch (ex) { toggle.checked = !!share; fail(ex); }
+    finally { toggle.disabled = false; }
+  });
+}
+
+// Your library plus the friends' libraries you've added.
+async function openLibraries() {
+  const m = openModal(`
+    <div class="modal-head"><h2>Libraries</h2>${closeBtn()}</div>
+    <div class="libs" id="libList"><p class="muted pad-sm"><span class="spin"></span> Loading…</p></div>
+    <form class="inline-add code-add" id="codeForm">
+      <input id="codeInput" placeholder="Friend's code, like ABCDE-FGH23" autocomplete="off" autocapitalize="characters" spellcheck="false" aria-label="Friend's share code">
+      <button class="btn">Add</button>
+    </form>
+    <p class="warn" id="libErr" hidden></p>
+    <p class="muted small-print">Want friends to see yours? Turn on <button type="button" class="link" id="toShare">Share my library</button> in Settings.</p>`);
+  const err = $('#libErr', m);
+  const showErr = (msg) => { err.hidden = !msg; err.textContent = msg || ''; };
+  const user = store.currentUser();
+  const current = store.viewingFriend()?.uid || '';
+  const initial = (n) => esc((n || '?').slice(0, 1).toUpperCase());
+  const draw = async () => {
+    let list = [];
+    try { list = await store.friends(); } catch (ex) { showErr(ex.message); }
+    $('#libList', m).innerHTML = `
+      <button class="lib ${current ? '' : 'on'}" data-lib="">
+        <span class="avatar">${initial(user.displayName || user.email)}</span>
+        <span class="lib-name"><b>My library</b><small>${esc(user.email || '')}</small></span>
+        ${current ? '' : ICON.check}
+      </button>
+      ${list.map((f) => `<div class="lib-row">
+        <button class="lib ${current === f.uid ? 'on' : ''}" data-lib="${esc(f.uid)}">
+          <span class="avatar friend">${initial(f.name)}</span>
+          <span class="lib-name"><b>${esc(f.name)}</b><small>read only</small></span>
+          ${current === f.uid ? ICON.check : ''}
+        </button>
+        <button class="icon-btn subtle" data-unfollow="${esc(f.uid)}" title="Remove ${esc(f.name)}" aria-label="Remove ${esc(f.name)}">${ICON.close}</button>
+      </div>`).join('')}
+      ${list.length ? '' : '<p class="muted lib-empty">Add a friend’s code below to look through their library.</p>'}`;
+  };
+  $('#libList', m).addEventListener('click', async (e) => {
+    const rm = e.target.closest('[data-unfollow]');
+    if (rm) {
+      const f = (await store.friends()).find((x) => x.uid === rm.dataset.unfollow);
+      if (!f || !confirm(`Remove ${f.name}'s library from your list?`)) return;
+      try { await store.removeFriend(f.uid); toast(`Removed ${f.name}`); draw(); render(); }
+      catch (ex) { showErr(ex.message); }
+      return;
+    }
+    const lib = e.target.closest('[data-lib]');
+    if (!lib) return;
+    showErr('');
+    if (!lib.dataset.lib) { closeModal(m, true); showOwn(); return; }
+    lib.classList.add('busy');
+    try { await showFriend(lib.dataset.lib); closeModal(m, true); }
+    catch (ex) { showErr(ex.message); lib.classList.remove('busy'); }
+  });
+  $('#codeForm', m).addEventListener('submit', async (e) => {
+    e.preventDefault();
+    showErr('');
+    const btn = e.submitter || $('#codeForm .btn', m);
+    btn.classList.add('busy');
+    try {
+      const f = await store.addFriend($('#codeInput', m).value);
+      await showFriend(f.uid);
+      closeModal(m, true);
+      toast(`Added ${f.name}'s library`);
+    } catch (ex) { showErr(ex.message); }
+    finally { btn.classList.remove('busy'); }
+  });
+  $('#toShare', m).addEventListener('click', () => { closeModal(m, true); openSettings(); });
+  await draw();
+}
+
+async function showFriend(uid) {
+  await store.viewFriend(uid);
+  data = store.getData();
+  ui.filter = '';
+  if (location.hash && location.hash !== '#/') location.hash = '#/';
+  else render();
+  scrollTo(0, 0);
+}
+
+function showOwn() {
+  store.viewOwn();
+  data = store.getData();
+  if (location.hash && location.hash !== '#/') location.hash = '#/';
+  else render();
+  scrollTo(0, 0);
+}
+
+// Opened a share link (#/friend/CODE): add that library and show it.
+async function acceptCode(code) {
+  app.innerHTML = '<div class="loading"><span class="spin"></span>Opening your friend’s library…</div>';
+  history.replaceState(null, '', '#/');
+  try {
+    const f = await store.addFriend(code);
+    await showFriend(f.uid);
+    toast(`Added ${f.name}'s library`);
+  } catch (ex) {
+    render();
+    toast(ex.message, 'error');
+  }
 }
 
 // ------------------------------------------------------------------ modal + toast
@@ -1137,8 +1407,10 @@ document.addEventListener('click', (e) => {
   if (add) addAlbum({ year: add.dataset.add });
   const q = e.target.closest('[data-queue]');
   if (q) openQueueItem(q.dataset.queue);
+  if (e.target.closest('[data-view-own]')) showOwn();
 });
-$('#addBtn').addEventListener('click', () => data && addAlbum());
+$('#addBtn').addEventListener('click', () => data && !ro() && addAlbum());
+$('#libsBtn').addEventListener('click', () => data && openLibraries());
 $('#searchBtn').addEventListener('click', () => (location.hash = '#/search'));
 $('#settingsBtn').addEventListener('click', openSettings);
 document.addEventListener('keydown', (e) => {
@@ -1146,7 +1418,7 @@ document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { const last = modalRoot.lastElementChild; if (last) closeModal(last); return; }
   if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
   if (modalRoot.children.length || !isStarted) return;
-  if (e.key === 'n') { e.preventDefault(); addAlbum(); }
+  if (e.key === 'n' && !ro()) { e.preventDefault(); addAlbum(); }
   if (e.key === '/') { e.preventDefault(); location.hash = '#/search'; }
 });
 
