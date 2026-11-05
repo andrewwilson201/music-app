@@ -919,19 +919,25 @@
      "id": "a291f7f4038",
      "artist": "Space Afrika",
      "title": "Honest Labour",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ee4f27e146a8170967896bef",
+     "spotify": "https://open.spotify.com/album/7Cr6BDi4l08zU8OCKC74Cq"
     },
     {
      "id": "a2bc2257b69",
      "artist": "kafari",
      "title": "blanket of black",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2731f2cd0db870c02da8c1ed062",
+     "spotify": "https://open.spotify.com/album/4K73Egc8kx6v7MNAmig0uv"
     },
     {
      "id": "ab32445ecd0",
      "artist": "magdenela bay",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     }
    ],
    "favourites": [
@@ -1208,13 +1214,17 @@
      "id": "adbfc6d19e0",
      "artist": "angel olsen",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273d694c58f32a384b71f8057a7",
+     "spotify": "https://open.spotify.com/album/02R7PREL8nCr02CEYLy7YH"
     },
     {
      "id": "ad29d8cc454",
      "artist": "the smile",
      "title": "a light for attracting attention",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273423ac018d0ec2301e40948a0",
+     "spotify": "https://open.spotify.com/album/009EjjwUjtdjvH7UP0wHzi"
     },
     {
      "id": "a8eada9176d",
@@ -1223,7 +1233,9 @@
      "songs": [
       "toontown",
       "TLC …."
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2733000e6ece6d7798032fbc009",
+     "spotify": "https://open.spotify.com/album/3rg85MYama2Go4APAHRIQB"
     },
     {
      "id": "a624938fbb5",
@@ -1231,7 +1243,9 @@
      "title": "ugly season",
      "songs": [
       "eye in the wall"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2734a0edf669319807cc889739a",
+     "spotify": "https://open.spotify.com/album/6rFFWK98d8hhdSYgaOxI5L"
     },
     {
      "id": "a7c88925f91",
@@ -1239,13 +1253,17 @@
      "title": "regards to the end",
      "songs": [
       "blood brother"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2734c2bdac622ede7e830400d7e",
+     "spotify": "https://open.spotify.com/album/5e4ANdDthM3js73slozZpQ"
     },
     {
      "id": "afe77c5755f",
      "artist": "soccer mummy",
      "title": "sometimes, forever",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273af4f070d3683d9b5027059ab",
+     "spotify": "https://open.spotify.com/album/3VXLdJpzeaAyX9Tbm0i0zn"
     },
     {
      "id": "a1f8f5200b9",
@@ -1253,49 +1271,65 @@
      "title": "lp.8",
      "songs": [
       "nana's piano"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2732e3c51c43ddbd4ca1809e7aa",
+     "spotify": "https://open.spotify.com/album/2nDuOMxIgxcimqobgE5veh"
     },
     {
      "id": "ac117d6f549",
      "artist": "felicia atkinson",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b32370a62071159654c2b920",
+     "spotify": "https://open.spotify.com/album/7q2bJTCpr1TkJCOBXn1mRq"
     },
     {
      "id": "a99dce8f935",
      "artist": "kali malone",
      "title": "living torch",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27373146b531c78f5d88d7ec9ec",
+     "spotify": "https://open.spotify.com/album/5OV4wjspwoH3yn7DB3ZV7V"
     },
     {
      "id": "a32596b952e",
      "artist": "marina herlop",
      "title": "pripyat",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2732eecebb8eeb2c135d7ff5b4b",
+     "spotify": "https://open.spotify.com/album/0jwNPISM1nMtFfBqJvPnHE"
     },
     {
      "id": "ab58f4075ba",
      "artist": "florist",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2738dbf0609d598d97113c7030a",
+     "spotify": "https://open.spotify.com/album/5VAH7pRonDHlMiLLfCGpaK"
     },
     {
      "id": "ac78cc62a99",
      "artist": "gavilan rayna russom",
      "title": "trans feminist symphonic music",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a72f66e075f",
      "artist": "cloakroom",
      "title": "dissolution wave",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f6a93775188a5e4aa7e13a08",
+     "spotify": "https://open.spotify.com/album/0XABQZMWdLKgGfpFcsmBjR"
     },
     {
      "id": "a1306520ab9",
      "artist": "leila bordreuil",
      "title": "not an elegy",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2732dd4d4395e214fcde8603099",
+     "spotify": "https://open.spotify.com/album/2CHWOxHbR5v108NWniIjR8"
     },
     {
      "id": "ac3e0e254fc",
