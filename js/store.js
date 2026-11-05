@@ -12,8 +12,8 @@ import {
   getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, collection, writeBatch, serverTimestamp,
-} from '../vendor/firebase.js?v=12';
-import { FIREBASE_CONFIG } from './config.js?v=12';
+} from '../vendor/firebase.js?v=13';
+import { FIREBASE_CONFIG } from './config.js?v=13';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
 const LEGACY_DATA_KEY = 'music-log:data';
@@ -234,7 +234,7 @@ async function save() {
 
 // Replace the whole log (new account, or restoring a backup).
 export async function replaceAll(next) {
-  if (!next || typeof next.years !== 'object') throw new Error("That file isn't a listening log backup.");
+  if (!next || typeof next.years !== 'object') throw new Error("That file isn't a music library backup.");
   data = {
     version: next.version || 1,
     years: next.years,
@@ -296,7 +296,7 @@ export function exportJson() {
   const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });
   const a = document.createElement('a');
   a.href = URL.createObjectURL(blob);
-  a.download = `listening-log-${new Date().toISOString().slice(0, 10)}.json`;
+  a.download = `music-library-${new Date().toISOString().slice(0, 10)}.json`;
   a.click();
   setTimeout(() => URL.revokeObjectURL(a.href), 1000);
 }

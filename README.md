@@ -1,4 +1,4 @@
-# Listening log
+# Music library
 
 An app for logging the albums I listen to each year, ranking my favourites, and jumping straight to them on Spotify.
 
