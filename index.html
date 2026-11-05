@@ -13,7 +13,7 @@
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Fraunces:opsz,wght@9..144,400;9..144,600;9..144,800&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
-  <link rel="stylesheet" href="css/style.css?v=16">
+  <link rel="stylesheet" href="css/style.css?v=17">
 </head>
 <body>
   <header class="topbar">
@@ -22,6 +22,9 @@
       <span>music library</span>
     </a>
     <div class="top-actions">
+      <button class="icon-btn" id="libsBtn" title="Libraries: yours and friends'" aria-label="Libraries">
+        <svg viewBox="0 0 24 24"><circle cx="9" cy="8" r="3.5"/><path d="M2.5 20c.6-3.6 3.2-5.5 6.5-5.5s5.9 1.9 6.5 5.5"/><path d="M15.5 4.8a3.5 3.5 0 0 1 0 6.4M18 14.8c2 .7 3.2 2.5 3.5 5.2"/></svg>
+      </button>
       <button class="icon-btn" id="searchBtn" title="Search all years (/)" aria-label="Search">
         <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       </button>
@@ -31,6 +34,7 @@
       </button>
     </div>
   </header>
+  <div class="view-bar" id="viewBar" hidden></div>
 
   <main id="app" tabindex="-1"></main>
 
@@ -43,6 +47,6 @@
   <div id="modalRoot"></div>
 
   <script src="vendor/Sortable.min.js"></script>
-  <script type="module" src="js/app.js?v=16"></script>
+  <script type="module" src="js/app.js?v=17"></script>
 </body>
 </html>

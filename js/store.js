@@ -6,14 +6,22 @@
 // Firestore layout:
 //   users/{uid}              { version, toListen[], always[], updatedAt }
 //   users/{uid}/years/{YYYY} { albums[], favourites[] }
+//   users/{uid}/meta/share   { token }   this person's current share code, if sharing
+//   users/{uid}/meta/friends { list: [{ uid, token, name }] }   libraries they follow
+//   shares/{token}           { uid, name, createdAt }   lets a code be looked up
+//   shares/{token}/viewers/{viewerUid} { name, addedAt }  who added that code
+//
+// Sharing: a friend can read your years (not Up next) only while your
+// meta/share token points at a share whose viewers include them. Turning
+// sharing off, or making a new code, cuts off everyone who had the old one.
 
 import {
   initializeApp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
   getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, collection, writeBatch, serverTimestamp,
-} from '../vendor/firebase.js?v=16';
-import { FIREBASE_CONFIG } from './config.js?v=16';
+  memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
+} from '../vendor/firebase.js?v=17';
+import { FIREBASE_CONFIG } from './config.js?v=17';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
 const LEGACY_DATA_KEY = 'music-log:data';
@@ -26,6 +34,7 @@ let auth = null;
 let db = null;
 let user = null;
 let data = null;
+let viewing = null; // { uid, name, data } while looking at a friend's library
 let written = {}; // doc path -> JSON last saved, so a save only sends what changed
 let saveTimer = null;
 let saving = false;
@@ -46,7 +55,9 @@ export const configured = () => !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey);
 export const currentUser = () => user;
 export const canSync = () => !!user && !!data;
 export const getStatus = () => ({ status, lastError });
-export const getData = () => data;
+export const getData = () => (viewing ? viewing.data : data); // the library on screen
+export const ownData = () => data;
+export const viewingFriend = () => viewing && { uid: viewing.uid, name: viewing.name };
 export const subscribe = (fn) => (listeners.add(fn), () => listeners.delete(fn));
 const emit = () => listeners.forEach((fn) => fn());
 const setStatus = (s, err = '') => { status = s; lastError = err; emit(); };
@@ -252,6 +263,142 @@ export async function replaceAll(next) {
 
 export const startFresh = () => replaceAll({ years: {} });
 
+// ---------- sharing
+
+const CODE_CHARS = '23456789ABCDEFGHJKLMNPQRSTUVWXYZ'; // no 0/O, 1/I
+const shareMeta = () => doc(db, 'users', user.uid, 'meta', 'share');
+const friendsMeta = () => doc(db, 'users', user.uid, 'meta', 'friends');
+const shareDoc = (token) => doc(db, 'shares', token);
+const viewersCol = (token) => collection(db, 'shares', token, 'viewers');
+
+// 10 random characters (50 bits): too many to guess, short enough to read out.
+function newCode() {
+  const bytes = crypto.getRandomValues(new Uint8Array(10));
+  return [...bytes].map((b) => CODE_CHARS[b % 32]).join('');
+}
+export const normaliseCode = (s) => String(s || '').trim()
+  .replace(/^.*#\/friend\//, '').toUpperCase().replace(/[^0-9A-Z]/g, '').slice(0, 10);
+export const formatCode = (c) => (c && c.length === 10 ? `${c.slice(0, 5)}-${c.slice(5)}` : c || '');
+export const shareLink = (c) => `${location.origin}${location.pathname}#/friend/${c}`;
+export const defaultShareName = () => (user.displayName || (user.email || '').split('@')[0] || 'A friend').trim();
+
+// { token, name, viewers: [{ uid, name, addedAt }] } or null when not sharing.
+export async function getShare() {
+  const meta = await getDoc(shareMeta());
+  const token = meta.exists() && meta.data().token;
+  if (!token) return null;
+  const share = await getDoc(shareDoc(token));
+  if (!share.exists()) return null;
+  const viewers = [];
+  (await getDocs(viewersCol(token))).forEach((v) => viewers.push({ uid: v.id, ...v.data() }));
+  return { token, name: share.data().name, viewers };
+}
+
+export async function startSharing(name = defaultShareName()) {
+  const token = newCode();
+  const batch = writeBatch(db);
+  batch.set(shareDoc(token), { uid: user.uid, name: String(name).slice(0, 60), createdAt: serverTimestamp() });
+  batch.set(shareMeta(), { token });
+  await batch.commit();
+  return { token, name, viewers: [] };
+}
+
+export async function stopSharing() {
+  const meta = await getDoc(shareMeta());
+  const token = meta.exists() && meta.data().token;
+  const batch = writeBatch(db);
+  if (token) {
+    const share = await getDoc(shareDoc(token));
+    if (share.exists() && share.data().uid === user.uid) {
+      (await getDocs(viewersCol(token))).forEach((v) => batch.delete(v.ref));
+      batch.delete(shareDoc(token));
+    }
+  }
+  batch.delete(shareMeta());
+  await batch.commit();
+}
+
+// A new code: everyone who had the old one loses access until given the new one.
+export async function newShareCode(name) {
+  await stopSharing();
+  return startSharing(name);
+}
+
+export async function renameShare(token, name) {
+  await setDoc(shareDoc(token), { name: String(name).slice(0, 60) }, { merge: true });
+}
+
+export async function friends() {
+  const snap = await getDoc(friendsMeta());
+  return (snap.exists() && snap.data().list) || [];
+}
+
+const saveFriends = (list) => setDoc(friendsMeta(), { list });
+
+// Look up a code and add it to my libraries. Returns { uid, token, name }.
+export async function addFriend(code) {
+  const token = normaliseCode(code);
+  if (token.length !== 10) throw new Error('A share code has 10 letters and numbers, like ABCDE-FGH23.');
+  let share;
+  try { share = await getDoc(shareDoc(token)); }
+  catch (e) { throw new Error(e.code === 'permission-denied' ? 'Sharing needs the new Firestore rules published first.' : e.message); }
+  if (!share.exists()) throw new Error("That code doesn't match a shared library. It may have been turned off or replaced.");
+  const { uid: owner, name } = share.data();
+  if (owner === user.uid) throw new Error("That's your own code. Send it to a friend instead.");
+  await setDoc(doc(db, 'shares', token, 'viewers', user.uid), {
+    name: (user.displayName || user.email || 'Someone').slice(0, 80), addedAt: serverTimestamp(),
+  });
+  const friend = { uid: owner, token, name: name || 'A friend' };
+  const list = (await friends()).filter((f) => f.uid !== owner);
+  list.push(friend);
+  await saveFriends(list);
+  return friend;
+}
+
+export async function removeFriend(uid) {
+  const list = await friends();
+  const f = list.find((x) => x.uid === uid);
+  if (f) {
+    try { await deleteDoc(doc(db, 'shares', f.token, 'viewers', user.uid)); } catch {}
+  }
+  await saveFriends(list.filter((x) => x.uid !== uid));
+  if (viewing?.uid === uid) viewOwn();
+}
+
+// Load a friend's years (read only) and put them on screen.
+export async function viewFriend(uid) {
+  const f = (await friends()).find((x) => x.uid === uid);
+  if (!f) throw new Error("You haven't added that library.");
+  let name = f.name;
+  try {
+    const share = await getDoc(shareDoc(f.token));
+    if (!share.exists() || share.data().uid !== uid) throw Object.assign(new Error(), { code: 'permission-denied' });
+    name = share.data().name || name;
+    const years = {};
+    (await getDocs(collection(db, 'users', uid, 'years'))).forEach((s) => {
+      const v = s.data();
+      years[s.id] = { albums: v.albums || [], favourites: v.favourites || [] };
+    });
+    const now = String(new Date().getFullYear());
+    if (!years[now]) years[now] = { albums: [], favourites: [] };
+    viewing = { uid, name, data: { years, toListen: [], always: [] } };
+  } catch (e) {
+    if (e.code === 'permission-denied') {
+      throw Object.assign(new Error(`${name} has stopped sharing or made a new code. Ask for the new one.`), { gone: true });
+    }
+    throw e;
+  }
+  if (name !== f.name) saveFriends((await friends()).map((x) => (x.uid === uid ? { ...x, name } : x))).catch(() => {});
+  emit();
+  return viewing;
+}
+
+export function viewOwn() {
+  if (!viewing) return;
+  viewing = null;
+  emit();
+}
+
 // ---------- bringing over the old GitHub-saved log
 
 // True on a device that used the earlier GitHub-token version of the app.
@@ -306,7 +453,7 @@ export function exportJson() {
 export const uid = () => 'a' + Math.random().toString(36).slice(2, 12);
 
 export function years() {
-  return Object.keys(data.years).sort((a, b) => b - a);
+  return Object.keys(getData().years).sort((a, b) => b - a);
 }
 
 export function ensureYear(y) {
@@ -316,7 +463,7 @@ export function ensureYear(y) {
 }
 
 export function findAlbum(id) {
-  for (const [year, y] of Object.entries(data.years)) {
+  for (const [year, y] of Object.entries(getData().years)) {
     const album = y.albums.find((a) => a.id === id);
     if (album) return { year, album, yearData: y };
   }

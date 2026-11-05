@@ -1,11 +1,61 @@
 rules_version = '2';
 
-// Each person can read and write only their own log, under users/{their uid}.
 // Paste this into Firebase console › Firestore Database › Rules, then Publish.
+//
+// Each person's log lives under users/{uid}. Only they can write it. Their
+// years (not Up next or settings) can also be read by friends who added their
+// current share code, and only while sharing is switched on.
 service cloud.firestore {
   match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function isOwner(uid) { return signedIn() && request.auth.uid == uid; }
+    function shareAt(token) { return /databases/$(database)/documents/shares/$(token); }
+
+    // True when uid is sharing and the signed-in person added uid's current code.
+    function canView(uid) {
+      let token = get(/databases/$(database)/documents/users/$(uid)/meta/share).data.token;
+      return signedIn()
+        && get(shareAt(token)).data.uid == uid
+        && exists(/databases/$(database)/documents/shares/$(token)/viewers/$(request.auth.uid));
+    }
+
+    // Owner: everything under their own user, read and write.
     match /users/{uid}/{document=**} {
-      allow read, write: if request.auth != null && request.auth.uid == uid;
+      allow read, write: if isOwner(uid);
+    }
+
+    // Friends: read only, and only the year pages.
+    match /users/{uid}/years/{year} {
+      allow read: if canView(uid);
+    }
+
+    // A share code, looked up by someone who was given it. Codes can't be listed.
+    match /shares/{token} {
+      allow get: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'createdAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60;
+      allow update: if signedIn()
+        && resource.data.uid == request.auth.uid
+        && request.resource.data.uid == request.auth.uid
+        && request.resource.data.keys().hasOnly(['uid', 'name', 'createdAt'])
+        && request.resource.data.name is string && request.resource.data.name.size() <= 60;
+      allow delete: if signedIn() && resource.data.uid == request.auth.uid;
+
+      // People who added this code. Each adds only themselves; the owner can
+      // see who they are and remove them.
+      match /viewers/{viewer} {
+        allow read: if signedIn()
+          && (request.auth.uid == viewer || get(shareAt(token)).data.uid == request.auth.uid);
+        allow create, update: if isOwner(viewer)
+          && exists(shareAt(token))
+          && request.resource.data.keys().hasOnly(['name', 'addedAt'])
+          && request.resource.data.name is string && request.resource.data.name.size() <= 80;
+        allow delete: if signedIn()
+          && (request.auth.uid == viewer || get(shareAt(token)).data.uid == request.auth.uid);
+      }
     }
   }
 }

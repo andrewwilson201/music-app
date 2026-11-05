@@ -1,7 +1,7 @@
 // Spotify Web API with the PKCE login flow (no client secret, safe for a static site).
 // Only search is used, so no special scopes are requested.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=16';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=17';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
