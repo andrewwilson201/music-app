@@ -1,6 +1,6 @@
-import * as store from './store.js?v=12';
-import * as spotify from './spotify.js?v=12';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=12';
+import * as store from './store.js?v=13';
+import * as spotify from './spotify.js?v=13';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=13';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -104,7 +104,7 @@ function renderSignIn(error = '') {
   app.innerHTML = `<section class="auth">
     <div class="auth-hero">
       <span class="brand-disc big" aria-hidden="true"></span>
-      <h1>Your listening log</h1>
+      <h1>Your music library</h1>
       <p>Log the albums you listen to each year, pick your favourites, and play them on Spotify. Your log is private to you.</p>
     </div>
     <div class="auth-card">

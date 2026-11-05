@@ -1,6 +1,6 @@
 {
-  "name": "Listening Log",
-  "short_name": "Listening",
+  "name": "Music Library",
+  "short_name": "Music Library",
   "start_url": "./",
   "display": "standalone",
   "background_color": "#121110",
