@@ -1323,91 +1323,121 @@
      "id": "ad1240ffbab",
      "artist": "lambchop",
      "title": "the bible",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27316cf79edb3105a9a5c98b4d7",
+     "spotify": "https://open.spotify.com/album/3qsqha7S2q3yKNxsOCoN7L"
     },
     {
      "id": "ac62da42bdd",
      "artist": "oren ambarchi",
      "title": "shebang",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27344b19059a6074c23754deb39",
+     "spotify": "https://open.spotify.com/album/1khpMdVH3EXz5RWt4WRAbg"
     },
     {
      "id": "a14e0b78c06",
      "artist": "sofia birch & antonina nowacka",
      "title": "languoria",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737c918bfc6c8220eb51ee4a39",
+     "spotify": "https://open.spotify.com/album/7LXp7ppvXmmLvcn7ysGDgf"
     },
     {
      "id": "abde72f3ed8",
      "artist": "sorry",
      "title": "anywhere but here",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273d916b4f30d26d33b3b25617e",
+     "spotify": "https://open.spotify.com/album/18w7oi2HN7XeQD2CMNCFHV"
     },
     {
      "id": "a112d422386",
      "artist": "maxine funk",
      "title": "pieces of driftwood",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739f9405e6305a14eb4a0313e8",
+     "spotify": "https://open.spotify.com/album/6uBKiuX7zvJTLp1sNzKoY4"
     },
     {
      "id": "a01491b5e1f",
      "artist": "gilla band",
      "title": "most normal",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ee73d0bcf119dc97d6b8e0d1",
+     "spotify": "https://open.spotify.com/album/3UcqK7oJ4UiScKZD8IQsk0"
     },
     {
      "id": "a7c32772f75",
      "artist": "lucrecia dalt",
      "title": "!ay!",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ddf7703254e235294a0e2c12",
+     "spotify": "https://open.spotify.com/album/6g5Cioj39K7ix89q2xAtsh"
     },
     {
      "id": "a66441f6b9b",
      "artist": "plains",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ff27bf1920ddf42a79843243",
+     "spotify": "https://open.spotify.com/album/7mdK7vYHrLMzPHGeGXQN0h"
     },
     {
      "id": "ad481e3d4bb",
      "artist": "arctic monkeys",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736b3fa88bdd4af566fbbf2bbf",
+     "spotify": "https://open.spotify.com/album/50Zz8CkIhATKUlQMbHO3k1"
     },
     {
      "id": "a8abc5de4c0",
      "artist": "brian eno",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27337a379ca6520eaf191de6ff2",
+     "spotify": "https://open.spotify.com/album/063f8Ej8rLVTz9KkjQKEMa"
     },
     {
      "id": "a1cc0fb9693",
      "artist": "the 1975",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27304f21e12e67ba0dfd5db4fbf",
+     "spotify": "https://open.spotify.com/album/6Z1zv6Hw9bdvSoxI5uYk2h"
     },
     {
      "id": "ae8ae81e35c",
      "artist": "dry cleaning",
      "title": "stumpwork",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c6b461326ec8881e50e5194d",
+     "spotify": "https://open.spotify.com/album/64OXKq9VK1geZd3Q9OpoBO"
     },
     {
      "id": "a1a86bdc305",
      "artist": "tom skinner",
      "title": "voices of bishara",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27395961398c47a493180cce9c0",
+     "spotify": "https://open.spotify.com/album/4zvz6kPV86h2VkQcKdsGMM"
     },
     {
      "id": "a0fed6e41d0",
      "artist": "makaya mccraven",
      "title": "in these times",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273557019f413f7fdcd897772cd",
+     "spotify": "https://open.spotify.com/album/6OPYeQwXhmkcaSuh6fUTXA"
     },
     {
      "id": "a09db031773",
      "artist": "weyes blood",
      "title": "and in the darkness, hearts aglow",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273db8ab490bcedb6e518c37e6e",
+     "spotify": "https://open.spotify.com/album/1hngVRZt95TrqPqXoJzQ4A"
     },
     {
      "id": "a5538dcc8ce",
@@ -1415,25 +1445,33 @@
      "title": "meeting with a judas tree",
      "songs": [
       "up"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273196a28526d4ef92b36a47032",
+     "spotify": "https://open.spotify.com/album/2JEmFCOxEi8Onik59bRrMg"
     },
     {
      "id": "a33c8efbf2c",
      "artist": "moor mother",
      "title": "jazz codes",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f182fefb42fd16dc516b6f30",
+     "spotify": "https://open.spotify.com/album/2EET9vTNVbzuhm49j1CHn9"
     },
     {
      "id": "a68a15aa6ce",
      "artist": "jeff parker",
      "title": "mondays at the enfield tennis academy",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a3fb772378b",
      "artist": "anadol - felicita",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b2f4ae56a8eab158e2cdf2b0",
+     "spotify": "https://open.spotify.com/album/2Fwu9SRuU29hAgio29ELeb"
     },
     {
      "id": "aed5983a545",
@@ -1441,7 +1479,9 @@
      "title": "deep in view",
      "songs": [
       "gossamer"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27383bb696a12a93ca4ba2e5290",
+     "spotify": "https://open.spotify.com/album/6xCiTaBETJXjbRP68e7g0P"
     },
     {
      "id": "ad7eede214d",
