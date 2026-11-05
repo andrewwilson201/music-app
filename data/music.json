@@ -2831,19 +2831,25 @@
      "id": "ae65eb5f2a4",
      "artist": "civilistjavel",
      "title": "foljd",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27331c236bd9ba3692a401dd6eb",
+     "spotify": "https://open.spotify.com/album/265oH85HmogmGvtC0bqnpj"
     },
     {
      "id": "a9e1a71b218",
      "artist": "richard dawson",
      "title": "end of the middle",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736e0594e4b357cf5253c285c9",
+     "spotify": "https://open.spotify.com/album/1JzuX5abMNgLKPw1POeo1r"
     },
     {
      "id": "a585ae9e2e2",
      "artist": "venturing",
      "title": "ghostholding",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273a8b2e7742686b723f6b7e159",
+     "spotify": "https://open.spotify.com/album/0zfRCNRF2ya1KZDtgGXUgI"
     },
     {
      "id": "a2989b5c194",
@@ -2851,7 +2857,9 @@
      "title": "sinister grift",
      "songs": [
       "defense"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27319757748948360872bd77a95",
+     "spotify": "https://open.spotify.com/album/7dQ09jOwQBuBcm6qRBQcP9"
     },
     {
      "id": "ae74c1727c8",
@@ -2859,7 +2867,9 @@
      "title": "",
      "songs": [
       "lucy takes a picture"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2733ef1207895b314d646f6a3b7",
+     "spotify": "https://open.spotify.com/album/7jG32gfkuo10qarPgmWC7q"
     },
     {
      "id": "a6a60609670",
@@ -2867,37 +2877,49 @@
      "title": "bird higher than cloud",
      "songs": [
       "bird higher than cloud"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27336857e4c564b1e2d332bba0f",
+     "spotify": "https://open.spotify.com/album/086KhyHw0MkyAB7TgqrvuE"
     },
     {
      "id": "a9799cab069",
      "artist": "hamilton leithauser",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739d16ae5a6de81bbfa4f2d624",
+     "spotify": "https://open.spotify.com/album/06d60TFUm7t91QHcVKq65T"
     },
     {
      "id": "a39a2c65ccb",
      "artist": "alexander deplume",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a34b22e945c",
      "artist": "horse vision",
      "title": "another life",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273626910f846af7c277e209e72",
+     "spotify": "https://open.spotify.com/album/3duZIjETQX18dHLhyZ3ROo"
     },
     {
      "id": "af1b12ccb72",
      "artist": "whatever the weather",
      "title": "whatever the weather II",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27374bd30dcce9bb04afcaa6451",
+     "spotify": "https://open.spotify.com/album/6c2tadUprT8mxXulNmZ1dc"
     },
     {
      "id": "abad917c809",
      "artist": "claire rousay & more eaze",
      "title": "no floor",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27378948ab2679b334f32d2ebe9",
+     "spotify": "https://open.spotify.com/album/4LRwW5laUnoamagLHKENzG"
     },
     {
      "id": "a8a75d1064f",
@@ -2905,7 +2927,9 @@
      "title": "45 pounds",
      "songs": [
       "animal death already breathing"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27317f57ac1c9ba8bd8a4d6828d",
+     "spotify": "https://open.spotify.com/album/7EJcH2l7hiRvbvZDtQLdmU"
     },
     {
      "id": "a1d2275b0ac",
