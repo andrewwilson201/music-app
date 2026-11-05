@@ -2193,7 +2193,9 @@
      "songs": [
       "daydream repeat",
       "three drums"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2731cbbdaaa1d4b3bca2272f31c",
+     "spotify": "https://open.spotify.com/album/7mpTSR6E855VhdCeoPgpCF"
     },
     {
      "id": "a686a0f9a31",
@@ -2201,7 +2203,9 @@
      "title": "keeper of the shepherd",
      "songs": [
       "vacant intimacies"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2730181b8d2d3bca8b2eb79c28f",
+     "spotify": "https://open.spotify.com/album/7LwlfWHU5QuAHW6JHK9BUu"
     },
     {
      "id": "aea4f6e38e9",
@@ -2209,7 +2213,8 @@
      "title": "spectral evolution",
      "songs": [
       "spectral evolution"
-     ]
+     ],
+     "art": "https://is1-ssl.mzstatic.com/image/thumb/Music116/v4/f7/f0/cf/f7f0cf6b-e338-541f-d5e0-8efb6b6bf532/781484901426.png/600x600bb.jpg"
     },
     {
      "id": "a952ebb4b50",
@@ -2218,7 +2223,9 @@
      "songs": [
       "vampire empire",
       "evol"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ea44aa24e25dab5a2609e4ce",
+     "spotify": "https://open.spotify.com/album/2Y8WS7iDIZkvzB5GUeLvku"
     },
     {
      "id": "aafcd7f2f7c",
@@ -2226,19 +2233,25 @@
      "title": "tigers blood",
      "songs": [
       "right back to it"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2730bc584e8e6aefded5b054117",
+     "spotify": "https://open.spotify.com/album/2n3HUMLmNl0Cm2atVwWSK6"
     },
     {
      "id": "a395525bd15",
      "artist": "julia holter",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27392ecc684b66e024ce255d58c",
+     "spotify": "https://open.spotify.com/album/4N18onGeiRu5uj3H7bSOl3"
     },
     {
      "id": "a9fb5a7c93f",
      "artist": "roma zuckerman",
      "title": "the phenomenon of provincial mentality",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273230edfc17ae9f8469ad535c6",
+     "spotify": "https://open.spotify.com/album/4RQYKn2rVKoV6EZKDnVx9b"
     },
     {
      "id": "aedb90f4c3f",
@@ -2246,7 +2259,9 @@
      "title": "only god was above us",
      "songs": [
       "hope"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2734eb80469be3cfbbd3471081d",
+     "spotify": "https://open.spotify.com/album/1W04wu2W4OIcuiNc5AMB3y"
     },
     {
      "id": "aa5a2486782",
@@ -2254,7 +2269,9 @@
      "title": "revelator",
      "songs": [
       "revelator"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27374e36cb891eac1f4910d2af4",
+     "spotify": "https://open.spotify.com/album/41vjTx4EVtMQnTFtGF1mk9"
     },
     {
      "id": "a14ff184f38",
@@ -2262,7 +2279,9 @@
      "title": "fabiano palladino",
      "songs": [
       "I care"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273640be2939390c3d46b04fa7a",
+     "spotify": "https://open.spotify.com/album/42oaWsdIjvtngWBANg0tux"
     },
     {
      "id": "a3a7b5a7578",
@@ -2270,13 +2289,17 @@
      "title": "where's my utopia",
      "songs": [
       "blackpool illuminations"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e406b2b0d352a87afddb4d4a",
+     "spotify": "https://open.spotify.com/album/34UIFF2mDOl7JN0QdmMjPg"
     },
     {
      "id": "a81422805a2",
      "artist": "beatenbergg",
      "title": "the great fire of beatenberg",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273af2fec49ecd43f93edb9cf09",
+     "spotify": "https://open.spotify.com/album/47mHvmshB5n5m1S2hhoj2D"
     },
     {
      "id": "a1a6ef13feb",
@@ -2285,7 +2308,9 @@
      "songs": [
       "diamond jubilee",
       "flesh and blood"
-     ]
+     ],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a93e8686016",
@@ -2293,13 +2318,17 @@
      "title": "summer of love",
      "songs": [
       "summer of love"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b91d7bd5c7849d25edbfd06e",
+     "spotify": "https://open.spotify.com/album/30ygnO28xqg45y34Rrmees"
     },
     {
      "id": "adc2201c6b3",
      "artist": "still house plants",
      "title": "if I don't make it, I love u",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ed5a28ecedf648b2bd61a660",
+     "spotify": "https://open.spotify.com/album/7MiaxOTlkHvetd4LxXcVoq"
     },
     {
      "id": "a387e6796cf",
@@ -2307,19 +2336,25 @@
      "title": "sentiment",
      "songs": [
       "iii"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f9f5c08a2a72ae1252e73651",
+     "spotify": "https://open.spotify.com/album/0QhdOeubTOElMLAVK52uQu"
     },
     {
      "id": "a115586569e",
      "artist": "iron and wine",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27315268c3aaacadcec6f5c6b7b",
+     "spotify": "https://open.spotify.com/album/2diNeeePw7kIT2K4DYCdJx"
     },
     {
      "id": "a501dd24b98",
      "artist": "lightning bug",
      "title": "no paradise",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27351563d0651b0db29e09acbc5",
+     "spotify": "https://open.spotify.com/album/33piTxvzBKkRs6T94MGLmU"
     },
     {
      "id": "ae96db0fa53",
@@ -2327,19 +2362,25 @@
      "title": "here in the pitch",
      "songs": [
       "the last year"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273d6c735bd867af24e516ff659",
+     "spotify": "https://open.spotify.com/album/3sxWkhkLVGfUd9jltFgcrG"
     },
     {
      "id": "af82185e5ab",
      "artist": "amen dunes",
      "title": "death jokes",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273339512b50a9a816bba06b187",
+     "spotify": "https://open.spotify.com/album/0IbEeSedat83fZMCvcdCR3"
     },
     {
      "id": "acdb4694628",
      "artist": "jim white and marissa taylor",
      "title": "swallowtail",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273186c5199c8bf4ef3f534e4e6",
+     "spotify": "https://open.spotify.com/album/6ar2KIOs53SHwYXNFsrMtl"
     },
     {
      "id": "a8ae86e77f9",
