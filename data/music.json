@@ -1960,19 +1960,25 @@
      "id": "aff7755b893",
      "artist": "modern nature",
      "title": "no fixed point in space",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27368ae3b13516a835b2d56b0cf",
+     "spotify": "https://open.spotify.com/album/5ABpBcZbrjWS8TFpFfV8cC"
     },
     {
      "id": "af2ed80dbc5",
      "artist": "sufjan stevens",
      "title": "javelin",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27332a8498ea892ccd4fcf3f6cf",
+     "spotify": "https://open.spotify.com/album/2KqSL3vLfyVO7rrZJL9tUs"
     },
     {
      "id": "a569d815c49",
      "artist": "helena deland",
      "title": "goodnight summerland",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273a982cfab1316c024a72a9d1f",
+     "spotify": "https://open.spotify.com/album/0MVltcSSdlgnlSNMLmJGFn"
     },
     {
      "id": "a6ccb5812ff",
@@ -1980,7 +1986,9 @@
      "title": "I killed your dog",
      "songs": [
       "pet rock"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2734dfbfbce04ea416b6e092144",
+     "spotify": "https://open.spotify.com/album/0CYFH0OKR5bq9APjwpPZIV"
     },
     {
      "id": "a1b4e4330c3",
@@ -1988,7 +1996,9 @@
      "title": "the land is inhospitable and so are we",
      "songs": [
       "bug like an angel"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27334f21d3047d85440dfa37f10",
+     "spotify": "https://open.spotify.com/album/2Cn1d2KgbkAqbZCJ1RzdkA"
     },
     {
      "id": "abae022ab06",
@@ -1996,13 +2006,17 @@
      "title": "afternoon x",
      "songs": [
       "marbles"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e3597e15a6d85bff8e60713d",
+     "spotify": "https://open.spotify.com/album/6yUptnHXA1lRp48hWzXsUl"
     },
     {
      "id": "a7b2727a6a2",
      "artist": "ml buch",
      "title": "suntub",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27386a8513fec7563a8a6584c84",
+     "spotify": "https://open.spotify.com/album/6IjtDhIvMy3I8xORtWAVax"
     },
     {
      "id": "a24644734cf",
@@ -2011,7 +2025,9 @@
      "songs": [
       "arctic forest",
       "the tern"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27377c5503bc28ca44bcd7fcdf6",
+     "spotify": "https://open.spotify.com/album/1jhgsccCbT1WXtmGUuZvIA"
     },
     {
      "id": "a9882826b85",
@@ -2019,13 +2035,17 @@
      "title": "vidrio",
      "songs": [
       "anonima"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ad4fa3ef3452168bf94f9b83",
+     "spotify": "https://open.spotify.com/album/0fkpb1L4tISjGSYzjRkWOv"
     },
     {
      "id": "aecf99a1c99",
      "artist": "yo la tengo",
      "title": "this stupid world",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b65e24598993c715a41723f0",
+     "spotify": "https://open.spotify.com/album/3LaJpJFSY3cmLFEHJl2z6E"
     }
    ],
    "favourites": [
@@ -2117,7 +2137,9 @@
      "id": "acdba28865e",
      "artist": "acopia",
      "title": "acopia",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273644d50b82767ee7024fbe4cb",
+     "spotify": "https://open.spotify.com/album/05i26KIcMQJ9uhXvdSWWyP"
     },
     {
      "id": "afb70756a2a",
@@ -2125,7 +2147,9 @@
      "title": "boost",
      "songs": [
       "do you wanna"
-     ]
+     ],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a2c3b66f1ef",
