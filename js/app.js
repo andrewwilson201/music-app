@@ -1,6 +1,6 @@
-import * as store from './store.js?v=18';
-import * as spotify from './spotify.js?v=18';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs } from './art.js?v=18';
+import * as store from './store.js?v=19';
+import * as spotify from './spotify.js?v=19';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs } from './art.js?v=19';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -567,13 +567,7 @@ function renderFavourites(year) {
       store.commit({ quiet: true });
     },
   });
-  list.addEventListener('change', (e) => {
-    if (!e.target.matches('.song-input')) return;
-    const f = y.favourites.find((x) => x.albumId === e.target.closest('.fav').dataset.id);
-    f.song = e.target.value.trim();
-    store.commit({ quiet: true });
-    toast('Best song saved');
-  });
+  bindSongPicker(list, (el) => y.favourites.find((x) => x.albumId === el.closest('.fav').dataset.id));
   list.addEventListener('click', (e) => {
     const rm = e.target.closest('[data-unfav]');
     if (!rm) return;
@@ -594,7 +588,7 @@ function favRowHtml(album, fav, i) {
     <div class="fav-main">
       <button class="fav-title" data-open="${album.id}">${esc(album.title || album.artist)}</button>
       <span class="fav-artist">${esc(album.artist)}</span>
-      ${fav.song ? `<span class="song-text">♪ ${esc(fav.song)}</span>` : ''}
+      ${bestSongs(fav.song).length ? `<ul class="song-chips">${songChipsHtml(fav, false)}</ul>` : ''}
     </div>
     <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify">${ICON.spotify}</a>
   </li>`;
@@ -606,8 +600,7 @@ function favRowHtml(album, fav, i) {
     <div class="fav-main">
       <button class="fav-title" data-open="${album.id}">${esc(album.title || album.artist)}</button>
       <span class="fav-artist">${esc(album.artist)}</span>
-      <input class="song-input" value="${esc(fav.song || '')}" placeholder="Best song…" aria-label="Best song" list="songs-${album.id}">
-      <datalist id="songs-${album.id}">${(album.songs || []).map((s) => `<option value="${esc(s)}">`).join('')}</datalist>
+      ${songPickerHtml(album, fav, `songs-${album.id}`)}
     </div>
     <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify">${ICON.spotify}</a>
     <button class="icon-btn subtle" data-unfav="${album.id}" title="Remove from favourites">${ICON.close}</button>
@@ -691,6 +684,65 @@ async function makePlaylist(year) {
   }
 }
 
+// ------------------------------------------------------------------ best songs
+
+// A favourite can have several best songs. Each shows as a chip, with a box
+// underneath for adding another. They're stored in fav.song joined with "; "
+// so older copies of the app and friends' views still show them.
+function songChipsHtml(fav, editable = true) {
+  return bestSongs(fav.song).map((s, i) => `<li class="song-chip"><span>♪ ${esc(s)}</span>${editable
+    ? `<button type="button" data-rm-song="${i}" title="Remove ${esc(s)}" aria-label="Remove ${esc(s)}">${ICON.close}</button>` : ''}</li>`).join('');
+}
+
+function songPickerHtml(album, fav, listId) {
+  const n = bestSongs(fav.song).length;
+  return `<div class="song-picker">
+    <ul class="song-chips">${songChipsHtml(fav)}</ul>
+    <input class="song-input" placeholder="${n ? '+ Add another song' : 'Best song…'}" aria-label="${n ? 'Add another best song' : 'Best song'}" list="${listId}" enterkeyhint="done" autocomplete="off">
+    <datalist id="${listId}">${(album.songs || []).map((s) => `<option value="${esc(s)}">`).join('')}</datalist>
+  </div>`;
+}
+
+// favFor(element) returns the favourite that a picker inside `root` belongs to.
+function bindSongPicker(root, favFor) {
+  const redraw = (picker, fav) => {
+    const n = bestSongs(fav.song).length;
+    $('.song-chips', picker).innerHTML = songChipsHtml(fav);
+    const input = $('.song-input', picker);
+    input.placeholder = n ? '+ Add another song' : 'Best song…';
+    input.setAttribute('aria-label', n ? 'Add another best song' : 'Best song');
+  };
+  const add = (input) => {
+    const fresh = bestSongs(input.value);
+    input.value = '';
+    if (!fresh.length) return;
+    const fav = favFor(input);
+    const songs = bestSongs(fav.song);
+    const have = new Set(songs.map((x) => norm(x)));
+    for (const x of fresh) if (!have.has(norm(x))) { songs.push(x); have.add(norm(x)); }
+    fav.song = songs.join('; ');
+    redraw(input.closest('.song-picker'), fav);
+    store.commit({ quiet: true });
+    toast(songs.length > 1 ? 'Best songs saved' : 'Best song saved');
+  };
+  root.addEventListener('change', (e) => { if (e.target.matches('.song-input')) add(e.target); });
+  root.addEventListener('keydown', (e) => {
+    if (e.key === 'Enter' && e.target.matches('.song-input')) { e.preventDefault(); add(e.target); }
+  });
+  root.addEventListener('click', (e) => {
+    const rm = e.target.closest('[data-rm-song]');
+    if (!rm) return;
+    e.stopPropagation();
+    const fav = favFor(rm);
+    const songs = bestSongs(fav.song);
+    songs.splice(Number(rm.dataset.rmSong), 1);
+    fav.song = songs.join('; ');
+    redraw(rm.closest('.song-picker'), fav);
+    store.commit({ quiet: true });
+    toast('Best song removed');
+  });
+}
+
 function toggleFavourite(year, album, on) {
   const y = data.years[year];
   const has = y.favourites.some((f) => f.albumId === album.id);
@@ -758,9 +810,7 @@ function openAlbum(id) {
           <button class="btn heart ${rank ? 'on' : ''}" id="favToggle" aria-pressed="${!!rank}">${ICON.heart}<span>${rank ? 'Favourite' : 'Add to favourites'}</span></button>
           <button class="btn queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}">${queued ? ICON.check : ICON.queue}<span>${queued ? 'In Up next' : 'Add to Up next'}</span></button>
         </div>
-        ${rank ? `<label class="field"><span>Best song</span>
-          <input id="bestSong" value="${esc(fav.song || '')}" placeholder="Which track stood out?" list="detailSongs">
-          <datalist id="detailSongs">${(album.songs || []).map((s) => `<option value="${esc(s)}">`).join('')}</datalist></label>` : ''}
+        ${rank ? `<div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, fav, 'detailSongs')}</div>` : ''}
         <div class="detail-foot">
           <button class="link-btn" id="editAlbum">${ICON.edit} Edit</button>
           <button class="link-btn danger" id="deleteAlbum">${ICON.trash} Delete</button>
@@ -798,11 +848,7 @@ function openAlbum(id) {
     closeModal(m, true);
     openAlbum(id);
   });
-  $('#bestSong', m)?.addEventListener('change', (e) => {
-    fav.song = e.target.value.trim();
-    store.commit({ quiet: true });
-    toast('Best song saved');
-  });
+  if ($('#bestSongField', m)) bindSongPicker($('#bestSongField', m), () => fav);
   $('#editAlbum', m).addEventListener('click', () => { closeModal(m, true); editAlbum(id); });
   $('#deleteAlbum', m).addEventListener('click', () => {
     if (!confirm(`Delete “${album.title || album.artist}” from ${year}?`)) return;
@@ -833,7 +879,7 @@ function openFriendAlbum(id) {
         <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
         <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted'}</p>
         ${(album.songs || []).length ? `<div class="chips">${album.songs.map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
-        ${fav?.song ? `<p class="best-song"><span>Best song</span>${esc(fav.song)}</p>` : ''}
+        ${bestSongs(fav?.song).length ? `<div class="best-song"><span>Best song${bestSongs(fav.song).length > 1 ? 's' : ''}</span><ul class="song-chips">${songChipsHtml(fav, false)}</ul></div>` : ''}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn queue" id="queueMine"></button>
