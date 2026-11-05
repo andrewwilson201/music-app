@@ -12,8 +12,8 @@ import {
   getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, collection, writeBatch, serverTimestamp,
-} from '../vendor/firebase.js?v=14';
-import { FIREBASE_CONFIG } from './config.js?v=14';
+} from '../vendor/firebase.js?v=15';
+import { FIREBASE_CONFIG } from './config.js?v=15';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
 const LEGACY_DATA_KEY = 'music-log:data';
