@@ -1,6 +1,6 @@
-import * as store from './store.js?v=10';
-import * as spotify from './spotify.js?v=10';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=10';
+import * as store from './store.js?v=11';
+import * as spotify from './spotify.js?v=11';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=11';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -35,24 +35,168 @@ async function boot() {
   let spotifyMsg = '';
   try { if (await spotify.handleRedirect()) spotifyMsg = 'Logged in to Spotify'; }
   catch (e) { spotifyMsg = `Spotify login failed: ${e.message}`; }
+  if (spotifyMsg) setTimeout(() => toast(spotifyMsg, spotifyMsg.includes('failed') ? 'error' : ''), 300);
+  if (!store.configured()) return renderNotConfigured();
+  let user;
+  try { user = await store.init(); }
+  catch (e) { return renderSignIn(e.message); }
+  if (!user) return renderSignIn();
+  await startSession();
+}
+
+async function startSession() {
+  document.body.classList.remove('signed-out');
+  app.innerHTML = '<div class="loading"><span class="spin"></span>Loading your records…</div>';
   try {
     data = await store.load();
   } catch (e) {
-    app.innerHTML = `<div class="empty"><h2>Couldn't load your data</h2><p>${esc(e.message)}</p></div>`;
+    app.innerHTML = `<div class="empty"><h2>Couldn't load your log</h2><p>${esc(e.message)}</p>
+      <button class="btn" onclick="location.reload()">Try again</button></div>`;
     return;
   }
+  if (!data) return renderFirstRun();
+  started();
+}
+
+let isStarted = false;
+function started() {
+  data = store.getData();
+  if (isStarted) return render();
+  isStarted = true;
   store.subscribe(onStoreChange);
   onStoreChange();
   normaliseQueue();
   migrateArtCache();
   setTimeout(backfillArt, 4000);
-  if (spotifyMsg) setTimeout(() => toast(spotifyMsg, spotifyMsg.includes('failed') ? 'error' : ''), 300);
   window.addEventListener('hashchange', () => {
     [...modalRoot.children].forEach((w) => closeModal(w, true));
     ui.filter = '';
     render();
   });
+  // Save before the page is hidden, and pick up edits made on other devices on return.
+  let hiddenAt = 0;
+  document.addEventListener('visibilitychange', async () => {
+    if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); store.flush(); return; }
+    if (Date.now() - hiddenAt < 30000 || modalRoot.children.length) return;
+    try { if (await store.refresh()) { data = store.getData(); render(); } } catch {}
+  });
   render();
+}
+
+// ------------------------------------------------------------------ sign in
+
+const GOOGLE_ICON = '<svg viewBox="0 0 24 24" class="g-icon" aria-hidden="true"><path fill="#4285F4" d="M22.6 12.2c0-.8-.1-1.5-.2-2.2H12v4.2h6a5.1 5.1 0 0 1-2.2 3.4v2.8h3.6c2-1.9 3.2-4.7 3.2-8.2Z"/><path fill="#34A853" d="M12 23c3 0 5.5-1 7.4-2.7l-3.6-2.8c-1 .7-2.3 1.1-3.8 1.1-2.9 0-5.4-2-6.3-4.6H2v2.9A11 11 0 0 0 12 23Z"/><path fill="#FBBC05" d="M5.7 14a6.6 6.6 0 0 1 0-4.2V7H2a11 11 0 0 0 0 9.9L5.7 14Z"/><path fill="#EA4335" d="M12 5.4c1.6 0 3.1.6 4.3 1.7l3.2-3.2A11 11 0 0 0 2 7l3.7 2.9C6.6 7.3 9.1 5.4 12 5.4Z"/></svg>';
+
+function renderSignedOutShell() {
+  document.body.classList.add('signed-out');
+  $('#nav').innerHTML = '';
+}
+
+function renderNotConfigured() {
+  renderSignedOutShell();
+  app.innerHTML = `<div class="empty"><h2>Almost ready</h2>
+    <p>This app needs its Firebase settings before anyone can sign in. Add them to <code>js/config.js</code>.</p></div>`;
+}
+
+function renderSignIn(error = '') {
+  renderSignedOutShell();
+  let mode = 'signin';
+  app.innerHTML = `<section class="auth">
+    <div class="auth-hero">
+      <span class="brand-disc big" aria-hidden="true"></span>
+      <h1>Your listening log</h1>
+      <p>Log the albums you listen to each year, pick your favourites, and play them on Spotify. Your log is private to you.</p>
+    </div>
+    <div class="auth-card">
+      <button class="btn google" id="googleBtn">${GOOGLE_ICON}Continue with Google</button>
+      <div class="auth-or"><span>or use email</span></div>
+      <form class="form" id="emailForm" novalidate>
+        <label class="field"><span>Email</span><input name="email" type="email" autocomplete="email" inputmode="email" required></label>
+        <label class="field"><span>Password</span><input name="password" type="password" autocomplete="current-password" required minlength="6"></label>
+        <p class="warn" id="authErr" ${error ? '' : 'hidden'}>${esc(error)}</p>
+        <p class="ok-note" id="authNote" hidden></p>
+        <button class="btn primary" id="emailBtn">Sign in</button>
+        <div class="auth-links">
+          <button type="button" class="link" id="modeBtn">New here? Create an account</button>
+          <button type="button" class="link" id="resetBtn">Forgot password?</button>
+        </div>
+      </form>
+    </div>
+  </section>`;
+  const form = $('#emailForm');
+  const err = $('#authErr');
+  const note = $('#authNote');
+  const show = (msg) => { err.hidden = !msg; err.textContent = msg; if (msg) note.hidden = true; };
+  const busy = (btn, on) => { btn.disabled = on; btn.classList.toggle('busy', on); };
+  $('#modeBtn').addEventListener('click', () => {
+    mode = mode === 'signin' ? 'create' : 'signin';
+    $('#emailBtn').textContent = mode === 'signin' ? 'Sign in' : 'Create account';
+    $('#modeBtn').textContent = mode === 'signin' ? 'New here? Create an account' : 'Have an account? Sign in';
+    form.password.autocomplete = mode === 'signin' ? 'current-password' : 'new-password';
+    $('#resetBtn').hidden = mode === 'create';
+    show('');
+  });
+  $('#googleBtn').addEventListener('click', async (e) => {
+    show(''); busy(e.currentTarget, true);
+    try { if (await store.signInGoogle()) await startSession(); }
+    catch (ex) { show(ex.message); }
+    finally { busy(e.currentTarget, false); }
+  });
+  $('#resetBtn').addEventListener('click', async () => {
+    if (!form.email.value.trim()) { show('Enter your email first, then tap “Forgot password?” again.'); form.email.focus(); return; }
+    try {
+      await store.resetPassword(form.email.value);
+      show('');
+      note.hidden = false;
+      note.textContent = `If there's an account for ${form.email.value.trim()}, a reset link is on its way.`;
+    } catch (ex) { show(ex.message); }
+  });
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    if (!form.email.value.trim()) return show('Enter your email.');
+    if (!form.password.value) return show('Enter your password.');
+    const btn = $('#emailBtn');
+    show(''); busy(btn, true);
+    try { await store.signInEmail(form.email.value, form.password.value, mode === 'create'); await startSession(); }
+    catch (ex) { show(ex.message); }
+    finally { busy(btn, false); }
+  });
+}
+
+function renderFirstRun() {
+  renderSignedOutShell();
+  const user = store.currentUser();
+  const name = (user.displayName || '').split(' ')[0];
+  const legacy = store.hasLegacyLog();
+  app.innerHTML = `<section class="auth">
+    <div class="auth-hero">
+      <span class="brand-disc big" aria-hidden="true"></span>
+      <h1>Welcome${name ? `, ${esc(name)}` : ''}</h1>
+      <p>Signed in as ${esc(user.email || 'you')}. Your log is empty, so how would you like to start?</p>
+    </div>
+    <div class="auth-card choices">
+      ${legacy ? `<button class="choice primary" data-start="legacy"><b>Bring over my existing log</b><small>Copies the log this device was saving to GitHub into your account.</small></button>` : ''}
+      <button class="choice ${legacy ? '' : 'primary'}" data-start="fresh"><b>Start a new log</b><small>Begin with an empty ${new Date().getFullYear()}.</small></button>
+      <label class="choice" data-start="file"><b>Restore a backup file</b><small>A .json file from “Download backup”.</small><input type="file" accept="application/json,.json" hidden></label>
+      <p class="warn" id="startErr" hidden></p>
+      <button type="button" class="link" id="signOutBtn">Not you? Sign out</button>
+    </div>
+  </section>`;
+  const err = $('#startErr');
+  const run = async (fn) => {
+    err.hidden = true;
+    app.querySelectorAll('.choice').forEach((b) => b.classList.add('busy'));
+    try { await fn(); started(); document.body.classList.remove('signed-out'); toast('Your log is ready'); }
+    catch (ex) { err.hidden = false; err.textContent = ex.message; }
+    finally { app.querySelectorAll('.choice').forEach((b) => b.classList.remove('busy')); }
+  };
+  $('[data-start="legacy"]')?.addEventListener('click', () => run(store.importLegacyLog));
+  $('[data-start="fresh"]').addEventListener('click', () => run(store.startFresh));
+  $('[data-start="file"] input').addEventListener('change', (e) => {
+    const file = e.target.files[0];
+    if (file) run(async () => store.replaceAll(JSON.parse(await file.text())));
+  });
+  $('#signOutBtn').addEventListener('click', async () => { await store.signOut(); location.reload(); });
 }
 
 function onStoreChange() {
@@ -61,13 +205,12 @@ function onStoreChange() {
   const dot = $('#syncDot');
   dot.className = `sync-dot ${status}`;
   $('#settingsBtn').title = {
-    saved: 'Synced to GitHub',
-    saving: 'Saving to GitHub…',
-    local: 'Changes saved on this device only. Connect GitHub to sync.',
+    saved: 'Saved to your account',
+    saving: 'Saving…',
     error: `Sync problem: ${lastError}`,
-    idle: 'Settings and sync',
+    idle: 'Settings and account',
   }[status] || 'Settings';
-  if (status === 'error') toast(`Couldn't save to GitHub: ${lastError}`, 'error');
+  if (status === 'error') toast(`Couldn't save: ${lastError}`, 'error');
 }
 
 // ------------------------------------------------------------------ routing
@@ -144,7 +287,7 @@ function watchCovers(root = app) {
   });
 }
 
-// Artwork found while not connected to GitHub lives only in this browser.
+// Artwork found before the log has loaded lives only in this browser.
 // Once connected, copy it into the data so it's saved for every device.
 let artSinceSave = 0;
 function migrateArtCache() {
@@ -876,15 +1019,21 @@ function renderSearch(initial) {
 // ------------------------------------------------------------------ settings
 
 function openSettings() {
-  const cfg = store.getConfig();
+  if (!data) return;
+  const user = store.currentUser();
   const { status, lastError } = store.getStatus();
   const statusText = {
-    saved: 'Connected. Every change is saved to your GitHub repo, so it shows up on all your devices.',
-    saving: 'Saving to GitHub…',
-    error: `Connected, but the last save failed: ${lastError}`,
-  }[status] || 'Not connected. You can browse everything, and edits stay on this device until you connect.';
+    saved: 'Every change is saved to your account, so it shows up wherever you sign in.',
+    saving: 'Saving…',
+    error: `The last save failed: ${lastError}. Your edits are kept on this device and will be saved again.`,
+  }[status] || 'Every change is saved to your account, so it shows up wherever you sign in.';
   const m = openModal(`
-    <div class="modal-head"><h2>Sync with GitHub</h2>${closeBtn()}</div>
+    <div class="modal-head"><h2>Settings</h2>${closeBtn()}</div>
+    <div class="account-box">
+      ${user.photoURL ? `<img src="${esc(user.photoURL)}" alt="" referrerpolicy="no-referrer">` : `<span class="avatar">${esc((user.displayName || user.email || '?').slice(0, 1).toUpperCase())}</span>`}
+      <div><b>${esc(user.displayName || user.email || 'Signed in')}</b>${user.displayName && user.email ? `<small>${esc(user.email)}</small>` : ''}</div>
+      <button type="button" class="btn small" id="signOutBtn">Sign out</button>
+    </div>
     ${spotify.configured() ? `<div class="spotify-box">
       ${ICON.spotify}
       <div><b>Spotify</b><small>${spotify.connected()
@@ -893,57 +1042,35 @@ function openSettings() {
       <button type="button" class="btn ${spotify.connected() ? '' : 'spotify'} small" id="spotifyBtn">${spotify.connected() ? 'Log out' : 'Log in'}</button>
     </div>` : ''}
     <p class="status-line ${status}"><span class="sync-dot ${status}"></span>${esc(statusText)}</p>
-    <form class="form" id="cfgForm">
-      <div class="row">
-        <label class="field"><span>Owner</span><input name="owner" value="${esc(cfg.owner)}"></label>
-        <label class="field"><span>Repo</span><input name="repo" value="${esc(cfg.repo)}"></label>
-        <label class="field narrow"><span>Branch</span><input name="branch" value="${esc(cfg.branch)}"></label>
-      </div>
-      <label class="field"><span>Access token</span><input name="token" type="password" value="${esc(cfg.token)}" placeholder="github_pat_…" autocomplete="off"></label>
-      <details class="help"><summary>How to get a token</summary>
-        <ol>
-          <li>Open <a href="https://github.com/settings/personal-access-tokens/new" target="_blank" rel="noopener">GitHub › New fine-grained token</a>.</li>
-          <li>Under <b>Repository access</b> choose <i>Only select repositories</i> and pick <b>${esc(cfg.repo)}</b>.</li>
-          <li>Under <b>Permissions</b>, tap <b>+</b> next to Repositories, add <b>Contents</b> and set it to <i>Read and write</i>.</li>
-          <li>Generate it, copy it and paste it above. It stays in this browser only.</li>
-        </ol></details>
-      <p class="warn" id="cfgErr" hidden></p>
-      <div class="form-actions">
-        ${cfg.token ? '<button type="button" class="btn" id="disconnect">Disconnect</button>' : ''}
-        <button type="button" class="btn" id="export">Download backup</button>
-        <button class="btn primary">${cfg.token ? 'Save' : 'Connect'}</button>
-      </div>
-    </form>`);
+    <p class="warn" id="cfgErr" hidden></p>
+    <div class="form-actions">
+      <label class="btn" id="restore">Restore backup<input type="file" accept="application/json,.json" hidden></label>
+      <button type="button" class="btn" id="export">Download backup</button>
+    </div>`);
   $('#export', m).addEventListener('click', store.exportJson);
   $('#spotifyBtn', m)?.addEventListener('click', () => {
     if (spotify.connected()) { spotify.logout(); closeModal(m); toast('Logged out of Spotify'); }
     else spotify.login();
   });
-  $('#disconnect', m)?.addEventListener('click', () => {
-    store.setConfig({ ...cfg, token: '' });
-    closeModal(m);
-    toast('Disconnected from GitHub');
+  $('#signOutBtn', m).addEventListener('click', async () => {
+    store.flush();
+    await store.signOut();
+    location.hash = '';
     location.reload();
   });
-  $('#cfgForm', m).addEventListener('submit', async (e) => {
-    e.preventDefault();
-    const f = new FormData(e.target);
-    const next = Object.fromEntries([...f.entries()].map(([k, v]) => [k, v.trim()]));
+  $('#restore input', m).addEventListener('change', async (e) => {
+    const file = e.target.files[0];
+    e.target.value = '';
+    if (!file || !confirm('Replace your whole log with this backup? Download a backup of the current one first if you might want it back.')) return;
     const err = $('#cfgErr', m);
     err.hidden = true;
-    store.setConfig(next);
     try {
-      await store.testConnection();
-      await store.reloadFromRemote();
-      closeModal(m);
-      toast('Connected to GitHub');
+      await store.replaceAll(JSON.parse(await file.text()));
       data = store.getData();
+      closeModal(m);
+      toast('Backup restored');
       render();
-    } catch (ex) {
-      err.hidden = false;
-      err.textContent = ex.message;
-      store.setConfig(cfg);
-    }
+    } catch (ex) { err.hidden = false; err.textContent = ex.message; }
   });
 }
 
@@ -993,13 +1120,13 @@ document.addEventListener('click', (e) => {
   if (q) openQueueItem(q.dataset.queue);
   if (e.target.closest('[data-queue-add]')) addAlbum({ mode: 'queue' });
 });
-$('#addBtn').addEventListener('click', () => addAlbum());
+$('#addBtn').addEventListener('click', () => data && addAlbum());
 $('#searchBtn').addEventListener('click', () => (location.hash = '#/search'));
 $('#settingsBtn').addEventListener('click', openSettings);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape') { const last = modalRoot.lastElementChild; if (last) closeModal(last); return; }
   if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
-  if (modalRoot.children.length) return;
+  if (modalRoot.children.length || !isStarted) return;
   if (e.key === 'n') { e.preventDefault(); addAlbum(); }
   if (e.key === '/') { e.preventDefault(); location.hash = '#/search'; }
 });
