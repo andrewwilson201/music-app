@@ -1,6 +1,6 @@
-import * as store from './store.js?v=14';
-import * as spotify from './spotify.js?v=14';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=14';
+import * as store from './store.js?v=15';
+import * as spotify from './spotify.js?v=15';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=15';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -15,6 +15,9 @@ const ICON = {
   close: '<svg viewBox="0 0 24 24"><path d="M6 6l12 12M18 6 6 18"/></svg>',
   grid: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="4" width="6.5" height="6.5" rx="1.5"/><rect x="4" y="13.5" width="6.5" height="6.5" rx="1.5"/><rect x="13.5" y="13.5" width="6.5" height="6.5" rx="1.5"/></svg>',
   list: '<svg viewBox="0 0 24 24"><rect x="3.5" y="4.5" width="5" height="5" rx="1"/><rect x="3.5" y="14.5" width="5" height="5" rx="1"/><path d="M11.5 6h9M11.5 8.5h6M11.5 16h9M11.5 18.5h6"/></svg>',
+  sort: '<svg viewBox="0 0 24 24"><path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5"/></svg>',
+  search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
+  chevron: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
   queue: '<svg viewBox="0 0 24 24"><path d="M4 6h12M4 11h12M4 16h7"/><path d="m15 14 5 3-5 3z" fill="currentColor"/></svg>',
   grip: '<svg viewBox="0 0 24 24" class="fill"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>',
   edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>',
@@ -89,7 +92,6 @@ const GOOGLE_ICON = '<svg viewBox="0 0 24 24" class="g-icon" aria-hidden="true">
 
 function renderSignedOutShell() {
   document.body.classList.add('signed-out');
-  $('#nav').innerHTML = '';
 }
 
 function renderNotConfigured() {
@@ -225,7 +227,7 @@ function render() {
   const years = shownYears();
   if (sortable) { sortable.destroy(); sortable = null; }
   closeYearMenu();
-  renderNav(page === 'year' ? a : page ? page : years[0]);
+  navActive = page === 'year' ? a : page ? page : years[0];
   if (!page) return renderYear(years[0], 'listened');
   if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
   if (page === 'up-next' || page === 'to-listen') return renderUpNext();
@@ -242,15 +244,11 @@ function shownYears() {
     .concat(data.years[now] ? [] : [now]).sort((a, b) => b - a);
 }
 
+// The page heading ("2026 ▾") is the one and only year switcher.
 let navActive = '';
-function renderNav(active) {
-  navActive = active;
-  const isYear = /^\d{4}$/.test(active);
-  $('#nav').innerHTML = `<button type="button" class="year-pick ${isYear ? 'on' : ''}" id="yearPick" aria-haspopup="true" aria-expanded="false">
-    <span>${isYear ? esc(active) : 'Years'}</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>`;
-}
+const yearMenuBtn = (label) => `<button type="button" class="hero-year" data-year-menu aria-haspopup="true" aria-expanded="false" title="Switch year">${esc(label)}${ICON.chevron}</button>`;
 
-function openYearMenu() {
+function openYearMenu(btn) {
   if (closeYearMenu()) return;
   const now = String(new Date().getFullYear());
   const queued = (data.toListen || []).length;
@@ -262,9 +260,8 @@ function openYearMenu() {
     return `<a href="#/year/${y}" class="${y === navActive ? 'on' : ''}"><b>${y}</b><small>${n ? `${n} album${n === 1 ? '' : 's'}` : y === now ? 'nothing yet' : ''}</small></a>`;
   }).join('') + `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`;
   document.body.appendChild(menu);
-  const btn = $('#yearPick');
   const r = btn.getBoundingClientRect();
-  menu.style.top = `${r.bottom + 8}px`;
+  menu.style.top = `${r.bottom + scrollY + 8}px`;
   menu.style.left = `${Math.max(12, Math.min(r.left, innerWidth - menu.offsetWidth - 12))}px`;
   btn.setAttribute('aria-expanded', 'true');
   menu.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
@@ -275,7 +272,7 @@ function closeYearMenu() {
   const menu = $('#yearMenu');
   if (!menu) return false;
   menu.remove();
-  $('#yearPick')?.setAttribute('aria-expanded', 'false');
+  $$('[data-year-menu]').forEach((b) => b.setAttribute('aria-expanded', 'false'));
   return true;
 }
 
@@ -423,18 +420,21 @@ function albumsHtml(list, yearData, showYear = '') {
     : `<div class="grid">${list.map((a) => cardHtml(a, yearData, showYear)).join('')}</div>`;
 }
 
-const viewToggleHtml = () => `<div class="view-toggle" role="group" aria-label="View">
-  <button type="button" data-view="grid" class="${ui.view === 'grid' ? 'on' : ''}" aria-pressed="${ui.view === 'grid'}" title="Grid view">${ICON.grid}</button>
-  <button type="button" data-view="list" class="${ui.view === 'list' ? 'on' : ''}" aria-pressed="${ui.view === 'list'}" title="List view">${ICON.list}</button>
-</div>`;
+// One button that flips between grid and list; it shows the view you'd switch to.
+const viewBtnInner = () => (ui.view === 'grid' ? ICON.list : ICON.grid);
+const viewLabel = () => (ui.view === 'grid' ? 'Show as list' : 'Show as grid');
+const viewToggleHtml = () => `<button type="button" class="tool-btn" data-view-toggle title="${viewLabel()}" aria-label="${viewLabel()}">${viewBtnInner()}</button>`;
 
 function bindViewToggle(root, redraw) {
-  root.querySelectorAll('[data-view]').forEach((b) => b.addEventListener('click', () => {
-    ui.view = b.dataset.view;
+  const b = root.querySelector('[data-view-toggle]');
+  b?.addEventListener('click', () => {
+    ui.view = ui.view === 'grid' ? 'list' : 'grid';
     try { localStorage.setItem('music-log:view', ui.view); } catch {}
-    root.querySelectorAll('[data-view]').forEach((x) => { x.classList.toggle('on', x === b); x.setAttribute('aria-pressed', x === b); });
+    b.innerHTML = viewBtnInner();
+    b.title = viewLabel();
+    b.setAttribute('aria-label', viewLabel());
     redraw();
-  }));
+  });
 }
 
 function renderYear(year, tab) {
@@ -444,14 +444,13 @@ function renderYear(year, tab) {
     <section class="hero">
       <div>
         <p class="eyebrow">albums released in</p>
-        <h1><button type="button" class="hero-year" data-year-menu title="Switch year">${year}<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></h1>
-        <p class="hero-stats"><b>${y.albums.length}</b> listened · <b>${favCount}</b> in your top list</p>
-      </div>
-      <div class="seg" role="tablist">
-        <a role="tab" href="#/year/${year}" class="${tab === 'listened' ? 'on' : ''}">Listened</a>
-        <a role="tab" href="#/year/${year}/favourites" class="${tab === 'favourites' ? 'on' : ''}">${ICON.heart} Favourites</a>
+        <h1>${yearMenuBtn(year)}</h1>
       </div>
     </section>
+    <nav class="tabs" role="tablist">
+      <a role="tab" href="#/year/${year}" class="${tab === 'listened' ? 'on' : ''}" aria-selected="${tab === 'listened'}">Listened <span>${y.albums.length}</span></a>
+      <a role="tab" href="#/year/${year}/favourites" class="${tab === 'favourites' ? 'on' : ''}" aria-selected="${tab === 'favourites'}">Favourites <span>${favCount}</span></a>
+    </nav>
     <div id="yearBody"></div>`;
   if (tab === 'favourites') renderFavourites(year);
   else renderListened(year);
@@ -463,20 +462,25 @@ function renderListened(year) {
   body.innerHTML = `
     <div class="toolbar">
       <label class="search-field">
-        <svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-        <input id="filter" type="search" placeholder="Filter ${year}…" value="${esc(ui.filter)}" autocomplete="off">
+        ${ICON.search}
+        <input id="filter" type="search" placeholder="Filter albums" aria-label="Filter ${year}" value="${esc(ui.filter)}" autocomplete="off">
       </label>
-      <select id="sort" aria-label="Sort">
-        <option value="latest">Latest first</option>
-        <option value="order">Listening order</option>
-        <option value="artist">Artist A–Z</option>
-        <option value="favs">Favourites first</option>
-      </select>
+      <label class="tool-btn" title="Sort">
+        ${ICON.sort}
+        <select id="sort" aria-label="Sort">
+          <option value="latest">Latest first</option>
+          <option value="order">Listening order</option>
+          <option value="artist">Artist A–Z</option>
+          <option value="favs">Favourites first</option>
+        </select>
+      </label>
       ${viewToggleHtml()}
     </div>
     <div id="grid"></div>`;
-  if (year === store.years()[0]) body.insertAdjacentHTML('afterbegin', upNextHtml());
+  if (year === store.years()[0] && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
   $('#sort').value = ui.sort;
+  const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
+  sortTitle();
   const draw = () => {
     const list = sortedAlbums(y);
     $('#grid').innerHTML = list.length
@@ -487,7 +491,7 @@ function renderListened(year) {
     watchCovers();
   };
   $('#filter').addEventListener('input', (e) => { ui.filter = e.target.value; draw(); });
-  $('#sort').addEventListener('change', (e) => { ui.sort = e.target.value; draw(); });
+  $('#sort').addEventListener('change', (e) => { ui.sort = e.target.value; sortTitle(); draw(); toast(e.target.selectedOptions[0].text); });
   bindViewToggle(body, draw);
   draw();
 }
@@ -499,8 +503,8 @@ function renderFavourites(year) {
   const favs = y.favourites.filter((f) => byId[f.albumId]);
   body.innerHTML = `
     <div class="fav-head">
-      <p class="muted">${favs.length ? 'Drag to reorder. Add the best song from each record if you like.' : ''}</p>
-      <button class="btn" id="addFav">${ICON.plus} Add from ${year}</button>
+      <p class="muted">${favs.length ? 'Drag to reorder' : ''}</p>
+      <button class="btn small" id="addFav">${ICON.plus} Add</button>
     </div>
     ${favs.length ? `<ol class="favs" id="favList">${favs.map((f, i) => favRowHtml(byId[f.albumId], f, i)).join('')}</ol>`
       : `<div class="empty"><h2>No favourites for ${year} yet</h2>
@@ -673,7 +677,7 @@ function editAlbum(id) {
       </div>
       <label class="field"><span>Spotify link <small>optional, paste from Share › Copy link</small></span><input name="spotify" value="${esc(album.spotify || '')}" placeholder="https://open.spotify.com/album/…"></label>
       <label class="field"><span>Artwork URL <small>optional</small></span><input name="art" value="${esc(artFor(album) || '')}"></label>
-      <div class="form-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary">Save</button></div>
+      <div class="form-actions"><button class="btn primary">Save</button></div>
     </form>`);
   $('#refetch', m).addEventListener('click', async () => {
     const picker = $('#artPicker', m);
@@ -753,7 +757,7 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
       <input id="addQ" type="search" placeholder="Search for an album or artist…" autocomplete="off" value="${esc(query)}"></label>
     <div class="results" id="results"></div>
     <form id="addForm" class="form">
-      <div class="form-cover"><div id="addCover"></div></div>
+      <div class="form-cover" id="addCover" hidden></div>
       <label class="field"><span>Artist</span><input name="artist" required autocomplete="off"></label>
       <label class="field"><span>Album</span><input name="title" autocomplete="off"></label>
       <div class="log-only">
@@ -765,7 +769,7 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
       </div>
       <p class="muted queue-only queue-hint">Just an artist is fine too. It'll wait in Up next until you've heard it.</p>
       <p class="warn" id="dupWarn" hidden></p>
-      <div class="form-actions"><button type="button" class="btn" data-close>Cancel</button><button class="btn primary" id="addSubmit">Add album</button></div>
+      <div class="form-actions"><button class="btn primary" id="addSubmit">Add album</button></div>
     </form>`, 'wide');
   const form = $('#addForm', m);
   const F = form.elements;
@@ -782,6 +786,7 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
   $$('[data-mode]', m).forEach((b) => b.addEventListener('click', () => setMode(b.dataset.mode)));
   const coverPreview = () => {
     const al = { id: 'preview', artist: F.artist.value, title: F.title.value };
+    $('#addCover', m).hidden = !chosen?.art && !al.artist && !al.title;
     $('#addCover', m).innerHTML = `<div class="cover md" style="background:${placeholder(al)}"><span class="cover-initial">${esc((al.title || al.artist || '?').slice(0, 1).toUpperCase())}</span>${chosen?.art ? `<img src="${esc(chosen.art)}" alt="">` : ''}</div>`;
     checkDup();
   };
@@ -915,11 +920,8 @@ function upNextHtml() {
   const items = data.toListen;
   return `<section class="upnext">
     <div class="upnext-head">
-      <h2>Up next${items.length ? ` <span>${items.length}</span>` : ''}</h2>
-      <div class="upnext-actions">
-        <button class="link-btn" data-queue-add>${ICON.plus} Add</button>
-        ${items.length ? '<a class="link-btn" href="#/up-next">See all</a>' : ''}
-      </div>
+      <h2>Up next <span>${items.length}</span></h2>
+      <a class="link-btn" href="#/up-next">See all</a>
     </div>
     ${items.length ? `<div class="upnext-strip">${items.slice(0, 15).map((x) => `
       <button class="q-card" data-queue="${x.id}">
@@ -1005,9 +1007,11 @@ function renderUpNext() {
 function renderSearch(initial) {
   app.innerHTML = `
     <section class="hero"><div><p class="eyebrow">every year</p><h1>search</h1></div></section>
-    <label class="search-field big"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
-      <input id="gq" type="search" placeholder="Artist, album or song…" value="${esc(initial)}" autocomplete="off"></label>
-    <div class="search-tools">${viewToggleHtml()}</div>
+    <div class="toolbar">
+      <label class="search-field">${ICON.search}
+        <input id="gq" type="search" placeholder="Artist, album or song…" value="${esc(initial)}" autocomplete="off"></label>
+      ${viewToggleHtml()}
+    </div>
     <div id="gres"></div>`;
   const input = $('#gq');
   const draw = () => {
@@ -1041,25 +1045,27 @@ function openSettings() {
     saving: 'Saving…',
     error: `The last save failed: ${lastError}. Your edits are kept on this device and will be saved again.`,
   }[status] || 'Every change is saved to your account, so it shows up wherever you sign in.';
+  const statusShort = { saving: 'Saving…', error: `Not saved yet: ${lastError}` }[status] || 'All changes saved';
   const m = openModal(`
     <div class="modal-head"><h2>Settings</h2>${closeBtn()}</div>
     <div class="account-box">
       ${user.photoURL ? `<img src="${esc(user.photoURL)}" alt="" referrerpolicy="no-referrer">` : `<span class="avatar">${esc((user.displayName || user.email || '?').slice(0, 1).toUpperCase())}</span>`}
-      <div><b>${esc(user.displayName || user.email || 'Signed in')}</b>${user.displayName && user.email ? `<small>${esc(user.email)}</small>` : ''}</div>
+      <div><b>${esc(user.displayName || user.email || 'Signed in')}</b>${user.displayName && user.email ? `<small>${esc(user.email)}</small>` : ''}
+        <small class="status-line ${status}" title="${esc(statusText)}"><span class="sync-dot ${status}"></span>${esc(statusShort)}</small></div>
       <button type="button" class="btn small" id="signOutBtn">Sign out</button>
     </div>
     ${spotify.configured() ? `<div class="spotify-box">
       ${ICON.spotify}
       <div><b>Spotify</b><small>${spotify.connected()
-        ? 'Logged in. Artwork and exact album links come from Spotify.'
-        : 'Log in so artwork and exact album links come from Spotify.'}${spotify.lastError ? `<br>Last Spotify error: ${esc(spotify.lastError)}` : ''}</small></div>
+        ? 'Connected for artwork and album links'
+        : 'Connect for better artwork and album links'}${spotify.lastError ? `<br>Last Spotify error: ${esc(spotify.lastError)}` : ''}</small></div>
       <button type="button" class="btn ${spotify.connected() ? '' : 'spotify'} small" id="spotifyBtn">${spotify.connected() ? 'Log out' : 'Log in'}</button>
     </div>` : ''}
-    <p class="status-line ${status}"><span class="sync-dot ${status}"></span>${esc(statusText)}</p>
     <p class="warn" id="cfgErr" hidden></p>
-    <div class="form-actions">
-      <label class="btn" id="restore">Restore backup<input type="file" accept="application/json,.json" hidden></label>
-      <button type="button" class="btn" id="export">Download backup</button>
+    <div class="backup-row">
+      <span class="muted">Backup</span>
+      <button type="button" class="link-btn" id="export">Download</button>
+      <label class="link-btn" id="restore">Restore<input type="file" accept="application/json,.json" hidden></label>
     </div>`);
   $('#export', m).addEventListener('click', store.exportJson);
   $('#spotifyBtn', m)?.addEventListener('click', () => {
@@ -1128,7 +1134,8 @@ document.addEventListener('click', (e) => {
     $$('.modal-wrap').forEach((w) => closeModal(w, true));
     openAlbum(open.dataset.open);
   }
-  if (e.target.closest('#yearPick, [data-year-menu]')) { e.stopPropagation(); openYearMenu(); return; }
+  const yearBtn = e.target.closest('[data-year-menu]');
+  if (yearBtn) { e.stopPropagation(); openYearMenu(yearBtn); return; }
   if ($('#yearMenu') && (!e.target.closest('#yearMenu') || e.target.closest('a'))) closeYearMenu();
   const add = e.target.closest('[data-add]');
   if (add) addAlbum({ year: add.dataset.add });
