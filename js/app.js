@@ -760,7 +760,7 @@ function yearField(value) {
 
 // ------------------------------------------------------------------ add album
 
-function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
+function addAlbum({ year, query = '', fromQueue = null } = {}) {
   // New albums go under their release year: filled in from the search result,
   // otherwise this year until changed.
   year = year || String(new Date().getFullYear());
@@ -781,21 +781,13 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
           <label class="check"><input type="checkbox" name="fav"> ${ICON.heart} Favourite</label>
         </div>
       </div>
-      <p class="muted queue-only queue-hint">Just an artist is fine too. It'll wait in Up next until you've heard it.</p>
       <p class="warn" id="dupWarn" hidden></p>
-      <div class="form-actions"><button class="btn primary" id="addSubmit">Add album</button></div>
+      <div class="form-actions"><button class="btn primary" id="addSubmit">Add to log</button></div>
     </form>`, 'wide');
   const form = $('#addForm', m);
   const F = form.elements;
   const q = $('#addQ', m);
   const results = $('#results', m);
-  const setMode = (next) => {
-    mode = next;
-    m.querySelector('.modal').dataset.mode = mode;
-    $('.modal-head h2', m).textContent = mode === 'queue' ? 'Add to Up next' : 'Add an album';
-    $('#addSubmit', m).textContent = mode === 'queue' ? 'Add to Up next' : 'Add to log';
-    checkDup();
-  };
   const coverPreview = () => {
     const al = { id: 'preview', artist: F.artist.value, title: F.title.value };
     $('#addCover', m).hidden = !chosen?.art && !al.artist && !al.title;
@@ -804,12 +796,6 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
   };
   const checkDup = () => {
     const w = $('#dupWarn', m);
-    if (mode === 'queue') {
-      const inQueue = data.toListen.find((x) => queueMatches(x, { artist: F.artist.value, title: F.title.value }));
-      w.hidden = !inQueue || !F.artist.value;
-      if (!w.hidden) w.textContent = "That's already in Up next.";
-      return;
-    }
     const y = data.years[F.year.value];
     const dup = y && y.albums.find((x) => norm(x.artist) === norm(F.artist.value) && norm(x.title) === norm(F.title.value));
     w.hidden = !dup;
@@ -847,25 +833,13 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
     if (chosen.year) F.year.value = chosen.year;
     $$('.result', results).forEach((x) => x.classList.toggle('chosen', x === b));
     coverPreview();
-    if (mode === 'log') F.songs.focus();
+    F.songs.focus();
   });
   F.artist.addEventListener('input', () => { chosen = null; coverPreview(); });
   F.title.addEventListener('input', () => { chosen = null; coverPreview(); });
   F.year.addEventListener('input', checkDup);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
-    if (mode === 'queue') {
-      const item = { id: store.uid(), artist: F.artist.value.trim(), title: F.title.value.trim(), added: new Date().toISOString().slice(0, 10) };
-      if (chosen?.art) item.art = chosen.art;
-      if (chosen?.spotify) item.spotify = chosen.spotify;
-      data.toListen.unshift(item);
-      store.commit();
-      closeModal(m, true);
-      toast('Added to Up next');
-      render();
-      if (!item.art) requestArt(item);
-      return;
-    }
     const y = store.ensureYear(F.year.value);
     const album = { id: store.uid(), artist: F.artist.value.trim(), title: F.title.value.trim(), songs: splitSongs(F.songs.value) };
     if (chosen?.art) album.art = chosen.art;
@@ -880,7 +854,6 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
     else render();
     if (!album.art) requestArt(album);
   });
-  setMode(mode);
   coverPreview();
   if (query) search();
   q.focus();
@@ -942,7 +915,7 @@ function upNextHtml() {
         <span class="q-sub">${esc(queueSub(x))}</span>
       </button>`).join('')}
       ${items.length > 15 ? `<a class="q-more" href="#/up-next">+${items.length - 15}<small>more</small></a>` : ''}
-    </div>` : '<p class="muted upnext-empty">Nothing queued. Add an album or artist you want to hear.</p>'}
+    </div>` : ''}
   </section>`;
 }
 
@@ -996,8 +969,7 @@ function openQueueItem(id) {
 function renderUpNext() {
   app.innerHTML = `
     <section class="hero"><div><p class="eyebrow">to listen</p><h1>up next</h1>
-      <p class="hero-stats"><b>${data.toListen.length}</b> waiting to be heard</p></div>
-      <button class="btn primary" data-queue-add>${ICON.plus} Add to Up next</button></section>
+      <p class="hero-stats"><b>${data.toListen.length}</b> waiting to be heard</p></div></section>
     ${data.toListen.length ? `<div class="rows">${data.toListen.map((x) => `
       <div class="row-item">
         <button class="row-open" data-queue="${x.id}">
@@ -1007,7 +979,7 @@ function renderUpNext() {
         <button class="btn small" data-heard="${x.id}" title="Log it as listened">${ICON.check}<span class="hide-sm"> Listened</span></button>
         <button class="icon-btn subtle" data-drop="${x.id}" title="Remove">${ICON.close}</button>
       </div>`).join('')}</div>`
-      : '<div class="empty"><h2>Nothing queued</h2><p>Add albums or artists you want to hear, and tick them off when you have.</p></div>'}`;
+      : '<div class="empty"><h2>Nothing queued</h2><p>Open any album in your library and tap Add to Up next.</p></div>'}`;
   watchCovers();
   app.querySelector('.rows')?.addEventListener('click', (e) => {
     const drop = e.target.closest('[data-drop]');
@@ -1165,7 +1137,6 @@ document.addEventListener('click', (e) => {
   if (add) addAlbum({ year: add.dataset.add });
   const q = e.target.closest('[data-queue]');
   if (q) openQueueItem(q.dataset.queue);
-  if (e.target.closest('[data-queue-add]')) addAlbum({ mode: 'queue' });
 });
 $('#addBtn').addEventListener('click', () => data && addAlbum());
 $('#searchBtn').addEventListener('click', () => (location.hash = '#/search'));

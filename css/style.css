@@ -272,9 +272,6 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .small-print { margin: -4px 0 0; font-size: 13px; }
 
 /* add sheet modes */
-.modal[data-mode="queue"] .log-only { display: none; }
-.modal:not([data-mode="queue"]) .queue-only { display: none; }
-.queue-hint { margin: -4px 0 0; font-size: 13px; }
 .log-only { display: flex; flex-direction: column; gap: 14px; }
 
 /* list view */
