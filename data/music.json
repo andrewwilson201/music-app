@@ -2463,13 +2463,17 @@
      "title": "moves in the field",
      "songs": [
       "sodalis (II)"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2732812b09d8746d71fd90e8fd3",
+     "spotify": "https://open.spotify.com/album/1z0KCPqug2XNK68UyPT4zz"
     },
     {
      "id": "a1c937d15f2",
      "artist": "small medium large",
      "title": "sml",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a8443f938d1",
@@ -2477,7 +2481,9 @@
      "title": "my light, my destroyer",
      "songs": [
       "omakase"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b90275415d03c3a038122840",
+     "spotify": "https://open.spotify.com/album/5Px8e7X2ohQr0Tf3a73oLJ"
     },
     {
      "id": "a3b435bf67e",
@@ -2485,13 +2491,17 @@
      "title": "um",
      "songs": [
       "forgive"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2733b84bc3dfb4ef3663290d2dc",
+     "spotify": "https://open.spotify.com/album/0QbyUVKKfKhaGiaBhRl764"
     },
     {
      "id": "a598b176372",
      "artist": "jasmine wood",
      "title": "piano reverb",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27317847cca81c57f18a43f4c96",
+     "spotify": "https://open.spotify.com/album/15NLPp6mQ3dlQzMYoyrlWi"
     },
     {
      "id": "ad9841c83d7",
@@ -2499,7 +2509,9 @@
      "title": "sophcore",
      "songs": [
       "love's refrain"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273bef72908e333cef7bdbdf995",
+     "spotify": "https://open.spotify.com/album/72ocR4sSbkz2XT5eIA5c1h"
     },
     {
      "id": "ad65a679e53",
@@ -2507,7 +2519,9 @@
      "title": "strange burden",
      "songs": [
       "hey kekule"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273be6ef3691c3c57c1551b1f55",
+     "spotify": "https://open.spotify.com/album/3f9H5cS9T3gOetuYW5TeeH"
     },
     {
      "id": "a25f874aace",
@@ -2515,7 +2529,9 @@
      "title": "wild god",
      "songs": [
       "o wow o wow"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273af517c4f70e8479d61165cca",
+     "spotify": "https://open.spotify.com/album/0TRr4JGEPJ4eAb5QKRaunf"
     },
     {
      "id": "ac49ebee7c4",
@@ -2523,7 +2539,9 @@
      "title": "when I'm called",
      "songs": [
       "who killed poor robin?"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737d8c4148fb870d2dd71381e5",
+     "spotify": "https://open.spotify.com/album/7Mv2F4dWfzDt9FLM5qeFBI"
     },
     {
      "id": "ab1edcb0c9a",
@@ -2531,37 +2549,49 @@
      "title": "princ$ss",
      "songs": [
       "point of view"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736d4c2c72da01ae6f2db1194d",
+     "spotify": "https://open.spotify.com/album/51Mlprk1NMBAGxonqSeoBB"
     },
     {
      "id": "a2ad3bfce00",
      "artist": "dummy",
      "title": "free energy",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ed5430ddcbc8307dee52bf03",
+     "spotify": "https://open.spotify.com/album/65xYYnCJh3cuM2OWFlKrN3"
     },
     {
      "id": "a0466aba2ea",
      "artist": "nala sinephro",
      "title": "endlessness",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e6d52246a013b10185e0f55b",
+     "spotify": "https://open.spotify.com/album/51CQQ3tQLRZlZJZ5jcpoGE"
     },
     {
      "id": "acdd84c16a9",
      "artist": "floating points",
      "title": "cascade",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e54a661b8aff6d4f2fe7aa29",
+     "spotify": "https://open.spotify.com/album/4IYnAmZ8GvmNFF2ZxxKT8L"
     },
     {
      "id": "a1c158691b5",
      "artist": "colin stetson",
      "title": "the love it took to leave you",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27368d3bdec45cbccf872a6af97",
+     "spotify": "https://open.spotify.com/album/680wgdRAfjfC65I8dlgqU4"
     },
     {
      "id": "a8f094a2101",
      "artist": "nilufer yanya",
      "title": "my method actor",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273cb53aff3036cf65df48f50f6",
+     "spotify": "https://open.spotify.com/album/4BBVZgRsWeNVgGmub6LY3p"
     },
     {
      "id": "a47939b434b",
@@ -2569,7 +2599,9 @@
      "title": "in waves",
      "songs": [
       "still summer"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27314b5583615b195556a3882ac",
+     "spotify": "https://open.spotify.com/album/57MSBg5pBQZH5bfLVDmeuP"
     },
     {
      "id": "a7a2d4cfe0f",
@@ -2577,25 +2609,33 @@
      "title": "white roses, my god",
      "songs": [
       "brother"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273dc97a7eadfda8683d306e22c",
+     "spotify": "https://open.spotify.com/album/4pjNKpE6QDipmeJnqIS5kt"
     },
     {
      "id": "aa9116b48dd",
      "artist": "patrick shiroishi",
      "title": "glass house",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ff0d1d82d171cecfd0e0c8f7",
+     "spotify": "https://open.spotify.com/album/2LcmifkpDlgUnFbW7fl929"
     },
     {
      "id": "a1d0c413fb0",
      "artist": "nidia & valentina",
      "title": "estradas",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c816f7b1930cfd21ca171ec2",
+     "spotify": "https://open.spotify.com/album/3K9vj1Y2AQEn2GL2wJjPe0"
     },
     {
      "id": "a345a174ebe",
      "artist": "wendy eisenberg",
      "title": "viewfinder",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273499e1042d8c2c918ba8315ae",
+     "spotify": "https://open.spotify.com/album/5HwsRe7VpoWduOsrHnadaD"
     },
     {
      "id": "ad06c0580ff",
