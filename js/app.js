@@ -1,6 +1,6 @@
-import * as store from './store.js?v=11';
-import * as spotify from './spotify.js?v=11';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=11';
+import * as store from './store.js?v=12';
+import * as spotify from './spotify.js?v=12';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=12';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -222,25 +222,61 @@ function route() {
 
 function render() {
   const [page, a, b] = route();
-  const years = store.years();
+  const years = shownYears();
   if (sortable) { sortable.destroy(); sortable = null; }
-  renderNav(page === 'year' ? a : page || years[0]);
+  closeYearMenu();
+  renderNav(page === 'year' ? a : page ? page : years[0]);
   if (!page) return renderYear(years[0], 'listened');
   if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
   if (page === 'up-next' || page === 'to-listen') return renderUpNext();
-  if (page === 'always') return renderAlways();
   if (page === 'search') return renderSearch(a || '');
   location.hash = '#/';
 }
 
+// Years worth showing: any with albums, plus this year so there's always
+// somewhere to land. Adding an album files it under its release year, which
+// creates that year if it's new.
+function shownYears() {
+  const now = String(new Date().getFullYear());
+  return store.years().filter((y) => y === now || data.years[y].albums.length || data.years[y].favourites.length)
+    .concat(data.years[now] ? [] : [now]).sort((a, b) => b - a);
+}
+
+let navActive = '';
 function renderNav(active) {
-  const years = store.years();
-  $('#nav').innerHTML =
-    years.map((y) => `<a href="#/year/${y}" class="${active === y ? 'on' : ''}">${y}</a>`).join('') +
-    `<span class="nav-sep"></span>` +
-    `<a href="#/always" class="${active === 'always' ? 'on' : ''}">always</a>`;
-  const on = $('#nav .on');
-  if (on) on.scrollIntoView({ block: 'nearest', inline: 'center' });
+  navActive = active;
+  const isYear = /^\d{4}$/.test(active);
+  $('#nav').innerHTML = `<button type="button" class="year-pick ${isYear ? 'on' : ''}" id="yearPick" aria-haspopup="true" aria-expanded="false">
+    <span>${isYear ? esc(active) : 'Years'}</span><svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button>`;
+}
+
+function openYearMenu() {
+  if (closeYearMenu()) return;
+  const now = String(new Date().getFullYear());
+  const queued = (data.toListen || []).length;
+  const menu = document.createElement('div');
+  menu.className = 'year-menu';
+  menu.id = 'yearMenu';
+  menu.innerHTML = shownYears().map((y) => {
+    const n = data.years[y]?.albums.length || 0;
+    return `<a href="#/year/${y}" class="${y === navActive ? 'on' : ''}"><b>${y}</b><small>${n ? `${n} album${n === 1 ? '' : 's'}` : y === now ? 'nothing yet' : ''}</small></a>`;
+  }).join('') + `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`;
+  document.body.appendChild(menu);
+  const btn = $('#yearPick');
+  const r = btn.getBoundingClientRect();
+  menu.style.top = `${r.bottom + 8}px`;
+  menu.style.left = `${Math.max(12, Math.min(r.left, innerWidth - menu.offsetWidth - 12))}px`;
+  btn.setAttribute('aria-expanded', 'true');
+  menu.querySelector('.on')?.scrollIntoView({ block: 'nearest' });
+  requestAnimationFrame(() => menu.classList.add('in'));
+}
+
+function closeYearMenu() {
+  const menu = $('#yearMenu');
+  if (!menu) return false;
+  menu.remove();
+  $('#yearPick')?.setAttribute('aria-expanded', 'false');
+  return true;
 }
 
 // ------------------------------------------------------------------ artwork
@@ -408,7 +444,7 @@ function renderYear(year, tab) {
     <section class="hero">
       <div>
         <p class="eyebrow">albums released in</p>
-        <h1>${year}</h1>
+        <h1><button type="button" class="hero-year" data-year-menu title="Switch year">${year}<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg></button></h1>
         <p class="hero-stats"><b>${y.albums.length}</b> listened · <b>${favCount}</b> in your top list</p>
       </div>
       <div class="seg" role="tablist">
@@ -633,7 +669,7 @@ function editAlbum(id) {
       <label class="field"><span>Album</span><input name="title" value="${esc(album.title)}"></label>
       <label class="field"><span>Standout songs <small>comma separated</small></span><input name="songs" value="${esc((album.songs || []).join(', '))}"></label>
       <div class="row">
-        <label class="field"><span>Release year</span><select name="year">${yearOptions(year)}</select></label>
+        ${yearField(year)}
       </div>
       <label class="field"><span>Spotify link <small>optional, paste from Share › Copy link</small></span><input name="spotify" value="${esc(album.spotify || '')}" placeholder="https://open.spotify.com/album/…"></label>
       <label class="field"><span>Artwork URL <small>optional</small></span><input name="art" value="${esc(artFor(album) || '')}"></label>
@@ -695,17 +731,17 @@ function editAlbum(id) {
 
 const splitSongs = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
 
-function yearOptions(selected) {
-  const now = new Date().getFullYear();
-  const set = new Set([...store.years(), String(now), String(now + 1)]);
-  return [...set].sort((a, b) => b - a).map((y) => `<option ${y === String(selected) ? 'selected' : ''}>${y}</option>`).join('');
+function yearField(value) {
+  const max = new Date().getFullYear() + 1;
+  return `<label class="field narrow"><span>Release year</span><input name="year" type="number" inputmode="numeric" min="1900" max="${max}" required value="${esc(value)}"></label>`;
 }
 
 // ------------------------------------------------------------------ add album
 
 function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
-  const [page, a] = route();
-  year = year || (page === 'year' ? a : null) || String(new Date().getFullYear());
+  // New albums go under their release year: filled in from the search result,
+  // otherwise this year until changed.
+  year = year || String(new Date().getFullYear());
   let chosen = null;
   const m = openModal(`
     <div class="modal-head"><h2>Add an album</h2>${closeBtn()}</div>
@@ -723,7 +759,7 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
       <div class="log-only">
         <label class="field"><span>Standout songs <small>optional, comma separated</small></span><input name="songs" autocomplete="off"></label>
         <div class="row">
-          <label class="field"><span>Release year</span><select name="year">${yearOptions(year)}</select></label>
+          ${yearField(year)}
           <label class="check"><input type="checkbox" name="fav"> ${ICON.heart} Favourite</label>
         </div>
       </div>
@@ -791,15 +827,14 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
     chosen = results._list[b.dataset.i];
     F.artist.value = chosen.artist.toLowerCase();
     F.title.value = chosen.title.toLowerCase();
-    if (chosen.year && [...F.year.options].some((o) => o.value === chosen.year)) F.year.value = chosen.year;
-    else if (chosen.year) { F.year.insertAdjacentHTML('afterbegin', `<option>${chosen.year}</option>`); F.year.value = chosen.year; }
+    if (chosen.year) F.year.value = chosen.year;
     $$('.result', results).forEach((x) => x.classList.toggle('chosen', x === b));
     coverPreview();
     if (mode === 'log') F.songs.focus();
   });
   F.artist.addEventListener('input', () => { chosen = null; coverPreview(); });
   F.title.addEventListener('input', () => { chosen = null; coverPreview(); });
-  F.year.addEventListener('change', checkDup);
+  F.year.addEventListener('input', checkDup);
   form.addEventListener('submit', (e) => {
     e.preventDefault();
     if (mode === 'queue') {
@@ -834,7 +869,7 @@ function addAlbum({ year, query = '', mode = 'log', fromQueue = null } = {}) {
   q.focus();
 }
 
-// ------------------------------------------------------------------ to listen / always
+// ------------------------------------------------------------------ up next
 
 // ---- Up next (the "to listen" queue) ----
 // Items are { id, artist, title, art?, spotify?, added? }. Older data stored
@@ -962,27 +997,6 @@ function renderUpNext() {
       const item = data.toListen.find((x) => x.id === heard.dataset.heard);
       addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
     }
-  });
-}
-
-function renderAlways() {
-  app.innerHTML = `
-    <section class="hero"><div><p class="eyebrow">all-time</p><h1>always</h1>
-      <p class="hero-stats">The ones that never leave.</p></div></section>
-    <form class="inline-add" id="alForm"><input name="item" placeholder="Add an all-time favourite…" autocomplete="off" required><button class="btn primary">${ICON.plus} Add</button></form>
-    <ol class="always" id="al">${data.always.map((t, i) => `
-      <li><span class="al-n">${String(i + 1).padStart(2, '0')}</span><span class="al-name">${esc(t)}</span>
-        <a class="icon-btn spot" href="${esc(spotifyArtistUrl(t))}" target="_blank" rel="noopener" title="Play on Spotify">${ICON.spotify}</a>
-        <button class="icon-btn subtle" data-rm="${i}" title="Remove">${ICON.close}</button></li>`).join('')}</ol>`;
-  $('#alForm').addEventListener('submit', (e) => {
-    e.preventDefault();
-    data.always.push(e.target.item.value.trim());
-    store.commit();
-    renderAlways();
-  });
-  $('#al').addEventListener('click', (e) => {
-    const rm = e.target.closest('[data-rm]');
-    if (rm && confirm(`Remove “${data.always[+rm.dataset.rm]}”?`)) { data.always.splice(+rm.dataset.rm, 1); store.commit(); renderAlways(); }
   });
 }
 
@@ -1114,6 +1128,8 @@ document.addEventListener('click', (e) => {
     $$('.modal-wrap').forEach((w) => closeModal(w, true));
     openAlbum(open.dataset.open);
   }
+  if (e.target.closest('#yearPick, [data-year-menu]')) { e.stopPropagation(); openYearMenu(); return; }
+  if ($('#yearMenu') && (!e.target.closest('#yearMenu') || e.target.closest('a'))) closeYearMenu();
   const add = e.target.closest('[data-add]');
   if (add) addAlbum({ year: add.dataset.add });
   const q = e.target.closest('[data-queue]');
@@ -1124,6 +1140,7 @@ $('#addBtn').addEventListener('click', () => data && addAlbum());
 $('#searchBtn').addEventListener('click', () => (location.hash = '#/search'));
 $('#settingsBtn').addEventListener('click', openSettings);
 document.addEventListener('keydown', (e) => {
+  if (e.key === 'Escape' && closeYearMenu()) return;
   if (e.key === 'Escape') { const last = modalRoot.lastElementChild; if (last) closeModal(last); return; }
   if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
   if (modalRoot.children.length || !isStarted) return;
