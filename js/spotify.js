@@ -1,7 +1,8 @@
 // Spotify Web API with the PKCE login flow (no client secret, safe for a static site).
-// Only search is used, so no special scopes are requested.
+// Search needs no scopes. Making playlists asks for the playlist scopes the
+// first time it's used, then picks up where it left off after the redirect.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=17';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=18';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
@@ -24,10 +25,17 @@ export const connected = () => configured() && !!tokens?.refresh_token;
 
 const b64url = (bytes) => btoa(String.fromCharCode(...new Uint8Array(bytes))).replace(/\+/g, '-').replace(/\//g, '_').replace(/=+$/, '');
 
-export async function login() {
+export const PLAYLIST_SCOPES = ['playlist-modify-private', 'playlist-modify-public', 'playlist-read-private'];
+const granted = () => new Set((tokens?.scope || '').split(' ').filter(Boolean));
+export const hasScopes = (scopes) => connected() && scopes.every((s) => granted().has(s));
+
+// `then` is remembered through the redirect and handed back by handleRedirect,
+// so the app can carry on with whatever needed the login.
+export async function login({ scopes = [], then = '' } = {}) {
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
-  ls(VERIFIER_KEY, JSON.stringify({ verifier, hash: location.hash }));
+  ls(VERIFIER_KEY, JSON.stringify({ verifier, hash: location.hash, then }));
+  const scope = [...new Set([...granted(), ...scopes])].join(' ');
   const params = new URLSearchParams({
     client_id: SPOTIFY_CLIENT_ID,
     response_type: 'code',
@@ -35,6 +43,7 @@ export async function login() {
     code_challenge_method: 'S256',
     code_challenge: challenge,
   });
+  if (scope) params.set('scope', scope);
   location.href = `https://accounts.spotify.com/authorize?${params}`;
 }
 
@@ -48,6 +57,7 @@ function saveTokens(json) {
     access_token: json.access_token,
     refresh_token: json.refresh_token || tokens?.refresh_token,
     expires_at: Date.now() + (json.expires_in - 60) * 1000,
+    scope: json.scope ?? tokens?.scope ?? '',
   };
   ls(TOKEN_KEY, JSON.stringify(tokens));
 }
@@ -64,7 +74,7 @@ async function tokenRequest(body) {
 }
 
 // Call on page load: finishes a login redirect if there is one.
-// Returns true if this load was a Spotify callback.
+// Returns the login's `then` value (or true) if this load was a Spotify callback.
 export async function handleRedirect() {
   const q = new URLSearchParams(location.search);
   if (!q.has('code') && !q.has('error')) return false;
@@ -74,7 +84,7 @@ export async function handleRedirect() {
   history.replaceState(null, '', location.pathname + (saved.hash || ''));
   if (q.has('error')) throw new Error(q.get('error') === 'access_denied' ? 'Spotify login was cancelled.' : q.get('error'));
   await tokenRequest({ grant_type: 'authorization_code', code: q.get('code'), redirect_uri: redirectUri(), code_verifier: saved.verifier });
-  return true;
+  return saved.then || true;
 }
 
 async function accessToken() {
@@ -83,20 +93,28 @@ async function accessToken() {
   return tokens.access_token;
 }
 
-export async function searchAlbums(term, limit = 10) {
-  const res = await fetch(`https://api.spotify.com/v1/search?type=album&limit=${Math.min(limit, 10)}&q=${encodeURIComponent(term)}`, {
-    headers: { Authorization: `Bearer ${await accessToken()}` },
+// One Web API call. Throws with Spotify's message; err.status holds the HTTP code.
+async function api(path, { method = 'GET', body } = {}) {
+  const res = await fetch(`https://api.spotify.com/v1${path}`, {
+    method,
+    headers: { Authorization: `Bearer ${await accessToken()}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+    body: body ? JSON.stringify(body) : undefined,
   });
   if (!res.ok) {
-    const body = await res.json().catch(() => ({}));
-    lastError = `${res.status} ${body.error?.message || res.statusText}`.trim();
-    console.warn('Spotify search failed:', lastError);
-    if (res.status === 401) { tokens.expires_at = 0; throw new Error('Spotify session expired'); }
-    if (res.status === 429) throw new Error('rate limited');
-    throw new Error(`Spotify said ${lastError}`);
+    const json = await res.json().catch(() => ({}));
+    lastError = `${res.status} ${json.error?.message || res.statusText}`.trim();
+    console.warn(`Spotify ${method} ${path.split('?')[0]} failed:`, lastError);
+    if (res.status === 401) tokens.expires_at = 0;
+    const err = new Error(res.status === 401 ? 'Spotify session expired' : res.status === 429 ? 'rate limited' : `Spotify said ${lastError}`);
+    err.status = res.status;
+    throw err;
   }
   lastError = '';
-  const json = await res.json();
+  return res.status === 204 ? {} : res.json().catch(() => ({}));
+}
+
+export async function searchAlbums(term, limit = 10) {
+  const json = await api(`/search?type=album&limit=${Math.min(limit, 10)}&q=${encodeURIComponent(term)}`);
   return (json.albums?.items || []).filter(Boolean).map((a) => ({
     artist: a.artists.map((x) => x.name).join(', '),
     title: a.name,
@@ -105,4 +123,36 @@ export async function searchAlbums(term, limit = 10) {
     tracks: a.total_tracks,
     spotify: a.external_urls?.spotify || '',
   }));
+}
+
+export async function searchTracks(q, limit = 10) {
+  const json = await api(`/search?type=track&limit=${Math.min(limit, 10)}&q=${encodeURIComponent(q)}`);
+  return (json.tracks?.items || []).filter(Boolean).map((t) => ({
+    uri: t.uri,
+    name: t.name,
+    artist: (t.artists || []).map((x) => x.name).join(', '),
+    album: t.album?.name || '',
+  }));
+}
+
+// Creates the playlist called `name` in the user's account, or reuses the one
+// they already own with that name, and sets its songs to `uris` in order.
+// Returns { url, created }.
+export async function upsertPlaylist(name, description, uris) {
+  let me = null;
+  try { me = await api('/me'); } catch (e) { if (e.status === 401) throw e; }
+  let playlist = null;
+  for (let offset = 0; offset < 500 && !playlist; offset += 50) {
+    const page = await api(`/me/playlists?limit=50&offset=${offset}`);
+    playlist = (page.items || []).find((p) => p && p.name === name && (!me || p.owner?.id === me.id));
+    if (!page.next) break;
+  }
+  const created = !playlist;
+  if (!playlist) playlist = await api('/me/playlists', { method: 'POST', body: { name, description, public: false } });
+  // The first 100 replace whatever was there; any more are appended.
+  await api(`/playlists/${playlist.id}/items`, { method: 'PUT', body: { uris: uris.slice(0, 100) } });
+  for (let i = 100; i < uris.length; i += 100) {
+    await api(`/playlists/${playlist.id}/items`, { method: 'POST', body: { uris: uris.slice(i, i + 100) } });
+  }
+  return { url: playlist.external_urls?.spotify || `https://open.spotify.com/playlist/${playlist.id}`, created };
 }

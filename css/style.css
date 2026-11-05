@@ -454,3 +454,15 @@ body.signed-out .view-bar { display: none; }
 .small-print .link { font-size: inherit; padding: 0; }
 @media (max-width: 720px) { .view-bar { top: 59px; } }
 #libErr { margin-bottom: 12px; }
+
+/* Spotify playlist of a year's best songs */
+.fav-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.fav-actions .btn svg.fill { fill: var(--spotify); }
+.playlist-progress { display: flex; align-items: center; gap: 12px; color: var(--muted); padding: 8px 0 4px; }
+.playlist-done { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-weight: 600; }
+.playlist-done svg { width: 22px; height: 22px; flex: none; stroke: var(--spotify); fill: none; stroke-width: 2.4; }
+.playlist-missed { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin-bottom: 14px; }
+.playlist-missed ul { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 6px; }
+.playlist-missed li { display: flex; flex-direction: column; }
+.playlist-missed li small { color: var(--muted); }
+.small-print { font-size: 13px; margin: 0 0 14px; }

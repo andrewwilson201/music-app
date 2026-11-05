@@ -1,6 +1,6 @@
-import * as store from './store.js?v=17';
-import * as spotify from './spotify.js?v=17';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion } from './art.js?v=17';
+import * as store from './store.js?v=18';
+import * as spotify from './spotify.js?v=18';
+import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs } from './art.js?v=18';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -37,13 +37,18 @@ let data;
 let ui = { sort: 'latest', filter: '', view: 'grid' };
 try { ui.view = localStorage.getItem('music-log:view') || 'grid'; } catch {}
 let sortable = null;
+let resumePlaylist = ''; // year whose playlist to make once we're back from a Spotify login
 
 // ------------------------------------------------------------------ boot
 
 async function boot() {
   app.innerHTML = '<div class="loading"><span class="spin"></span>Loading your records…</div>';
   let spotifyMsg = '';
-  try { if (await spotify.handleRedirect()) spotifyMsg = 'Logged in to Spotify'; }
+  try {
+    const back = await spotify.handleRedirect();
+    if (typeof back === 'string' && back.startsWith('playlist:')) resumePlaylist = back.slice(9);
+    else if (back) spotifyMsg = 'Logged in to Spotify';
+  }
   catch (e) { spotifyMsg = `Spotify login failed: ${e.message}`; }
   if (spotifyMsg) setTimeout(() => toast(spotifyMsg, spotifyMsg.includes('failed') ? 'error' : ''), 300);
   if (!store.configured()) return renderNotConfigured();
@@ -94,6 +99,11 @@ function started() {
     } catch {}
   });
   render();
+  if (resumePlaylist && !ro()) {
+    const year = resumePlaylist;
+    resumePlaylist = '';
+    if (data.years[year]) makePlaylist(year);
+  }
 }
 
 // ------------------------------------------------------------------ sign in
@@ -531,15 +541,20 @@ function renderFavourites(year) {
     watchCovers();
     return;
   }
+  const canPlaylist = spotify.configured() && favs.some((f) => bestSongs(f.song).length);
   body.innerHTML = `
     <div class="fav-head">
       <p class="muted">${favs.length ? 'Drag to reorder' : ''}</p>
-      <button class="btn small" id="addFav">${ICON.plus} Add</button>
+      <div class="fav-actions">
+        ${canPlaylist ? `<button class="btn small" id="makePlaylist" title="Put every best song from these albums into a Spotify playlist">${ICON.spotify} Make playlist</button>` : ''}
+        <button class="btn small" id="addFav">${ICON.plus} Add</button>
+      </div>
     </div>
     ${favs.length ? `<ol class="favs" id="favList">${favs.map((f, i) => favRowHtml(byId[f.albumId], f, i)).join('')}</ol>`
       : `<div class="empty"><h2>No favourites for ${year} yet</h2>
          <p>Open any album and tap the heart, or pick from this year's list.</p></div>`}`;
   $('#addFav').addEventListener('click', () => pickFavourite(year));
+  $('#makePlaylist')?.addEventListener('click', () => makePlaylist(year));
   watchCovers();
   const list = $('#favList');
   if (!list) return;
@@ -597,6 +612,83 @@ function favRowHtml(album, fav, i) {
     <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify">${ICON.spotify}</a>
     <button class="icon-btn subtle" data-unfav="${album.id}" title="Remove from favourites">${ICON.close}</button>
   </li>`;
+}
+
+// ------------------------------------------------------------------ playlists
+
+// Finds every best song from a year's favourites on Spotify and puts them, in
+// favourites order, into a "YYYY Favourite Songs" playlist in the user's own
+// account. Running it again updates the same playlist.
+async function makePlaylist(year) {
+  if (!spotify.hasScopes(spotify.PLAYLIST_SCOPES)) {
+    const m = openModal(`
+      <div class="modal-head"><h2>Make a Spotify playlist</h2>${closeBtn()}</div>
+      <p>${spotify.connected()
+        ? 'Spotify needs one more permission first, so the app can create and update playlists in your account.'
+        : 'Log in to Spotify first, so the app can create the playlist in your account.'}
+        You'll come straight back here and the playlist will be made.</p>
+      <div class="form-actions"><button type="button" class="btn spotify" id="goSpotify">${ICON.spotify} Continue to Spotify</button></div>`);
+    $('#goSpotify', m).addEventListener('click', () => spotify.login({ scopes: spotify.PLAYLIST_SCOPES, then: `playlist:${year}` }));
+    return;
+  }
+  const y = data.years[year];
+  const byId = Object.fromEntries(y.albums.map((a) => [a.id, a]));
+  const favs = y.favourites.filter((f) => byId[f.albumId]);
+  const wanted = favs.flatMap((f) => bestSongs(f.song).map((song) => ({ album: byId[f.albumId], song })));
+  const noSong = favs.filter((f) => !bestSongs(f.song).length).map((f) => byId[f.albumId]);
+  const name = `${year} Favourite Songs`;
+
+  const m = openModal(`
+    <div class="modal-head"><h2>${esc(name)}</h2>${closeBtn()}</div>
+    <div class="playlist-progress"><span class="spin"></span><span id="plStatus">Finding songs on Spotify…</span></div>
+    <div id="plResult"></div>`);
+  const status = $('#plStatus', m);
+  let cancelled = false;
+  m.onClose = () => { cancelled = true; };
+
+  try {
+    const found = new Array(wanted.length);
+    let next = 0, done = 0;
+    const worker = async () => {
+      while (next < wanted.length && !cancelled) {
+        const i = next++;
+        try { found[i] = await findTrack(wanted[i].album, wanted[i].song); }
+        catch (e) { if (e.status === 401 || e.status === 403) throw e; found[i] = null; }
+        status.textContent = `Finding songs on Spotify… ${++done} of ${wanted.length}`;
+      }
+    };
+    await Promise.all([worker(), worker(), worker()]);
+    if (cancelled) return;
+    const uris = [...new Set(found.filter(Boolean).map((t) => t.uri))];
+    const missed = wanted.filter((_, i) => !found[i]);
+    if (!uris.length) throw new Error('None of the best songs could be found on Spotify.');
+    status.textContent = 'Saving the playlist…';
+    const description = `The best song from each of my favourite albums of ${year}, in order. Made with Music Library.`;
+    const { url, created } = await spotify.upsertPlaylist(name, description, uris);
+    if (cancelled) return;
+    $('.playlist-progress', m).remove();
+    $('#plResult', m).innerHTML = `
+      <p class="playlist-done">${ICON.check} ${created ? 'Made' : 'Updated'} with ${uris.length} song${uris.length === 1 ? '' : 's'}${missed.length ? `, but ${missed.length} couldn't be found` : ''}.</p>
+      ${missed.length ? `<div class="playlist-missed"><b>Not found on Spotify</b>
+        <ul>${missed.map((w) => `<li><span>${esc(w.song)}</span><small>${esc(w.album.title || w.album.artist)} · ${esc(w.album.artist)}</small></li>`).join('')}</ul>
+        <small class="muted">Check the spelling of the best song, or add these in Spotify by hand.</small></div>` : ''}
+      ${noSong.length ? `<p class="muted small-print">${noSong.length} favourite${noSong.length === 1 ? ' has' : 's have'} no best song yet: ${noSong.map((a) => esc(a.title || a.artist)).join(', ')}.</p>` : ''}
+      <div class="form-actions"><a class="btn spotify" href="${esc(url)}" target="_blank" rel="noopener">${ICON.spotify} Open in Spotify</a></div>`;
+  } catch (e) {
+    if (cancelled) return;
+    const needsLogin = e.status === 401 || e.status === 403;
+    $('.playlist-progress', m)?.remove();
+    $('#plResult', m).innerHTML = `
+      <p class="warn">Couldn't make the playlist: ${esc(e.message)}</p>
+      ${e.status === 403 ? `<p class="muted small-print">If this keeps happening, your Spotify account may need adding to the app's allowed users (the app owner can do this in the Spotify developer dashboard).</p>` : ''}
+      <div class="form-actions">${needsLogin
+        ? `<button type="button" class="btn spotify" id="plRetry">${ICON.spotify} Log in to Spotify again</button>`
+        : `<button type="button" class="btn" id="plRetry">Try again</button>`}</div>`;
+    $('#plRetry', m).addEventListener('click', () => {
+      if (needsLogin) spotify.login({ scopes: spotify.PLAYLIST_SCOPES, then: `playlist:${year}` });
+      else { closeModal(m, true); makePlaylist(year); }
+    });
+  }
 }
 
 function toggleFavourite(year, album, on) {
