@@ -3194,31 +3194,41 @@
      "id": "ab4b7633da5",
      "artist": "djon",
      "title": "baby",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27313897f60941d99ec7e1210f4",
+     "spotify": "https://open.spotify.com/album/12qsP7OjHVt7LTxqQjl7XD"
     },
     {
      "id": "a9c99c1be59",
      "artist": "cass mccombs",
      "title": "interior live oak",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e169b437ec5878134f66b2d1",
+     "spotify": "https://open.spotify.com/album/2GMrzMBDK4rpOLXtTMECl2"
     },
     {
      "id": "a108fa13262",
      "artist": "golden apples",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737990ce0ef9dc5091723bc6df",
+     "spotify": "https://open.spotify.com/album/2jjWUGwAqUz0ixfHBLV8OH"
     },
     {
      "id": "a5fef46dcb3",
      "artist": "titanic",
      "title": "hagen",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273fd3c078b833f8c85f80e9f6b",
+     "spotify": "https://open.spotify.com/album/6fpQpGbetAet2iBfQ9t9gj"
     },
     {
      "id": "a594973306f",
      "artist": "greg freeman",
      "title": "burnover",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273bceb605dbbe9c414a4781d8b",
+     "spotify": "https://open.spotify.com/album/0C9nK6t31Xxpv6XtMakvQv"
     },
     {
      "id": "ab1e3623dc5",
@@ -3226,19 +3236,25 @@
      "title": "double infinity",
      "songs": [
       "los angeles"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737a9109a9eea979b562879518",
+     "spotify": "https://open.spotify.com/album/1yEo1ZJE5ZgIF7LYrDTbMK"
     },
     {
      "id": "ab4ff4c7f9a",
      "artist": "the berries",
      "title": "the berries",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f650e06d3feca160dba2a3a8",
+     "spotify": "https://open.spotify.com/album/2s4VZNjd2BR5S7CbPbISHa"
     },
     {
      "id": "a89a24ec129",
      "artist": "duval timothy",
      "title": "wishful thinking",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f62f1595b78b62d539efe09d",
+     "spotify": "https://open.spotify.com/album/7AzqzYUtZhGnQA2gnM6wXz"
     },
     {
      "id": "ae7d85800e1",
@@ -3246,13 +3262,17 @@
      "title": "mark william lewis",
      "songs": [
       "tomorrow is perfect"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c5a6ddf834f39f5eb0486ab8",
+     "spotify": "https://open.spotify.com/album/34iEW5XY1mGgjhzvKsMo0h"
     },
     {
      "id": "a3f2a3cb224",
      "artist": "blood orange",
      "title": "essex honey",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2730710ea6bfb5a1208a5105693",
+     "spotify": "https://open.spotify.com/album/5RUma3H9uzDLXxwT7JzTel"
     },
     {
      "id": "ac5d147ab00",
@@ -3260,7 +3280,9 @@
      "title": "41 longield street late '80s",
      "songs": [
       "spider ballad"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2734c296a40027527d4d37c1135",
+     "spotify": "https://open.spotify.com/album/481bf9qdap2XkqmAxdVVZG"
     },
     {
      "id": "ac41da80bd9",
@@ -3268,7 +3290,9 @@
      "title": "blurrr",
      "songs": [
       "gown"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27329009872653e654f4d858385",
+     "spotify": "https://open.spotify.com/album/7d9Y4TE60UfMFMGoGnX6gL"
     },
     {
      "id": "a19dfbb12bf",
@@ -3276,49 +3300,65 @@
      "title": "getting killed",
      "songs": [
       "au pays du cocaine"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27345e82ae0372a50834825c018",
+     "spotify": "https://open.spotify.com/album/0eeXb23yMW6EaIgm63xxPC"
     },
     {
      "id": "ac01dee9f45",
      "artist": "cate le bon",
      "title": "michelangelo dying",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27374f7b678ad289a6e3ac304a3",
+     "spotify": "https://open.spotify.com/album/1Ce9FPiBLS0PBkYjg2NKho"
     },
     {
      "id": "a38e2945761",
      "artist": "m sage",
      "title": "tender / wading",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2738afa0cb6b2c35392a2eb9176",
+     "spotify": "https://open.spotify.com/album/0MkdmGmjEV7PzZXvzHhVYj"
     },
     {
      "id": "ad98a8bc642",
      "artist": "feeo",
      "title": "goodness",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273306cc39c1c12dfe256656ad6",
+     "spotify": "https://open.spotify.com/album/2AaXUyVeuAIuEU25rMUvze"
     },
     {
      "id": "a2b410e5248",
      "artist": "jenny hval",
      "title": "iris silver mist",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273bf461e87312c7bca4c24a206",
+     "spotify": "https://open.spotify.com/album/2eMQz1VNYCVSJ8amR0AgQX"
     },
     {
      "id": "af41af94a0b",
      "artist": "sorry",
      "title": "cosplay",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737434c84cafb8c9dcf6ce3229",
+     "spotify": "https://open.spotify.com/album/2y9KTl1MXK8jgH40zwh11X"
     },
     {
      "id": "a06346c8a34",
      "artist": "claire rousay",
      "title": "a little death",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e3a18156ab48a9b55e8dcdc2",
+     "spotify": "https://open.spotify.com/album/6pnb0vQLp8a9c6u1XAW3Up"
     },
     {
      "id": "a5ebaae19a2",
      "artist": "anna von hausswolff",
      "title": "iconoclasts",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739bee596da8e3f67a3ce6e7d7",
+     "spotify": "https://open.spotify.com/album/20BKSOzIQSHI4kLQIzPslN"
     },
     {
      "id": "a7dd5649af1",
@@ -4132,8 +4172,9 @@
      "artist": "@",
      "title": "autosmile",
      "songs": [],
-     "art": "",
-     "artTry": 3
+     "art": "https://i.scdn.co/image/ab67616d0000b27393c812017763535bb202b703",
+     "artTry": 3,
+     "spotify": "https://open.spotify.com/album/53a19c7TkUcgvZ1lnPLQCr"
     },
     {
      "id": "a4020c2b407",
