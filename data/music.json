@@ -3067,43 +3067,57 @@
      "id": "a5baaced037",
      "artist": "hayden pedigo",
      "title": "I'll be waving as you drive away",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2738a84c542b76ebed3632decbe",
+     "spotify": "https://open.spotify.com/album/5LZVQiwNWzbq8W1cT9MxHe"
     },
     {
      "id": "a23233a1aa6",
      "artist": "lyra pramuk",
      "title": "hymnal",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a0a8e4ce26d",
      "artist": "horsegirl",
      "title": "phonetics on and on",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2735879fd55abc5b89852ce08c8",
+     "spotify": "https://open.spotify.com/album/7C51cbjlLSILLTMVnxbrOc"
     },
     {
      "id": "a9ebf8476d1",
      "artist": "shinetiac",
      "title": "infiltrating roku city",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273331c9e79e01062966b765b53",
+     "spotify": "https://open.spotify.com/album/1hpLHDcAqb7Rw6DItpOCLZ"
     },
     {
      "id": "a3aaf9ab33a",
      "artist": "sharp pins",
      "title": "radio ddr",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2734718277239bfdf0299b0f9fc",
+     "spotify": "https://open.spotify.com/album/2rMHZAlbmZuIsr8iWR7oZX"
     },
     {
      "id": "a0df787337e",
      "artist": "water damage",
      "title": "instruments",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2731e9537c237abfb5a33725ff0",
+     "spotify": "https://open.spotify.com/album/7At3d8zRcabHZRAFefZq1x"
     },
     {
      "id": "a05abe5bbdb",
      "artist": "dutch interior",
      "title": "moneyball",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736b3dd7c9cf6514503e8a024b",
+     "spotify": "https://open.spotify.com/album/3c959V1BE6WsCICg4RKtQi"
     },
     {
      "id": "aa7b2a14de8",
@@ -3111,19 +3125,25 @@
      "title": "headlights",
      "songs": [
       "afterlife"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2731be0832f80073c2f8750887c",
+     "spotify": "https://open.spotify.com/album/6txHM80BKWlp4UdqLpWXRZ"
     },
     {
      "id": "acac95c4322",
      "artist": "goon",
      "title": "dream 3",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27398c7491ad1f27c590178ceb5",
+     "spotify": "https://open.spotify.com/album/75ILMGhtHI7bBn4vHdS8gQ"
     },
     {
      "id": "a7f5f76a516",
      "artist": "radiohead",
      "title": "hail to the thief live recordings",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2732c700c64cffdee30cdd40031",
+     "spotify": "https://open.spotify.com/album/5BLrEOEDKoDDg5T8PzdIHN"
     },
     {
      "id": "ab38d450634",
@@ -3132,7 +3152,9 @@
      "songs": [
       "rewind",
       "another baby!"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273fd69099343fa7827e78cca4b",
+     "spotify": "https://open.spotify.com/album/3hKlec1wgYVJcI0YvwCFJB"
     },
     {
      "id": "a8a334194b5",
@@ -3140,13 +3162,17 @@
      "title": "new threats from the soul",
      "songs": [
       "mutliation falls"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2732120ffd396c5e3d2a4dc451f",
+     "spotify": "https://open.spotify.com/album/6Nz0tVEEYyTVouKZt8SqXO"
     },
     {
      "id": "abb92e68832",
      "artist": "moneyball",
      "title": "dutch interior",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "ad1c9b084dc",
