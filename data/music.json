@@ -2133,13 +2133,17 @@
      "title": "wall of eyes",
      "songs": [
       "all of them"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ec5757cdfeb9a29df135c96d",
+     "spotify": "https://open.spotify.com/album/6PdPOv5ybKZ9ZuGMk5iGZd"
     },
     {
      "id": "a6b0ba2d492",
      "artist": "cowboy sadness",
      "title": "selected jambient works",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c9e1e4f8883a380b1905ea5f",
+     "spotify": "https://open.spotify.com/album/06L5BvN5YEPJnlmyGil8KB"
     },
     {
      "id": "a1f9cf7981f",
@@ -2147,7 +2151,9 @@
      "title": "lovegaze",
      "songs": [
       "into the sun"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c3deb5800d51408b7d53a84d",
+     "spotify": "https://open.spotify.com/album/5wZ1zvJhdu078W27V9mr5U"
     },
     {
      "id": "a794ac6443f",
@@ -2156,7 +2162,9 @@
      "songs": [
       "I want",
       "alesis"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2738b048b6486231cca4766a076",
+     "spotify": "https://open.spotify.com/album/62xd4emBJXINuYl0RzfvO8"
     },
     {
      "id": "aad711faef0",
@@ -2164,7 +2172,9 @@
      "title": "phasor",
      "songs": [
       "I just want to wake up with you"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273cdae80a73429b6936e40499c",
+     "spotify": "https://open.spotify.com/album/0iIfsqcMuRwzmseYvSZw9S"
     },
     {
      "id": "af9c5e9d4f6",
@@ -2172,19 +2182,24 @@
      "title": "where we've been, where we go from here",
      "songs": [
       "for ella"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e6bc598472ed677357b61d7d",
+     "spotify": "https://open.spotify.com/album/77KTk9PdOsC2NuMjGSDCS3"
     },
     {
      "id": "ad203376579",
      "artist": "kali malone",
      "title": "all life long",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737e1d14288503caf53f8ba58f",
+     "spotify": "https://open.spotify.com/album/1Ft3N89bxz63EQAC3Eaift"
     },
     {
      "id": "a9110c815b9",
      "artist": "blemishes",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://is1-ssl.mzstatic.com/image/thumb/Music211/v4/65/40/eb/6540eb05-98a3-e5d5-4217-108fcf8ff675/5740017271158.jpg/600x600bb.jpg"
     },
     {
      "id": "a9da11f0ceb",
