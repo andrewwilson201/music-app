@@ -2601,43 +2601,57 @@
      "id": "ad06c0580ff",
      "artist": "the smile",
      "title": "cutouts",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736613d3127feee7ee948412f9",
+     "spotify": "https://open.spotify.com/album/1wOiuWSlK5pQdpQP8VgH6F"
     },
     {
      "id": "a79683f57fe",
      "artist": "sarah hennies",
      "title": "motor tapes",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273fa776f448d4049338bf9ea8c",
+     "spotify": "https://open.spotify.com/album/34cLbUjCXp4tPyEbfyHobP"
     },
     {
      "id": "a2216f57786",
      "artist": "haley heynderickx",
      "title": "seed of a seed",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273165741eb843a1a05155c8f65",
+     "spotify": "https://open.spotify.com/album/5WjjIOn40MG9kLfaeHBS5a"
     },
     {
      "id": "a35a902921c",
      "artist": "porridge radio",
      "title": "clouds in the sky they will always be there for me",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273615ef17893823e5ef70d0ce8",
+     "spotify": "https://open.spotify.com/album/2iXwKeYYKuXjalgAXtx9sd"
     },
     {
      "id": "a885d41d898",
      "artist": "claire rousay",
      "title": "the bloody lady",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b78a68531a60634514e7e637",
+     "spotify": "https://open.spotify.com/album/679IsrVRhtAtuVh5E64CU4"
     },
     {
      "id": "ac0b7ddd913",
      "artist": "anne butterss",
      "title": "mighty vertebrate",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736e4bb692f673d2d777dde2a7",
+     "spotify": "https://open.spotify.com/album/1csOIDxJVdPRU3mNAYOKDP"
     },
     {
      "id": "a232c4d0546",
      "artist": "jeff parker",
      "title": "the way out of easy",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27386de701697d9f8bd4144c752",
+     "spotify": "https://open.spotify.com/album/3tt6MJP7miMmlagnTHZEyq"
     },
     {
      "id": "a347773e361",
@@ -2645,37 +2659,49 @@
      "title": "mahashmashana",
      "songs": [
       "mahashmashana"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c52d98abe880691a131cbe8f",
+     "spotify": "https://open.spotify.com/album/3f4xN7DVAH8Qak6JVYjQ8a"
     },
     {
      "id": "ad36be7a6c5",
      "artist": "mj lenderman",
      "title": "manning fireworks",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b18fae872e1700b83e72a15b",
+     "spotify": "https://open.spotify.com/album/1bKiiYGt1fzm9YMlTnUqpN"
     },
     {
      "id": "a64d49f20a8",
      "artist": "amen dunes",
      "title": "death jokes ii",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273eb83664b29cab0704c237e2c",
+     "spotify": "https://open.spotify.com/album/4DCCED6M2qEev1v4lGy7MH"
     },
     {
      "id": "a33ee32b8fd",
      "artist": "rosali",
      "title": "bite down",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273234e52e6d1977964e38054df",
+     "spotify": "https://open.spotify.com/album/2uAqfoInL19gF2ABonkWH5"
     },
     {
      "id": "ab2fcb725fa",
      "artist": "wh lung",
      "title": "every inch of earth pulsates",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273e98879bd1236c5c6cc9740e2",
+     "spotify": "https://open.spotify.com/album/1KlVCPJWbQO3HScSoaagHa"
     },
     {
      "id": "af1fdbba488",
      "artist": "kim deal",
      "title": "",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273d9327aece81266a4e380495b",
+     "spotify": "https://open.spotify.com/album/6MygjJ2a8narXmZnk9ifKp"
     }
    ],
    "favourites": [
@@ -2775,7 +2801,9 @@
      "id": "ae47191546f",
      "artist": "ethel cain",
      "title": "perverts",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273c6d1d934d100fa2167c71b5d",
+     "spotify": "https://open.spotify.com/album/3kZk3M80kQTJus45lgRKyv"
     },
     {
      "id": "ae604dd6152",
@@ -2793,19 +2821,25 @@
      "title": "into a pretty room",
      "songs": [
       "the rain"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737e1af6b36521feb2b6be4b3e",
+     "spotify": "https://open.spotify.com/album/2t0Npgqlh3rGvMLQeOQirC"
     },
     {
      "id": "aa4b62861e5",
      "artist": "fka twigs",
      "title": "eusexua",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273466785d26bb862c1412899ed",
+     "spotify": "https://open.spotify.com/album/5n2pgHBsvQ1rFfv2PbuBud"
     },
     {
      "id": "a8f3af6d12a",
      "artist": "kathryn mohr",
      "title": "waiting room",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ee08dd58d871ebfb724580f3",
+     "spotify": "https://open.spotify.com/album/6KxOsfcshieNAz3iwcQ07T"
     },
     {
      "id": "a445b72fa42",
@@ -2813,19 +2847,25 @@
      "title": "lucre",
      "songs": [
       "elevator"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273431e51837b48b33f884c770c",
+     "spotify": "https://open.spotify.com/album/0d7ZMEydmOnr4GHHK6MvSu"
     },
     {
      "id": "a8d0e439c8b",
      "artist": "klein",
      "title": "thirteen sense",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2733428aa1243cf66d041a827ad",
+     "spotify": "https://open.spotify.com/album/4ylfKGaZXGb0aFcvm9tfZH"
     },
     {
      "id": "ae421ac1b6e",
      "artist": "squid",
      "title": "cowards",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2739ae052c5f750f7b71cb0ee99",
+     "spotify": "https://open.spotify.com/album/2PXkyoHGhPBTdumrGSh8Ta"
     },
     {
      "id": "ae65eb5f2a4",
