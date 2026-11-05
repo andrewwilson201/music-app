@@ -1,7 +1,7 @@
 // Album artwork and album search. Uses Spotify when you're logged in to it,
 // and the iTunes Search API (no key needed, via JSONP) otherwise or as a fallback.
 
-import * as spotify from './spotify.js?v=17';
+import * as spotify from './spotify.js?v=19';
 
 let seq = 0;
 function jsonp(url, timeout = 8000) {
@@ -124,6 +124,43 @@ export async function findSpotifyLink(album) {
   }
   return '';
 }
+
+// ---- songs, for playlists ----
+const stripSong = (t) => t
+  .replace(/\s+-\s+.*(remaster|version|edit|mix|live|mono|stereo|demo|feat).*$/i, '')
+  .replace(/\s*[([](feat|ft|with|remaster|live|mono|stereo|demo|radio|single|album).*?[)\]]/gi, '')
+  .trim();
+
+function trackScore(album, song, t) {
+  const as = sim(album.artist, t.artist);
+  if (as < 0.6) return 0;
+  const ns = Math.max(sim(song, t.name), sim(stripSong(song), stripSong(t.name)));
+  if (ns < 0.75) return 0;
+  // Prefer the version from the album itself over live cuts and compilations.
+  const al = album.title ? Math.max(sim(album.title, t.album), sim(album.title, stripEdition(t.album))) : 0;
+  return ns * 2 + as + (al >= 0.8 ? 0.5 : 0);
+}
+
+// Spotify track for one song on an album: { uri, name, artist } or null.
+export async function findTrack(album, song) {
+  const q = (s) => s.replace(/"/g, '');
+  const queries = [
+    `track:"${q(stripSong(song))}" artist:"${q(album.artist)}"`,
+    `${stripSong(song)} ${album.artist}`,
+  ];
+  for (const query of queries) {
+    let best = null, bestScore = 0;
+    for (const t of await spotify.searchTracks(query, 10)) {
+      const s = trackScore(album, song, t);
+      if (s > bestScore) { best = t; bestScore = s; }
+    }
+    if (best) return best;
+  }
+  return null;
+}
+
+// A favourite's best song field can hold more than one song: "A; B" or "A / B".
+export const bestSongs = (text = '') => String(text).split(/\s*;\s*|\s+\/\s+|\n/).map((s) => s.trim()).filter(Boolean);
 
 // Bump when matching improves so earlier misses get another try.
 // Logging in to Spotify counts as an improvement.

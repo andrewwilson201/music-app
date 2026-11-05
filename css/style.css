@@ -411,7 +411,7 @@ body.signed-out .view-bar { display: none; }
 .favs.read-only .fav { padding-left: 12px; }
 .song-text { margin-top: 4px; font-size: 14px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .best-song { margin: 0; display: flex; flex-direction: column; gap: 2px; color: var(--accent); font-weight: 600; }
-.best-song span { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
+.best-song > span { font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--muted); font-weight: 600; }
 
 .share-box { padding: 12px 14px; margin: 0 0 12px; border-radius: 12px; background: var(--surface); }
 .share-head { display: flex; align-items: center; gap: 12px; }
@@ -454,3 +454,30 @@ body.signed-out .view-bar { display: none; }
 .small-print .link { font-size: inherit; padding: 0; }
 @media (max-width: 720px) { .view-bar { top: 59px; } }
 #libErr { margin-bottom: 12px; }
+
+/* Spotify playlist of a year's best songs */
+.fav-actions { display: flex; gap: 8px; flex-wrap: wrap; justify-content: flex-end; }
+.fav-actions .btn svg.fill { fill: var(--spotify); }
+.playlist-progress { display: flex; align-items: center; gap: 12px; color: var(--muted); padding: 8px 0 4px; }
+.playlist-done { display: flex; align-items: center; gap: 10px; margin: 0 0 16px; font-weight: 600; }
+.playlist-done svg { width: 22px; height: 22px; flex: none; stroke: var(--spotify); fill: none; stroke-width: 2.4; }
+.playlist-missed { padding: 12px 14px; border: 1px solid var(--line); border-radius: 12px; background: var(--surface); margin-bottom: 14px; }
+.playlist-missed ul { list-style: none; margin: 8px 0 10px; padding: 0; display: grid; gap: 6px; }
+.playlist-missed li { display: flex; flex-direction: column; }
+.playlist-missed li small { color: var(--muted); }
+.small-print { font-size: 13px; margin: 0 0 14px; }
+
+/* Best songs: one chip each, plus a box to add another */
+.song-picker { display: flex; flex-direction: column; align-items: flex-start; gap: 2px; margin-top: 4px; min-width: 0; }
+.song-chips { list-style: none; margin: 0; padding: 0; display: flex; flex-wrap: wrap; gap: 6px; }
+.song-chips:empty { display: none; }
+.fav-main > .song-chips { margin-top: 6px; }
+.song-chip { display: inline-flex; align-items: center; gap: 2px; max-width: 100%; padding: 3px 4px 3px 10px; border-radius: 999px; background: var(--accent-soft); color: var(--accent); font-size: 13px; font-weight: 600; }
+.song-chip > span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.song-chips:not(:has(button)) .song-chip { padding-right: 10px; }
+.song-chip button { display: grid; place-items: center; width: 22px; height: 22px; border-radius: 50%; color: inherit; opacity: .7; flex: none; }
+.song-chip button:hover { opacity: 1; background: rgba(232, 97, 60, .18); }
+.song-chip button svg { width: 13px; height: 13px; stroke-width: 2.4; }
+.song-picker .song-input { margin-top: 2px; }
+.song-chips:not(:empty) + .song-input { font-size: 13px; }
+.best-song .song-chips { margin-top: 4px; }
