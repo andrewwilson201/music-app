@@ -1826,19 +1826,25 @@
      "title": "romantic piano",
      "songs": [
       "a dream will always divide"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b2736a7b47d1f0c64d6bcb56fdfa",
+     "spotify": "https://open.spotify.com/album/4TFQoPpiHkSsYDbhfXMqCM"
     },
     {
      "id": "ad48d1b377b",
      "artist": "beach fossils",
      "title": "bunny",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27345e3c267e14a7722a482fda9",
+     "spotify": "https://open.spotify.com/album/5cyu3tkdmGoB0BC0EJfz2V"
     },
     {
      "id": "a0dcaa7ae92",
      "artist": "arthur russell",
      "title": "picture of bunny rabbit",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27394dfb9d4d7d5544052a2c32b",
+     "spotify": "https://open.spotify.com/album/4SrqiN17xd1TDMwNQRGzHB"
     },
     {
      "id": "a91cef47a65",
@@ -1846,7 +1852,9 @@
      "title": "maps",
      "songs": [
       "soft landing"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27327d7f624645c825dd17e016d",
+     "spotify": "https://open.spotify.com/album/3VoX4iyvy7et6Qt47e2XwS"
     },
     {
      "id": "ad04d8d9290",
@@ -1854,13 +1862,17 @@
      "title": "the greater wings",
      "songs": [
       "portrait of a clear day"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273577596ff584169f2b31f969c",
+     "spotify": "https://open.spotify.com/album/1KeJzjoh4vHrJif6BsYKRg"
     },
     {
      "id": "adbfc3cf118",
      "artist": "pj harvey",
      "title": "I inside the old year dying",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2737c94a30539ff194850bcb80f",
+     "spotify": "https://open.spotify.com/album/3Fx9t2cVbxwd01JjbDatgg"
     },
     {
      "id": "a73b1d5c1df",
@@ -1868,31 +1880,41 @@
      "title": "I've got me",
      "songs": [
       "stockholm syndrome"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273830ae896b461bb321b85b086",
+     "spotify": "https://open.spotify.com/album/3l3xPtGZXUcnQaNlpbjvR0"
     },
     {
      "id": "af903fc6a50",
      "artist": "grian chatten",
      "title": "chaos for the fly",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273eee2ba331579330258c562da",
+     "spotify": "https://open.spotify.com/album/7IO2RSWhcIt8Tliya8fCZL"
     },
     {
      "id": "ad125ff2afe",
      "artist": "blue lake",
      "title": "sun arcs",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273da882d9afc8badd85f7614d8",
+     "spotify": "https://open.spotify.com/album/3YTEVzfNYUL5dnPcpLkwf5"
     },
     {
      "id": "a971d8586a3",
      "artist": "anohi and the johnsons",
      "title": "my back was a bridge for you to cross",
-     "songs": []
+     "songs": [],
+     "art": "",
+     "artTry": 3
     },
     {
      "id": "a75d7c6eee1",
      "artist": "blake mills",
      "title": "jelly road",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273625588fb852125b57df89b57",
+     "spotify": "https://open.spotify.com/album/4hCqShBbkNDt32FdAhDWZL"
     },
     {
      "id": "a5191f53395",
@@ -1900,19 +1922,25 @@
      "title": "the ballad of darren",
      "songs": [
       "the narcisist"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b27393060f760e614ee2dc74e205",
+     "spotify": "https://open.spotify.com/album/6wIkkwi1ZFrtXD9z5hON25"
     },
     {
      "id": "a1274354ebd",
      "artist": "bonnie prince billy",
      "title": "keeping secrets will destroy you",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b27354039a197791f3a5b67eb152",
+     "spotify": "https://open.spotify.com/album/527BUPjoqgyblvo1NL9Te9"
     },
     {
      "id": "aa91e4a60df",
      "artist": "lawrence english and lea bertucci",
      "title": "chthonic",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273f15afb9e4f3489f61add556d",
+     "spotify": "https://open.spotify.com/album/3JHkchYQkGEbC7pxMV87Gx"
     },
     {
      "id": "a0adcb1301b",
@@ -1920,7 +1948,9 @@
      "title": "cut worms",
      "songs": [
       "I'll never make it"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273ee765db0a0331dd84ac90094",
+     "spotify": "https://open.spotify.com/album/2RcDC3U0dfYCrniJkBbtE2"
     },
     {
      "id": "a49af620d5b",
@@ -1928,13 +1958,17 @@
      "title": "slowdive",
      "songs": [
       "kisses"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273dacae168c80f791843f52439",
+     "spotify": "https://open.spotify.com/album/1qDA0jVhj4ZTjGHmpbmmwa"
     },
     {
      "id": "a633cc11592",
      "artist": "jaimie branch",
      "title": "fly or die",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b2730ba7e6d0fdbde9ba32cb734f",
+     "spotify": "https://open.spotify.com/album/3UhxAIMsKNCq0jMidZYlsi"
     },
     {
      "id": "ab0438095bf",
@@ -1942,19 +1976,25 @@
      "title": "bird machine",
      "songs": [
       "falling down"
-     ]
+     ],
+     "art": "https://i.scdn.co/image/ab67616d0000b273b17a948650b18ec9fa4b1b27",
+     "spotify": "https://open.spotify.com/album/7DUDIoIEw2yGKi1wcLjRuy"
     },
     {
      "id": "a2db6b0dc2c",
      "artist": "laurel halo",
      "title": "atlas",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273fc2c91a44166dcd904788a84",
+     "spotify": "https://open.spotify.com/album/3VaVfO7eUl24zzrtuayksx"
     },
     {
      "id": "ab514330ce7",
      "artist": "animal collective",
      "title": "isn't it now",
-     "songs": []
+     "songs": [],
+     "art": "https://i.scdn.co/image/ab67616d0000b273dd6fe6d5f8d229bd5c6f0366",
+     "spotify": "https://open.spotify.com/album/0J2TlWaut2IAlWdBRHLIHf"
     },
     {
      "id": "aff7755b893",
