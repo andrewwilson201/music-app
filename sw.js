@@ -6,7 +6,8 @@ const CACHE = 'music-library-v1';
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
   event.waitUntil((async () => {
-    for (const key of await caches.keys()) if (key !== CACHE) await caches.delete(key);
+    // Only clear our own old caches: the weekly shop shares this github.io origin.
+    for (const key of await caches.keys()) if (key.startsWith('music-library-') && key !== CACHE) await caches.delete(key);
     await self.clients.claim();
   })());
 });
