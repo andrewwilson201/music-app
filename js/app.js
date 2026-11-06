@@ -1,7 +1,7 @@
-import * as store from './store.js?v=29';
-import * as spotify from './spotify.js?v=29';
-import * as spHistory from './history.js?v=29';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=29';
+import * as store from './store.js?v=30';
+import * as spotify from './spotify.js?v=30';
+import * as spHistory from './history.js?v=30';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=30';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1886,7 +1886,62 @@ function indexListening(all) {
 function listeningFor(album) {
   if (ro() || !listenIndex || !album?.title) return null;
   const key = listenIndex.byId[spotifyAlbumId(album.spotify)] || groupKey(album.artist, album.title);
-  return listenIndex.groups[key] || null;
+  return listenIndex.groups[key] || nearGroup(firstArtist(album.artist), baseTitle(album.title));
+}
+
+// Edit distance, giving up (returning max + 1) once it's over max.
+function editDistance(a, b, max) {
+  if (Math.abs(a.length - b.length) > max) return max + 1;
+  let prev = Array.from({ length: b.length + 1 }, (_, j) => j);
+  for (let i = 1; i <= a.length; i++) {
+    const cur = [i];
+    let best = i;
+    for (let j = 1; j <= b.length; j++) {
+      cur[j] = Math.min(prev[j] + 1, cur[j - 1] + 1, prev[j - 1] + (a[i - 1] === b[j - 1] ? 0 : 1));
+      best = Math.min(best, cur[j]);
+    }
+    if (best > max) return max + 1;
+    prev = cur;
+  }
+  return prev[b.length];
+}
+
+// Typos allowed in a name of this length: none for short names, then about
+// one per six letters, at most three.
+const slack = (s) => Math.min(3, Math.floor(s.length / 6));
+
+// Albums typed into the log with a small spelling difference from Spotify
+// ("thomas dolbaum", "reality awakes") still find their listening, as long as
+// either the artist or the title matches exactly. Results are cached until the
+// listening index is rebuilt.
+let near = { index: null, byArtist: null, byTitle: null, cache: new Map() };
+function nearGroup(artist, title) {
+  if (!artist || !title) return null;
+  if (near.index !== listenIndex) {
+    near = { index: listenIndex, byArtist: new Map(), byTitle: new Map(), cache: new Map() };
+    for (const g of Object.values(listenIndex.groups)) {
+      const [a, t] = g.key.split('|');
+      if (!near.byArtist.has(a)) near.byArtist.set(a, []);
+      if (!near.byTitle.has(t)) near.byTitle.set(t, []);
+      near.byArtist.get(a).push([t, g]);
+      near.byTitle.get(t).push([a, g]);
+    }
+  }
+  const id = `${artist}|${title}`;
+  if (near.cache.has(id)) return near.cache.get(id);
+  let found = null;
+  let foundD = Infinity;
+  const look = (list, mine) => {
+    const max = slack(mine);
+    for (const [other, g] of list || []) {
+      const d = editDistance(mine, other, max);
+      if (d && d <= max && (d < foundD || (d === foundD && g.ms > found.ms))) { found = g; foundD = d; }
+    }
+  };
+  look(near.byArtist.get(artist), title);
+  look(near.byTitle.get(title), artist);
+  near.cache.set(id, found);
+  return found;
 }
 
 // Each Spotify-heard album group mapped to the album in the log it belongs to.
