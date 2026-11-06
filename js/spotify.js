@@ -2,7 +2,7 @@
 // Search needs no scopes. Making playlists asks for the playlist scopes the
 // first time it's used, then picks up where it left off after the redirect.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=20';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=21';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
@@ -146,6 +146,22 @@ export async function artistAlbums(id, max = 50) {
     const page = await api(`/artists/${id}/albums?include_groups=album&limit=10&offset=${offset}`);
     out.push(...(page.items || []).filter(Boolean).map(albumOf));
     if (!page.next) break;
+  }
+  return out;
+}
+
+// An album's tracks in order: [{ name, disc, no, ms }]. Asks for 50 a page,
+// and drops to 10 if development mode refuses that.
+export async function albumTracks(id) {
+  const out = [];
+  let size = 50;
+  for (let offset = 0; offset < 300;) {
+    let page;
+    try { page = await api(`/albums/${id}/tracks?limit=${size}&offset=${offset}`); }
+    catch (e) { if (e.status === 400 && size > 10) { size = 10; continue; } throw e; }
+    out.push(...(page.items || []).filter(Boolean).map((t) => ({ name: t.name, disc: t.disc_number || 1, no: t.track_number, ms: t.duration_ms })));
+    if (!page.next) break;
+    offset += size;
   }
   return out;
 }

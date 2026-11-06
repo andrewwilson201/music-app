@@ -1,7 +1,7 @@
 // Album artwork and album search. Uses Spotify when you're logged in to it,
 // and the iTunes Search API (no key needed, via JSONP) otherwise or as a fallback.
 
-import * as spotify from './spotify.js?v=20';
+import * as spotify from './spotify.js?v=21';
 
 let seq = 0;
 function jsonp(url, timeout = 8000) {
@@ -46,6 +46,7 @@ export const searchSpotify = (term, limit) => spotify.searchAlbums(term, limit);
 const itunesAlbum = (r) => {
   const tag = / - (Single|EP)$/.exec(r.collectionName || '');
   return {
+    id: r.collectionId,
     artist: r.artistName,
     artists: [{ id: r.artistId, name: r.artistName }],
     title: (r.collectionName || '').replace(/ - (Single|EP)$/, ''),
@@ -301,6 +302,51 @@ export async function findTrack(album, song) {
     if (best) return best;
   }
   return null;
+}
+
+// ---- tracklists, for picking best songs ----
+// The name to show for a track: no "- 2011 Remaster" or "(feat. X)".
+export const cleanSong = (t = '') => stripSong(String(t)) || String(t).trim();
+
+const tracklists = new Map();
+
+// An album's tracks in order: [{ name, disc, no, ms }], or [] if it can't be
+// found. Spotify when logged in, iTunes otherwise or if Spotify hasn't got it.
+export function findTracklist(album) {
+  const key = album.id || `${album.artist}|${album.title}`;
+  if (!tracklists.has(key)) {
+    tracklists.set(key, loadTracklist(album).then((list) => {
+      if (!list.length) tracklists.delete(key);
+      return list;
+    }, (e) => { tracklists.delete(key); throw e; }));
+  }
+  return tracklists.get(key);
+}
+
+async function loadTracklist(album) {
+  let failed = null;
+  if (spotify.connected()) {
+    try {
+      const link = /open\.spotify\.com\/album\/([A-Za-z0-9]+)/.test(album.spotify || '') ? album.spotify : await findSpotifyLink(album);
+      const id = /album\/([A-Za-z0-9]+)/.exec(link || '')?.[1];
+      if (id) {
+        const list = await spotify.albumTracks(id);
+        if (list.length) return list;
+      }
+    } catch (e) { failed = e; }
+  }
+  try {
+    for (const term of searchTerms(album)) {
+      const hit = bestMatch(album, await searchItunes(term, term === album.artist ? 50 : 15));
+      if (!hit?.id) continue;
+      const json = await jsonp(`https://itunes.apple.com/lookup?id=${hit.id}&entity=song&limit=200`);
+      const list = (json.results || []).filter((r) => r.wrapperType === 'track' && r.trackName)
+        .map((r) => ({ name: r.trackName, disc: r.discNumber || 1, no: r.trackNumber, ms: r.trackTimeMillis }))
+        .sort((a, b) => a.disc - b.disc || a.no - b.no);
+      if (list.length) return list;
+    }
+  } catch (e) { if (failed) throw failed; throw e; }
+  return [];
 }
 
 // A favourite's best song field can hold more than one song: "A; B" or "A / B".
