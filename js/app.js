@@ -1,6 +1,7 @@
-import * as store from './store.js?v=28';
-import * as spotify from './spotify.js?v=28';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=28';
+import * as store from './store.js?v=29';
+import * as spotify from './spotify.js?v=29';
+import * as spHistory from './history.js?v=29';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=29';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -23,6 +24,7 @@ const ICON = {
   edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>',
   trash: '<svg viewBox="0 0 24 24"><path d="M4 7h16M10 11v6M14 11v6M6 7l1 13h10l1-13M9 7V4h6v3"/></svg>',
   check: '<svg viewBox="0 0 24 24"><path d="m5 12 5 5 9-10"/></svg>',
+  download: '<svg viewBox="0 0 24 24"><path d="M12 3v12m0 0-4-4m4 4 4-4M4 17v2a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2v-2"/></svg>',
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   headphones: '<svg viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg>',
   share: '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/></svg>',
@@ -1478,6 +1480,7 @@ function openSettings() {
       </div>
       <p class="listen-status" id="listenStatus" ${tracking.enabled || tracking.lastError ? '' : 'hidden'}>${trackingStatusHtml()}</p>
       ${hasListening() ? `<label class="check listen-pills"><input type="checkbox" id="pillsToggle" ${pillsOn() ? 'checked' : ''}> Show time on album covers</label>` : ''}
+      <div class="import" id="historyBox">${historyBoxHtml()}</div>
     </div>` : ''}
     <div class="share-box" id="shareBox">
       <div class="share-head">
@@ -1722,7 +1725,74 @@ async function finishTrackingLogin() {
   } catch (e) { toast(`Couldn’t turn on tracking: ${e.message}`, 'error'); }
 }
 
+function historyBoxHtml() {
+  const meta = store.listeningMeta();
+  const h = meta.history;
+  const hidden = (meta.hidden || []).length;
+  const year = (ms) => new Date(ms).getFullYear();
+  return h?.parts
+    ? `<div class="import-row">${ICON.check}<div><b>Spotify history imported</b><small>${h.plays.toLocaleString()} plays of ${h.albums.toLocaleString()} albums, ${year(h.from)}–${year(h.to)}</small></div>
+        <label class="link-btn">Replace<input type="file" id="historyFile" accept=".zip,.json,application/zip,application/json" multiple hidden></label>
+        <button type="button" class="link-btn danger" id="historyRemove">Remove</button></div>
+      <label class="check listen-pills"><input type="checkbox" id="historySuggest" ${meta.historySuggest ? 'checked' : ''}> Suggest albums from imported history</label>
+      ${hidden ? `<p class="small-print muted">${hidden} album${hidden === 1 ? '' : 's'} hidden from suggestions · <button type="button" class="link" id="unhideAll">Show them again</button></p>` : ''}`
+    : `<div class="import-row">${ICON.download}<div><b>Import your full history</b><small>Upload the “Extended streaming history” zip from Spotify’s privacy page to add everything before tracking started.</small></div>
+        <label class="btn small">Upload<input type="file" id="historyFile" accept=".zip,.json,application/zip,application/json" multiple hidden></label></div>
+      ${hidden ? `<p class="small-print muted">${hidden} album${hidden === 1 ? '' : 's'} hidden from suggestions · <button type="button" class="link" id="unhideAll">Show them again</button></p>` : ''}`;
+}
+
+function bindHistoryBox(m) {
+  const box = $('#historyBox', m);
+  if (!box) return;
+  const redraw = () => { box.innerHTML = historyBoxHtml(); bindHistoryBox(m); };
+  const busy = (text) => { box.innerHTML = `<p class="pad-sm muted"><span class="spin"></span>${esc(text)}</p>`; };
+  $('#historyFile', box)?.addEventListener('change', async (e) => {
+    const files = [...e.target.files];
+    if (!files.length) return;
+    try {
+      busy('Opening your history…');
+      const rows = await spHistory.readExport(files, busy);
+      busy(`Adding up ${rows.length.toLocaleString()} plays…`);
+      await new Promise((r) => setTimeout(r, 30));
+      // Plays from after live tracking began are already counted.
+      const { albums, info } = spHistory.aggregate(rows, { before: tracking.since || Infinity });
+      if (!albums.length) throw new Error('No song plays found in those files.');
+      busy('Saving…');
+      await store.saveHistory(albums, info);
+      listenStamp = '';
+      await loadListening();
+      render();
+      redraw();
+      toast(`Imported ${info.plays.toLocaleString()} plays of ${info.albums.toLocaleString()} albums`);
+    } catch (err) {
+      redraw();
+      toast(`Import failed: ${err.message}`, 'error');
+    }
+  });
+  $('#historyRemove', box)?.addEventListener('click', async () => {
+    if (!confirm('Remove your imported Spotify history? Plays counted since tracking started are kept.')) return;
+    try {
+      busy('Removing…');
+      await store.removeHistory();
+      listenStamp = '';
+      await loadListening();
+      render();
+      redraw();
+      toast('Imported history removed');
+    } catch (err) { redraw(); toast(`Couldn’t remove it: ${err.message}`, 'error'); }
+  });
+  $('#historySuggest', box)?.addEventListener('change', async (e) => {
+    try { await store.setListenMeta({ historySuggest: e.target.checked }); render(); }
+    catch (err) { toast(`Couldn’t save that: ${err.message}`, 'error'); }
+  });
+  $('#unhideAll', box)?.addEventListener('click', async () => {
+    try { await store.setListenMeta({ hidden: [] }); redraw(); render(); toast('Hidden albums will be suggested again'); }
+    catch (err) { toast(`Couldn’t save that: ${err.message}`, 'error'); }
+  });
+}
+
 function setUpListenBox(m) {
+  bindHistoryBox(m);
   $('#pillsToggle', m)?.addEventListener('change', (e) => {
     try { localStorage.setItem('music-log:pills', e.target.checked ? 'on' : 'off'); } catch {}
     render();
@@ -1788,7 +1858,9 @@ function indexListening(all) {
     const g = groups[key] ||= { key, ids: [], title: l.title, artist: l.artist, art: l.art, spotify: l.spotify,
       ms: 0, plays: 0, first: Infinity, last: 0, albumMs: 0, weeks: {}, tracks: {} };
     g.ids.push(l.albumId);
-    if ((l.ms || 0) > (g.top || 0)) Object.assign(g, { top: l.ms, title: l.title, art: l.art || g.art, spotify: l.spotify });
+    if ((l.ms || 0) > (g.top || 0)) Object.assign(g, { top: l.ms, title: l.title, art: l.art || g.art, spotify: l.spotify || g.spotify });
+    else if (!g.art && l.art) Object.assign(g, { art: l.art, spotify: g.spotify || l.spotify });
+    if (!l.hist) g.liveMs = (g.liveMs || 0) + (l.ms || 0);
     g.ms += l.ms || 0;
     g.plays += l.plays || 0;
     g.first = Math.min(g.first, l.first || Infinity);
@@ -1861,7 +1933,7 @@ function renderListening(period, mode = 'albums') {
   const inLog = rows.reduce((n, r) => n + (r.album ? r.ms : 0), 0);
   const top = rows.slice(0, 25);
   const max = top[0]?.ms || 1;
-  const unlogged = rows.filter((r) => !r.album && r.ms >= 5 * 60000).slice(0, 12);
+  const unlogged = rows.filter((r) => !r.album && r.ms >= 5 * 60000 && suggestable(r.g)).slice(0, 12);
   const pseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
   const rowHtml = (r, i) => `<li>
       <span class="n">${i + 1}</span>
@@ -1886,7 +1958,8 @@ function renderListening(period, mode = 'albums') {
             <ul class="lb unlogged">${unlogged.map((r) => `<li>
               ${coverHtml(pseudo(r.g), 'sm')}
               <span class="m"><b>${esc(r.g.title)}</b><small>${esc(r.g.artist)} · ${fmtDur(r.ms)}</small></span>
-              <button class="btn small" data-log-heard="${esc(r.g.key)}">${ICON.plus} Log it</button></li>`).join('')}</ul>` : ''}`}`;
+              <button class="btn small" data-log-heard="${esc(r.g.key)}">${ICON.plus} Log it</button>
+              <button class="icon-btn subtle" data-hide-heard="${esc(r.g.key)}" title="Don't suggest ${esc(r.g.title)} again" aria-label="Don't suggest ${esc(r.g.title)} again">${ICON.close}</button></li>`).join('')}</ul>` : ''}`}`;
   watchCovers();
   $('#goSettings')?.addEventListener('click', openSettings);
 }
@@ -1894,8 +1967,23 @@ function renderListening(period, mode = 'albums') {
 // Albums heard on Spotify but not in the log: tapping them, or their + button,
 // opens Add album with a search for them already filled in.
 const openAttr = (r) => (r.album ? `data-open="${r.album.id}"` : `data-log-heard="${esc(r.g.key)}" title="Add to your library"`);
-const logBtn = (r) => (r.album ? '' : `<button class="icon-btn log-add" data-log-heard="${esc(r.g.key)}" title="Add ${esc(r.g.title)} to your library" aria-label="Add ${esc(r.g.title)} to your library">${ICON.plus}</button>`);
-document.addEventListener('click', (e) => {
+// Suggestions leave out albums hidden with ×, and (unless switched on in
+// Settings) albums only heard in imported history, not since tracking began.
+const hiddenHeard = () => new Set(store.listeningMeta().hidden || []);
+const suggestable = (g) => !hiddenHeard().has(g.key) && (store.listeningMeta().historySuggest || (g.liveMs || 0) > 0);
+const logBtn = (r) => (r.album || hiddenHeard().has(r.g.key) ? '' : `<button class="icon-btn log-add" data-log-heard="${esc(r.g.key)}" title="Add ${esc(r.g.title)} to your library" aria-label="Add ${esc(r.g.title)} to your library">${ICON.plus}</button>`);
+document.addEventListener('click', async (e) => {
+  const hide = e.target.closest('[data-hide-heard]');
+  if (hide && !ro()) {
+    const key = hide.dataset.hideHeard;
+    hide.closest('li')?.remove();
+    try {
+      await store.setListenMeta({ hidden: [...hiddenHeard(), key] });
+      toast('Won’t suggest that again');
+      render();
+    } catch (err) { toast(`Couldn’t save that: ${err.message}`, 'error'); }
+    return;
+  }
   const b = e.target.closest('[data-log-heard]');
   const g = b && listenIndex?.groups[b.dataset.logHeard];
   if (g && !ro()) addAlbum({ query: `${g.artist} ${g.title}` });
