@@ -1,6 +1,6 @@
-import * as store from './store.js?v=26';
-import * as spotify from './spotify.js?v=26';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=26';
+import * as store from './store.js?v=27';
+import * as spotify from './spotify.js?v=27';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=27';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -269,7 +269,7 @@ function render() {
   if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
   if ((page === 'up-next' || page === 'to-listen') && !ro()) return renderUpNext();
   if (page === 'search') return renderSearch(a || '');
-  if (page === 'listening' && !ro()) return renderListening(a || 'month');
+  if (page === 'listening' && !ro()) return renderListening(a || 'month', b === 'songs' ? 'songs' : 'albums');
   if (page === 'friend' && a) return acceptCode(a);
   location.hash = '#/';
 }
@@ -1796,9 +1796,14 @@ function indexListening(all) {
     g.albumMs = Math.max(g.albumMs, l.albumMs || 0);
     for (const [w, ms] of Object.entries(l.weeks || {})) g.weeks[w] = (g.weeks[w] || 0) + ms;
     for (const t of Object.values(l.tracks || {})) {
-      const o = g.tracks[norm(t.name)] ||= { name: t.name, ms: 0, plays: 0 };
+      const o = g.tracks[norm(t.name)] ||= { name: t.name, ms: 0, plays: 0, weeks: {}, wplays: {} };
       o.ms += t.ms || 0;
       o.plays += t.plays || 0;
+      // Songs counted before weekly song totals were kept go in the album's last week.
+      const weeks = t.weeks || { [weekKey(l.last || Date.now())]: t.ms || 0 };
+      const wplays = t.wplays || { [weekKey(l.last || Date.now())]: t.plays || 0 };
+      for (const [w, ms] of Object.entries(weeks)) o.weeks[w] = (o.weeks[w] || 0) + ms;
+      for (const [w, n] of Object.entries(wplays)) o.wplays[w] = (o.wplays[w] || 0) + n;
     }
   }
   return { groups, byId };
@@ -1843,9 +1848,11 @@ const PERIODS = {
 };
 // Time in a period, from the weekly totals (a week counts if it starts in the period).
 const msSince = (g, since) => (since ? Object.entries(g.weeks).reduce((n, [w, ms]) => n + (w >= since ? ms : 0), 0) : g.ms);
+const playsSince = (t, since) => (since ? Object.entries(t.wplays).reduce((n, [w, c]) => n + (w >= since ? c : 0), 0) : t.plays);
 
-function renderListening(period) {
+function renderListening(period, mode = 'albums') {
   const P = PERIODS[period] ? period : 'month';
+  if (mode === 'songs') return renderTopSongs(P);
   const since = PERIODS[P].since();
   const logged = loggedByGroup();
   const rows = Object.values(listenIndex?.groups || {}).map((g) => ({ g, ms: msSince(g, since), album: logged[g.key] }))
@@ -1864,7 +1871,7 @@ function renderListening(period) {
         <span class="t">${fmtDur(r.ms)}</span></button></li>`;
   app.innerHTML = `
     <section class="hero"><div><p class="eyebrow">your listening</p><h1>${PERIODS[P].title.toLowerCase()}</h1></div></section>
-    <nav class="seg listen-seg">${Object.entries(PERIODS).map(([k, v]) => `<a href="#/listening/${k}" class="${k === P ? 'on' : ''}">${v.tab}</a>`).join('')}</nav>
+    ${listenNavHtml(P, 'albums')}
     ${!tracking.enabled && !hasListening()
       ? `<div class="empty"><h2>Not tracking yet</h2><p>Switch on Track listening time in Settings to see how long you spend on each album.</p><button class="btn primary" id="goSettings">Open Settings</button></div>`
       : !rows.length
@@ -1887,6 +1894,58 @@ function renderListening(period) {
     const g = b && listenIndex.groups[b.dataset.logHeard];
     if (g) addAlbum({ query: `${g.artist} ${g.title}` });
   });
+}
+
+function listenNavHtml(P, mode) {
+  const suffix = mode === 'songs' ? '/songs' : '';
+  return `<nav class="listen-mode" aria-label="Show">
+      <a href="#/listening/${P}" class="${mode === 'albums' ? 'on' : ''}">Albums</a>
+      <a href="#/listening/${P}/songs" class="${mode === 'songs' ? 'on' : ''}">Songs</a>
+    </nav>
+    <nav class="seg listen-seg">${Object.entries(PERIODS).map(([k, v]) => `<a href="#/listening/${k}${suffix}" class="${k === P ? 'on' : ''}">${v.tab}</a>`).join('')}</nav>`;
+}
+
+// Every song heard in the period, most played first (then most time).
+function renderTopSongs(P) {
+  const since = PERIODS[P].since();
+  const logged = loggedByGroup();
+  const best = new Set();
+  for (const y of store.years()) {
+    for (const album of data.years[y].albums) {
+      const l = listeningFor(album);
+      if (!l) continue;
+      const fav = data.years[y].favourites.find((f) => f.albumId === album.id);
+      bestSongs(songsOf(album, fav).song).forEach((s) => best.add(`${l.key}|${norm(s)}`));
+    }
+  }
+  const songs = [];
+  for (const g of Object.values(listenIndex?.groups || {})) {
+    for (const [k, t] of Object.entries(g.tracks)) {
+      const plays = playsSince(t, since);
+      const ms = msSince(t, since);
+      if (plays || ms >= 60000) songs.push({ t, g, plays, ms, album: logged[g.key], best: best.has(`${g.key}|${k}`) });
+    }
+  }
+  songs.sort((a, b) => b.plays - a.plays || b.ms - a.ms);
+  const top = songs.slice(0, 50);
+  const max = top[0]?.plays || 1;
+  const pseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
+  app.innerHTML = `
+    <section class="hero"><div><p class="eyebrow">your listening</p><h1>${PERIODS[P].title.toLowerCase()}</h1></div></section>
+    ${listenNavHtml(P, 'songs')}
+    ${!top.length
+      ? `<div class="empty"><h2>No songs yet</h2><p>${tracking.enabled ? 'Songs you play on Spotify show up here within half an hour.' : 'Switch on Track listening time in Settings to see your most played songs.'}</p></div>`
+      : `<div class="big-total">
+          <div><b>${songs.reduce((n, s) => n + s.plays, 0).toLocaleString()}</b><small>plays</small></div>
+          <div><b>${songs.length.toLocaleString()}</b><small>song${songs.length === 1 ? '' : 's'}</small></div>
+        </div>
+        <ol class="lb songs">${top.map((s, i) => `<li>
+          <span class="n">${i + 1}</span>
+          <button class="lb-open" ${s.album ? `data-open="${s.album.id}"` : ''}>${coverHtml(s.album || pseudo(s.g), 'sm')}
+            <span class="m"><b class="${s.best ? 'best' : ''}">${esc(s.t.name)}</b><small>${esc(s.g.artist)} · ${esc(s.g.title)}</small>
+            <span class="bar"><i style="width:${Math.max(2, Math.round(s.plays / max * 100))}%"></i></span></span>
+            <span class="t">${s.plays} play${s.plays === 1 ? '' : 's'}<small>${fmtDur(s.ms)}</small></span></button></li>`).join('')}</ol>`}`;
+  watchCovers();
 }
 
 // Monday of a week as YYYY-MM-DD in UTC, matching functions/listening.js.

@@ -46,9 +46,11 @@ export function tally(items, cursor = 0) {
     a.last = Math.max(a.last, at);
     const wk = weekOf(at);
     a.weeks[wk] = (a.weeks[wk] || 0) + ms;
-    const t = a.tracks[track.id] ||= { name: track.name || '', n: track.track_number || 0, ms: 0, plays: 0 };
+    const t = a.tracks[track.id] ||= { name: track.name || '', n: track.track_number || 0, ms: 0, plays: 0, weeks: {}, wplays: {} };
     t.ms += ms;
     t.plays += 1;
+    t.weeks[wk] = (t.weeks[wk] || 0) + ms;
+    t.wplays[wk] = (t.wplays[wk] || 0) + 1;
   }
   return { cursor: prev, plays: plays.length, albums };
 }
