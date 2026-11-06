@@ -1,6 +1,6 @@
-import * as store from './store.js?v=23';
-import * as spotify from './spotify.js?v=23';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=23';
+import * as store from './store.js?v=24';
+import * as spotify from './spotify.js?v=24';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=24';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1823,7 +1823,33 @@ function listenPanelHtml(album, fav) {
 
 const closeBtn = (cls = '') => `<button class="icon-btn modal-close ${cls}" data-close aria-label="Close">${ICON.close}</button>`;
 
+// An open popup gets its own history entry, so the phone's back gesture
+// closes it instead of leaving the page underneath (and its year) behind.
+let skipPop = false;
+if (history.state?.modal) history.replaceState(null, '');
+window.addEventListener('popstate', () => {
+  if (skipPop) { skipPop = false; return; }
+  const top = modalRoot.lastElementChild;
+  if (history.state?.modal) {
+    // Landed on a popup's leftover entry (e.g. after a link inside it): step over it.
+    if (!top) history.back();
+    return;
+  }
+  if (!top) return;
+  closeModal(top);
+  if (modalRoot.children.length) history.pushState({ modal: true }, '');
+});
+function releaseModalEntry() {
+  // Deferred so a popup that closes and immediately opens another keeps the entry.
+  setTimeout(() => {
+    if (modalRoot.children.length || !history.state?.modal) return;
+    skipPop = true;
+    history.back();
+  });
+}
+
 function openModal(html, cls = '') {
+  if (!history.state?.modal) history.pushState({ modal: true }, '');
   const wrap = document.createElement('div');
   wrap.className = 'modal-wrap';
   wrap.innerHTML = `<div class="modal ${cls}" role="dialog" aria-modal="true">${html}</div>`;
@@ -1840,6 +1866,7 @@ function closeModal(wrap, silent = false) {
   wrap.remove();
   if (!modalRoot.children.length) document.body.classList.remove('modal-open');
   if (!silent) wrap.onClose?.();
+  if (!modalRoot.children.length) releaseModalEntry();
 }
 
 let toastTimer;
