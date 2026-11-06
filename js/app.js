@@ -1,6 +1,6 @@
-import * as store from './store.js?v=20';
-import * as spotify from './spotify.js?v=20';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs } from './art.js?v=20';
+import * as store from './store.js?v=21';
+import * as spotify from './spotify.js?v=21';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=21';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -696,11 +696,32 @@ function songChipsHtml(fav, editable = true) {
 
 function songPickerHtml(album, fav, listId) {
   const n = bestSongs(fav.song).length;
-  return `<div class="song-picker">
+  return `<div class="song-picker" data-album="${album.id}">
     <ul class="song-chips">${songChipsHtml(fav)}</ul>
-    <input class="song-input" placeholder="${n ? '+ Add another song' : 'Best song…'}" aria-label="${n ? 'Add another best song' : 'Best song'}" list="${listId}" enterkeyhint="done" autocomplete="off">
+    <div class="song-add">
+      <input class="song-input" placeholder="${n ? '+ Add another song' : 'Best song…'}" aria-label="${n ? 'Add another best song' : 'Best song'}" list="${listId}" enterkeyhint="done" autocomplete="off">
+      ${album.title ? `<button type="button" class="tl-toggle" aria-expanded="false" title="Pick songs from the album's tracklist">${ICON.list}<span>Tracklist</span></button>` : ''}
+    </div>
     <datalist id="${listId}">${(album.songs || []).map((s) => `<option value="${esc(s)}">`).join('')}</datalist>
+    <div class="tracklist" hidden></div>
   </div>`;
+}
+
+const fmtTime = (ms) => (ms ? `${Math.floor(ms / 60000)}:${String(Math.round(ms / 1000) % 60).padStart(2, '0')}` : '');
+const songKey = (t) => norm(cleanSong(t));
+
+function tracklistHtml(tracks, fav) {
+  const picked = new Set(bestSongs(fav.song).map(songKey));
+  const discs = new Set(tracks.map((t) => t.disc)).size > 1;
+  let html = '', disc = null;
+  tracks.forEach((t, i) => {
+    if (discs && t.disc !== disc) { disc = t.disc; html += `<li class="tl-disc">Disc ${disc}</li>`; }
+    const on = picked.has(songKey(t.name));
+    html += `<li><button type="button" class="tl-track${on ? ' on' : ''}" data-track="${i}" aria-pressed="${on}">
+      <span class="tl-no">${t.no || i + 1}</span><span class="tl-name">${esc(cleanSong(t.name))}</span>
+      <span class="tl-time">${fmtTime(t.ms)}</span><span class="tl-mark">${on ? ICON.check : ICON.plus}</span></button></li>`;
+  });
+  return `<div class="tl-head"><span>Tap the songs you love</span><button type="button" class="link-btn tl-done">Done</button></div><ol class="tl-list">${html}</ol>`;
 }
 
 // favFor(element) returns the favourite that a picker inside `root` belongs to.
@@ -711,6 +732,20 @@ function bindSongPicker(root, favFor) {
     const input = $('.song-input', picker);
     input.placeholder = n ? '+ Add another song' : 'Best song…';
     input.setAttribute('aria-label', n ? 'Add another best song' : 'Best song');
+    const picked = new Set(bestSongs(fav.song).map(songKey));
+    const tracks = $('.tracklist', picker)._tracks || [];
+    picker.querySelectorAll('.tl-track').forEach((b) => {
+      const on = picked.has(songKey(tracks[b.dataset.track]?.name));
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on);
+      $('.tl-mark', b).innerHTML = on ? ICON.check : ICON.plus;
+    });
+  };
+  const save = (picker, fav, songs, message) => {
+    fav.song = songs.join('; ');
+    redraw(picker, fav);
+    store.commit({ quiet: true });
+    toast(message);
   };
   const add = (input) => {
     const fresh = bestSongs(input.value);
@@ -720,26 +755,65 @@ function bindSongPicker(root, favFor) {
     const songs = bestSongs(fav.song);
     const have = new Set(songs.map((x) => norm(x)));
     for (const x of fresh) if (!have.has(norm(x))) { songs.push(x); have.add(norm(x)); }
-    fav.song = songs.join('; ');
-    redraw(input.closest('.song-picker'), fav);
-    store.commit({ quiet: true });
-    toast(songs.length > 1 ? 'Best songs saved' : 'Best song saved');
+    save(input.closest('.song-picker'), fav, songs, songs.length > 1 ? 'Best songs saved' : 'Best song saved');
+  };
+  const openTracklist = async (picker, btn) => {
+    const panel = $('.tracklist', picker);
+    const open = panel.hidden;
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', open);
+    if (!open || panel._tracks) return;
+    const found = store.findAlbum(picker.dataset.album);
+    if (!found) return;
+    panel.innerHTML = '<div class="tl-status"><span class="spin"></span>Finding the tracklist…</div>';
+    try {
+      const tracks = await findTracklist(found.album);
+      if (!tracks.length) throw new Error('none');
+      panel._tracks = tracks;
+      panel.innerHTML = tracklistHtml(tracks, favFor(picker));
+      // Typing a song suggests from the tracklist too.
+      const dl = picker.querySelector('datalist');
+      const seen = new Set();
+      dl.innerHTML = [...(found.album.songs || []), ...tracks.map((t) => cleanSong(t.name))]
+        .filter((x) => !seen.has(norm(x)) && seen.add(norm(x))).map((x) => `<option value="${esc(x)}">`).join('');
+    } catch (e) {
+      panel.innerHTML = `<div class="tl-status">${e.message === 'rate limited' ? 'Too many lookups just now. Try again in a minute.' : "Couldn't find this album's tracklist. Type the song instead."}</div>`;
+    }
   };
   root.addEventListener('change', (e) => { if (e.target.matches('.song-input')) add(e.target); });
   root.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.matches('.song-input')) { e.preventDefault(); add(e.target); }
   });
   root.addEventListener('click', (e) => {
+    const picker = e.target.closest('.song-picker');
+    if (!picker) return;
+    const toggle = e.target.closest('.tl-toggle');
+    if (toggle) { e.stopPropagation(); openTracklist(picker, toggle); return; }
+    if (e.target.closest('.tl-done')) {
+      e.stopPropagation();
+      $('.tracklist', picker).hidden = true;
+      $('.tl-toggle', picker)?.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    const track = e.target.closest('[data-track]');
+    if (track) {
+      e.stopPropagation();
+      const t = $('.tracklist', picker)._tracks?.[track.dataset.track];
+      if (!t) return;
+      const fav = favFor(picker);
+      const songs = bestSongs(fav.song);
+      const i = songs.findIndex((x) => songKey(x) === songKey(t.name));
+      if (i >= 0) { songs.splice(i, 1); save(picker, fav, songs, 'Best song removed'); }
+      else { songs.push(cleanSong(t.name)); save(picker, fav, songs, songs.length > 1 ? 'Best songs saved' : 'Best song saved'); }
+      return;
+    }
     const rm = e.target.closest('[data-rm-song]');
     if (!rm) return;
     e.stopPropagation();
     const fav = favFor(rm);
     const songs = bestSongs(fav.song);
     songs.splice(Number(rm.dataset.rmSong), 1);
-    fav.song = songs.join('; ');
-    redraw(rm.closest('.song-picker'), fav);
-    store.commit({ quiet: true });
-    toast('Best song removed');
+    save(picker, fav, songs, 'Best song removed');
   });
 }
 
