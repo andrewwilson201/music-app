@@ -1,6 +1,6 @@
-import * as store from './store.js?v=24';
-import * as spotify from './spotify.js?v=24';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=24';
+import * as store from './store.js?v=25';
+import * as spotify from './spotify.js?v=25';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=25';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -291,9 +291,12 @@ function openYearMenu(btn) {
   const menu = document.createElement('div');
   menu.className = 'year-menu';
   menu.id = 'yearMenu';
+  // Switching year keeps you on the tab you're looking at (Listened or Favourites).
+  const [page, , tab] = route();
+  const suffix = page === 'year' && tab === 'favourites' ? '/favourites' : '';
   menu.innerHTML = shownYears().map((y) => {
     const n = data.years[y]?.albums.length || 0;
-    return `<a href="#/year/${y}" class="${y === navActive ? 'on' : ''}"><b>${y}</b><small>${n ? `${n} album${n === 1 ? '' : 's'}` : y === now ? 'nothing yet' : ''}</small></a>`;
+    return `<a href="#/year/${y}${suffix}" class="${y === navActive ? 'on' : ''}"><b>${y}</b><small>${n ? `${n} album${n === 1 ? '' : 's'}` : y === now ? 'nothing yet' : ''}</small></a>`;
   }).join('') + (ro() ? '' : `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`);
   document.body.appendChild(menu);
   const r = btn.getBoundingClientRect();
