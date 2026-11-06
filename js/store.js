@@ -10,6 +10,8 @@
 //   users/{uid}/meta/friends { list: [{ uid, token, name }] }   libraries they follow
 //   shares/{token}           { uid, name, createdAt }   lets a code be looked up
 //   shares/{token}/viewers/{viewerUid} { name, addedAt }  who added that code
+//   users/{uid}/private/spotify   listening tracking: { enabled, refreshToken, clientId, since, cursor, lastRun, lastError, plays }
+//   users/{uid}/listening/{spotifyAlbumId}  time spent on that album, written by functions/index.js
 //
 // Sharing: a friend can read your years (not Up next) only while your
 // meta/share token points at a share whose viewers include them. Turning
@@ -20,8 +22,8 @@ import {
   getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
-} from '../vendor/firebase.js?v=20';
-import { FIREBASE_CONFIG } from './config.js?v=20';
+} from '../vendor/firebase.js?v=21';
+import { FIREBASE_CONFIG } from './config.js?v=21';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
 const LEGACY_DATA_KEY = 'music-log:data';
@@ -438,6 +440,39 @@ export async function importLegacyLog() {
   ls(LEGACY_CONFIG_KEY, null); ls(LEGACY_DATA_KEY, null); ls(LEGACY_DIRTY_KEY, null);
   return data;
 }
+
+// ---------- listening tracking (the counting is done by functions/index.js)
+
+const trackingDoc = () => doc(db, 'users', user.uid, 'private', 'spotify');
+let listening = null; // spotify album id -> totals, once loaded
+
+// { enabled, since, lastRun, lastError, plays, gapAt } (never the token itself)
+export async function trackingState() {
+  const snap = await getDoc(trackingDoc());
+  if (!snap.exists()) return { enabled: false };
+  const { refreshToken, clientId, ...rest } = snap.data();
+  return { ...rest, enabled: !!(rest.enabled && refreshToken) };
+}
+
+export async function startTracking(refreshToken, clientId) {
+  const snap = await getDoc(trackingDoc());
+  const since = snap.exists() && snap.data().since;
+  await setDoc(trackingDoc(), { enabled: true, refreshToken, clientId, since: since || Date.now(), lastError: '' }, { merge: true });
+}
+
+export async function stopTracking() {
+  await setDoc(trackingDoc(), { enabled: false, refreshToken: '' }, { merge: true });
+}
+
+// All of this person's listening totals, keyed by Spotify album id.
+export async function loadListening() {
+  if (!user || viewing) return listening || {};
+  const out = {};
+  (await getDocs(collection(db, 'users', user.uid, 'listening'))).forEach((s) => { out[s.id] = s.data(); });
+  listening = out;
+  return out;
+}
+export const getListening = () => (viewing ? null : listening);
 
 export function exportJson() {
   const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });

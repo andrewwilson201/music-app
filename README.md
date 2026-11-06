@@ -16,6 +16,21 @@ It's a static site (plain HTML, CSS and JavaScript, no build step) hosted on Git
 - **Spotify**: "Play on Spotify" opens a Spotify search for the album. To link to an exact album, paste its Spotify link into the album's Edit form.
 - **Playlists**: Favourites › Make playlist finds each favourite's best song on Spotify and puts them, in ranking order, into a private "YYYY Favourite Songs" playlist in your own Spotify account, then offers to open it. Running it again replaces the songs in that same playlist. An album can have several best songs: each one shows as a chip, with an "Add another song" box under them (they're stored in the favourite's `song` field joined with `; `). Songs it can't find are listed so you can fix the spelling. The first time, Spotify asks for permission to manage playlists. Everyone who uses it must be listed under User Management in the Spotify developer dashboard while the Spotify app is in development mode.
 
+- **Listening time**: Settings › Track listening time signs in to Spotify a second time (asking only to read recently played tracks) and saves that sign-in to `users/{uid}/private/spotify`. A scheduled Cloud Function ([`functions/index.js`](functions/index.js)) runs every 30 minutes, reads each person's last 50 plays, and adds any new ones to `users/{uid}/listening/{spotifyAlbumId}` (total time, plays, time per week and per track). Spotify doesn't say how much of a track was heard, so each play counts as the track's length, capped by the time since the previous play ended ([`functions/listening.js`](functions/listening.js)). The album details panel matches these totals to the log by Spotify album link, or by artist and title so other editions still count. Friends can't see them. If more than 50 plays happen between checks, Settings says some were missed.
+
+## Deploying the listening function
+
+It needs the Firebase project on the Blaze plan (the usage fits in the free allowance). From this folder:
+
+```sh
+npm install -g firebase-tools
+firebase login
+cd functions && npm install && cd ..
+firebase deploy --only functions
+```
+
+`cd functions && npm test` runs the tests for the counting logic.
+
 ## Shortcuts
 
 `n` adds an album, `/` searches every year, and `Esc` closes a dialog.
