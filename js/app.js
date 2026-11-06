@@ -1,6 +1,6 @@
-import * as store from './store.js?v=25';
-import * as spotify from './spotify.js?v=25';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=25';
+import * as store from './store.js?v=26';
+import * as spotify from './spotify.js?v=26';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=26';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -262,11 +262,14 @@ function render() {
   const years = shownYears();
   if (sortable) { sortable.destroy(); sortable = null; }
   closeYearMenu();
+  $('#listenBtn').hidden = !(hasListening() || (!ro() && tracking.enabled));
+  $('#listenBtn').classList.toggle('on', page === 'listening');
   navActive = page === 'year' ? a : page ? page : years[0];
   if (!page) return renderYear(years[0], 'listened');
   if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
   if ((page === 'up-next' || page === 'to-listen') && !ro()) return renderUpNext();
   if (page === 'search') return renderSearch(a || '');
+  if (page === 'listening' && !ro()) return renderListening(a || 'month');
   if (page === 'friend' && a) return acceptCode(a);
   location.hash = '#/';
 }
@@ -423,13 +426,19 @@ function sortedAlbums(yearData) {
   if (ui.sort === 'latest') list.reverse();
   if (ui.sort === 'artist') list.sort((x, y) => norm(x.a.artist).localeCompare(norm(y.a.artist)));
   if (ui.sort === 'favs') list.sort((x, y) => (store.favRank(yearData, x.a.id) || 999) - (store.favRank(yearData, y.a.id) || 999));
+  if (ui.sort === 'listened') list.sort((x, y) => (listeningFor(y.a)?.ms || 0) - (listeningFor(x.a)?.ms || 0));
   return list.map(({ a }) => a);
 }
+
+const timePill = (album) => {
+  const l = pillsOn() && listeningFor(album);
+  return l && l.ms >= 60000 ? `<span class="play-time" title="Time listened on Spotify">${ICON.headphones}${fmtDur(l.ms)}</span>` : '';
+};
 
 function cardHtml(album, yearData, showYear = '') {
   const rank = yearData ? store.favRank(yearData, album.id) : 0;
   return `<button class="card" data-open="${album.id}">
-    ${coverHtml(album)}
+    ${coverHtml(album).replace(/<\/div>$/, `${timePill(album)}</div>`)}
     ${rank ? `<span class="rank-badge" title="#${rank} favourite">${rank}</span>` : ''}
     <span class="card-meta">
       <span class="card-title">${esc(album.title || album.artist)}</span>
@@ -449,6 +458,7 @@ function rowHtml(album, yearData, showYear = '') {
         <span class="row-artist">${album.title ? esc(album.artist) : '<i>no album noted</i>'}${showYear ? ` · ${showYear}` : ''}</span>
         ${songs ? `<span class="row-songs">♪ ${esc(songs)}</span>` : ''}
       </span>
+      ${(() => { const l = listeningFor(album); return l && l.ms >= 60000 ? `<span class="row-time" title="Time listened on Spotify">${fmtDur(l.ms)}</span>` : ''; })()}
       ${rank ? `<span class="row-rank" title="#${rank} favourite">${ICON.heart}${rank}</span>` : ''}
     </button>
     <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify" aria-label="Play ${esc(album.title || album.artist)} on Spotify">${ICON.spotify}</a>
@@ -486,6 +496,7 @@ function renderYear(year, tab) {
       <div>
         <p class="eyebrow">${ro() ? `${esc(possessive(friendName()))} albums from` : 'albums released in'}</p>
         <h1>${yearMenuBtn(year)}</h1>
+        ${yearListenHtml(y)}
       </div>
     </section>
     <nav class="tabs" role="tablist">
@@ -513,12 +524,14 @@ function renderListened(year) {
           <option value="order">Listening order</option>
           <option value="artist">Artist A–Z</option>
           <option value="favs">Favourites first</option>
+          ${hasListening() ? '<option value="listened">Most listened</option>' : ''}
         </select>
       </label>
       ${viewToggleHtml()}
     </div>
     <div id="grid"></div>`;
   if (!ro() && year === store.years()[0] && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
+  if (ui.sort === 'listened' && !hasListening()) ui.sort = 'latest';
   $('#sort').value = ui.sort;
   const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
   sortTitle();
@@ -1464,6 +1477,7 @@ function openSettings() {
         <label class="switch" title="Track listening time"><input type="checkbox" id="listenToggle" ${tracking.enabled ? 'checked' : ''} aria-label="Track listening time"><span></span></label>
       </div>
       <p class="listen-status" id="listenStatus" ${tracking.enabled || tracking.lastError ? '' : 'hidden'}>${trackingStatusHtml()}</p>
+      ${hasListening() ? `<label class="check listen-pills"><input type="checkbox" id="pillsToggle" ${pillsOn() ? 'checked' : ''}> Show time on album covers</label>` : ''}
     </div>` : ''}
     <div class="share-box" id="shareBox">
       <div class="share-head">
@@ -1678,13 +1692,24 @@ async function acceptCode(code) {
 // plays and keeps a total per Spotify album in users/{uid}/listening. Here we
 // only read those totals and match them to albums in the log.
 
+let listenIndex = null; // { groups: { key: group }, byId: { spotifyId: key } }, built from the loaded totals
+let listenStamp = '';
+
 async function loadListening() {
   if (ro()) return;
   try {
-    const [, state] = await Promise.all([store.loadListening(), store.trackingState()]);
+    const [all, state] = await Promise.all([store.loadListening(), store.trackingState()]);
     tracking = state;
+    const stamp = Object.values(all).map((l) => `${l.albumId}:${l.ms}`).join() + (tracking.enabled ? '+' : '');
+    if (stamp === listenStamp) return;
+    listenStamp = stamp;
+    listenIndex = indexListening(all);
+    // Show the new totals, unless that would interrupt typing or an open dialog.
+    if (!modalRoot.children.length && !document.activeElement?.closest('input, select, textarea')) render();
   } catch (e) { console.warn('Listening totals not loaded:', e.message); }
 }
+const hasListening = () => !ro() && !!(listenIndex && Object.keys(listenIndex.groups).length);
+const pillsOn = () => { try { return localStorage.getItem('music-log:pills') !== 'off'; } catch { return true; } };
 
 async function finishTrackingLogin() {
   const { refreshToken } = pendingTracking;
@@ -1698,6 +1723,10 @@ async function finishTrackingLogin() {
 }
 
 function setUpListenBox(m) {
+  $('#pillsToggle', m)?.addEventListener('change', (e) => {
+    try { localStorage.setItem('music-log:pills', e.target.checked ? 'on' : 'off'); } catch {}
+    render();
+  });
   const toggle = $('#listenToggle', m);
   if (!toggle) return;
   toggle.addEventListener('change', async () => {
@@ -1746,33 +1775,118 @@ const spotifyAlbumId = (url) => (String(url || '').match(/album[/:]([A-Za-z0-9]{
 const baseTitle = (t) => norm(String(t || '').replace(/\s*[([][^)\]]*[)\]]\s*$/, '').replace(/\s+-\s+[^-]*(remaster|edition|version|deluxe|expanded)[^-]*$/i, ''));
 const firstArtist = (a) => norm(String(a || '').split(/,|&| and | feat\.? | x /i)[0]);
 
-// The listening totals for an album in the log, summed across every Spotify
-// edition of it (the linked one, plus anything with the same artist and title).
-function listeningFor(album) {
-  const all = store.getListening();
-  if (!all || !album.title) return null;
-  const id = spotifyAlbumId(album.spotify);
-  const title = baseTitle(album.title);
-  const artist = firstArtist(album.artist);
-  const hits = Object.values(all).filter((l) => l.albumId === id
-    || (baseTitle(l.title) === title && firstArtist(l.artist) === artist));
-  if (!hits.length) return null;
-  const sum = { ms: 0, plays: 0, first: Infinity, last: 0, albumMs: 0, weeks: {}, tracks: {} };
-  for (const l of hits) {
-    sum.ms += l.ms || 0;
-    sum.plays += l.plays || 0;
-    sum.first = Math.min(sum.first, l.first || Infinity);
-    sum.last = Math.max(sum.last, l.last || 0);
-    sum.albumMs = Math.max(sum.albumMs, l.albumMs || 0);
-    for (const [w, ms] of Object.entries(l.weeks || {})) sum.weeks[w] = (sum.weeks[w] || 0) + ms;
+const groupKey = (artist, title) => `${firstArtist(artist)}|${baseTitle(title)}`;
+
+// Spotify editions of the same album (deluxe, remaster...) are summed into one
+// group, keyed by first artist + base title.
+function indexListening(all) {
+  const groups = {};
+  const byId = {};
+  for (const l of Object.values(all || {})) {
+    const key = groupKey(l.artist, l.title);
+    byId[l.albumId] = key;
+    const g = groups[key] ||= { key, ids: [], title: l.title, artist: l.artist, art: l.art, spotify: l.spotify,
+      ms: 0, plays: 0, first: Infinity, last: 0, albumMs: 0, weeks: {}, tracks: {} };
+    g.ids.push(l.albumId);
+    if ((l.ms || 0) > (g.top || 0)) Object.assign(g, { top: l.ms, title: l.title, art: l.art || g.art, spotify: l.spotify });
+    g.ms += l.ms || 0;
+    g.plays += l.plays || 0;
+    g.first = Math.min(g.first, l.first || Infinity);
+    g.last = Math.max(g.last, l.last || 0);
+    g.albumMs = Math.max(g.albumMs, l.albumMs || 0);
+    for (const [w, ms] of Object.entries(l.weeks || {})) g.weeks[w] = (g.weeks[w] || 0) + ms;
     for (const t of Object.values(l.tracks || {})) {
-      const k = norm(t.name);
-      const o = sum.tracks[k] ||= { name: t.name, ms: 0, plays: 0 };
+      const o = g.tracks[norm(t.name)] ||= { name: t.name, ms: 0, plays: 0 };
       o.ms += t.ms || 0;
       o.plays += t.plays || 0;
     }
   }
-  return sum;
+  return { groups, byId };
+}
+
+// The listening group for an album in the log: its linked Spotify edition,
+// or anything with the same artist and title.
+function listeningFor(album) {
+  if (ro() || !listenIndex || !album?.title) return null;
+  const key = listenIndex.byId[spotifyAlbumId(album.spotify)] || groupKey(album.artist, album.title);
+  return listenIndex.groups[key] || null;
+}
+
+// Each Spotify-heard album group mapped to the album in the log it belongs to.
+function loggedByGroup() {
+  const out = {};
+  for (const y of store.years()) {
+    for (const album of data.years[y].albums) {
+      const l = listeningFor(album);
+      if (l && !out[l.key]) out[l.key] = album;
+    }
+  }
+  return out;
+}
+
+function yearListenHtml(y) {
+  if (!hasListening()) return '';
+  const seen = new Set();
+  let ms = 0;
+  for (const album of y.albums) {
+    const l = listeningFor(album);
+    if (l && !seen.has(l.key)) { seen.add(l.key); ms += l.ms; }
+  }
+  return ms >= 60000 ? `<p class="hero-stats"><b>${y.albums.length}</b> album${y.albums.length === 1 ? '' : 's'} · <a class="listen-link" href="#/listening/year"><span class="ear"></span><b>${fmtDur(ms).replace(/ 00m$/, '')}</b> listened on Spotify</a></p>` : '';
+}
+
+const PERIODS = {
+  week: { tab: 'Week', title: 'This week', since: () => weekKey(Date.now()) },
+  month: { tab: 'Month', title: 'Last 4 weeks', since: () => weekKey(Date.now() - 21 * 864e5) },
+  year: { tab: 'Year', title: 'This year', since: () => `${new Date().getFullYear()}-01-01` },
+  all: { tab: 'All', title: 'All time', since: () => '' },
+};
+// Time in a period, from the weekly totals (a week counts if it starts in the period).
+const msSince = (g, since) => (since ? Object.entries(g.weeks).reduce((n, [w, ms]) => n + (w >= since ? ms : 0), 0) : g.ms);
+
+function renderListening(period) {
+  const P = PERIODS[period] ? period : 'month';
+  const since = PERIODS[P].since();
+  const logged = loggedByGroup();
+  const rows = Object.values(listenIndex?.groups || {}).map((g) => ({ g, ms: msSince(g, since), album: logged[g.key] }))
+    .filter((r) => r.ms >= 60000).sort((a, b) => b.ms - a.ms);
+  const total = rows.reduce((n, r) => n + r.ms, 0);
+  const inLog = rows.reduce((n, r) => n + (r.album ? r.ms : 0), 0);
+  const top = rows.slice(0, 25);
+  const max = top[0]?.ms || 1;
+  const unlogged = rows.filter((r) => !r.album && r.ms >= 15 * 60000).slice(0, 12);
+  const pseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
+  const rowHtml = (r, i) => `<li>
+      <span class="n">${i + 1}</span>
+      <button class="lb-open" ${r.album ? `data-open="${r.album.id}"` : ''}>${coverHtml(r.album || pseudo(r.g), 'sm')}
+        <span class="m"><b>${esc(r.g.title)}</b><small>${esc(r.g.artist)}${r.album ? '' : ' · <i>not logged</i>'}</small>
+        <span class="bar"><i style="width:${Math.max(2, Math.round(r.ms / max * 100))}%"></i></span></span>
+        <span class="t">${fmtDur(r.ms)}</span></button></li>`;
+  app.innerHTML = `
+    <section class="hero"><div><p class="eyebrow">your listening</p><h1>${PERIODS[P].title.toLowerCase()}</h1></div></section>
+    <nav class="seg listen-seg">${Object.entries(PERIODS).map(([k, v]) => `<a href="#/listening/${k}" class="${k === P ? 'on' : ''}">${v.tab}</a>`).join('')}</nav>
+    ${!tracking.enabled && !hasListening()
+      ? `<div class="empty"><h2>Not tracking yet</h2><p>Switch on Track listening time in Settings to see how long you spend on each album.</p><button class="btn primary" id="goSettings">Open Settings</button></div>`
+      : !rows.length
+        ? `<div class="empty"><h2>Nothing yet</h2><p>${tracking.enabled ? 'Plays you make on Spotify show up here within half an hour.' : 'No listening counted in this period.'}</p></div>`
+        : `<div class="big-total">
+            <div><b>${fmtDur(total)}</b><small>on Spotify</small></div>
+            <div><b>${rows.length}</b><small>album${rows.length === 1 ? '' : 's'}</small></div>
+            <div><b>${Math.round(inLog / total * 100)}%</b><small>on albums in your log</small></div>
+          </div>
+          <ol class="lb">${top.map(rowHtml).join('')}</ol>
+          ${unlogged.length ? `<h2 class="sec-title">Heard, not logged <small>${unlogged.length}</small></h2>
+            <ul class="lb unlogged">${unlogged.map((r) => `<li>
+              ${coverHtml(pseudo(r.g), 'sm')}
+              <span class="m"><b>${esc(r.g.title)}</b><small>${esc(r.g.artist)} · ${fmtDur(r.ms)}</small></span>
+              <button class="btn small" data-log-heard="${esc(r.g.key)}">${ICON.plus} Log it</button></li>`).join('')}</ul>` : ''}`}`;
+  watchCovers();
+  $('#goSettings')?.addEventListener('click', openSettings);
+  app.querySelector('.unlogged')?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-log-heard]');
+    const g = b && listenIndex.groups[b.dataset.logHeard];
+    if (g) addAlbum({ query: `${g.artist} ${g.title}` });
+  });
 }
 
 // Monday of a week as YYYY-MM-DD in UTC, matching functions/listening.js.
@@ -1901,6 +2015,7 @@ document.addEventListener('click', (e) => {
 $('#addBtn').addEventListener('click', () => data && !ro() && addAlbum());
 $('#libsBtn').addEventListener('click', () => data && openLibraries());
 $('#searchBtn').addEventListener('click', () => (location.hash = '#/search'));
+$('#listenBtn').addEventListener('click', () => (location.hash = '#/listening'));
 $('#settingsBtn').addEventListener('click', openSettings);
 document.addEventListener('keydown', (e) => {
   if (e.key === 'Escape' && closeYearMenu()) return;

@@ -18,6 +18,8 @@ It's a static site (plain HTML, CSS and JavaScript, no build step) hosted on Git
 
 - **Listening time**: Settings › Track listening time signs in to Spotify a second time (asking only to read recently played tracks) and saves that sign-in to `users/{uid}/private/spotify`. A scheduled Cloud Function ([`functions/index.js`](functions/index.js)) runs every 30 minutes, reads each person's last 50 plays, and adds any new ones to `users/{uid}/listening/{spotifyAlbumId}` (total time, plays, time per week and per track). Spotify doesn't say how much of a track was heard, so each play counts as the track's length, capped by the time since the previous play ended ([`functions/listening.js`](functions/listening.js)). The album details panel matches these totals to the log by Spotify album link, or by artist and title so other editions still count. Friends can't see them. If more than 50 plays happen between checks, Settings says some were missed.
 
+- **Listening page** (headphones button, `#/listening`): top albums by time for this week, the last 4 weeks, this year or all time (from the weekly totals), how much of it was on albums in the log, and a "Heard, not logged" list with a Log it button. Covers show a time pill (Settings can hide it), the year heading shows the year's total, and the year page can sort by Most listened.
+
 ## Deploying the listening function
 
 It needs the Firebase project on the Blaze plan (the usage fits in the free allowance). From this folder:
