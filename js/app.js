@@ -1,6 +1,6 @@
-import * as store from './store.js?v=21';
-import * as spotify from './spotify.js?v=21';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=21';
+import * as store from './store.js?v=22';
+import * as spotify from './spotify.js?v=22';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=22';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -567,12 +567,16 @@ function renderFavourites(year) {
       store.commit({ quiet: true });
     },
   });
-  bindSongPicker(list, (el) => y.favourites.find((x) => x.albumId === el.closest('.fav').dataset.id));
+  bindSongPicker(list, (el) => {
+    const id = el.closest('.fav').dataset.id;
+    return songsOf(y.albums.find((a) => a.id === id), y.favourites.find((x) => x.albumId === id));
+  });
   list.addEventListener('click', (e) => {
     const rm = e.target.closest('[data-unfav]');
     if (!rm) return;
     e.stopPropagation();
     const id = rm.dataset.unfav;
+    keepSongs(y, id);
     y.favourites = y.favourites.filter((f) => f.albumId !== id);
     store.commit();
     renderFavourites(year);
@@ -724,7 +728,28 @@ function tracklistHtml(tracks, fav) {
   return `<div class="tl-head"><span>Tap the songs you love</span><button type="button" class="link-btn tl-done">Done</button></div><ol class="tl-list">${html}</ol>`;
 }
 
-// favFor(element) returns the favourite that a picker inside `root` belongs to.
+// Any album can have best songs. They live in album.songs, and a favourite
+// also keeps them in fav.song (what playlists and friends' views read), so
+// songsOf() hands the picker one thing to edit that keeps both in step.
+function songsOf(album, fav) {
+  return {
+    get song() { return fav ? fav.song : (album?.songs || []).join('; '); },
+    set song(v) {
+      if (album) album.songs = bestSongs(v);
+      if (fav) fav.song = v;
+    },
+  };
+}
+
+// Before an album stops being a favourite, keep its best songs on the album.
+function keepSongs(yearData, albumId) {
+  const fav = yearData.favourites.find((f) => f.albumId === albumId);
+  const album = yearData.albums.find((a) => a.id === albumId);
+  if (fav && album && bestSongs(fav.song).length) album.songs = bestSongs(fav.song);
+}
+
+// favFor(element) returns what a picker inside `root` edits: anything with a
+// `song` string (see songsOf).
 function bindSongPicker(root, favFor) {
   const redraw = (picker, fav) => {
     const n = bestSongs(fav.song).length;
@@ -820,7 +845,8 @@ function bindSongPicker(root, favFor) {
 function toggleFavourite(year, album, on) {
   const y = data.years[year];
   const has = y.favourites.some((f) => f.albumId === album.id);
-  if (on && !has) y.favourites.push({ albumId: album.id, song: (album.songs || [])[0] || '' });
+  if (on && !has) y.favourites.push({ albumId: album.id, song: (album.songs || []).join('; ') });
+  if (!on && has) keepSongs(y, album.id);
   if (!on && has) y.favourites = y.favourites.filter((f) => f.albumId !== album.id);
   store.commit();
 }
@@ -878,13 +904,12 @@ function openAlbum(id) {
         <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">#${rank} favourite</span>` : ''}</p>
         <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
         <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted. Tap Edit to add one.'}</p>
-        ${(album.songs || []).length ? `<div class="chips">${album.songs.map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn heart ${rank ? 'on' : ''}" id="favToggle" aria-pressed="${!!rank}">${ICON.heart}<span>${rank ? 'Favourite' : 'Add to favourites'}</span></button>
           <button class="btn queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}">${queued ? ICON.check : ICON.queue}<span>${queued ? 'In Up next' : 'Add to Up next'}</span></button>
         </div>
-        ${rank ? `<div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, fav, 'detailSongs')}</div>` : ''}
+        <div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, songsOf(album, fav), 'detailSongs')}</div>
         <div class="detail-foot">
           <button class="link-btn" id="editAlbum">${ICON.edit} Edit</button>
           <button class="link-btn danger" id="deleteAlbum">${ICON.trash} Delete</button>
@@ -922,7 +947,7 @@ function openAlbum(id) {
     closeModal(m, true);
     openAlbum(id);
   });
-  if ($('#bestSongField', m)) bindSongPicker($('#bestSongField', m), () => fav);
+  bindSongPicker($('#bestSongField', m), () => songsOf(album, fav));
   $('#editAlbum', m).addEventListener('click', () => { closeModal(m, true); editAlbum(id); });
   $('#deleteAlbum', m).addEventListener('click', () => {
     if (!confirm(`Delete “${album.title || album.artist}” from ${year}?`)) return;
@@ -997,7 +1022,6 @@ function editAlbum(id) {
       <div class="art-picker" id="artPicker" hidden></div>
       <label class="field"><span>Artist</span><input name="artist" value="${esc(album.artist)}" required></label>
       <label class="field"><span>Album</span><input name="title" value="${esc(album.title)}"></label>
-      <label class="field"><span>Standout songs <small>comma separated</small></span><input name="songs" value="${esc((album.songs || []).join(', '))}"></label>
       <div class="row">
         ${yearField(year)}
       </div>
@@ -1041,7 +1065,6 @@ function editAlbum(id) {
     const f = new FormData(e.target);
     album.artist = f.get('artist').trim();
     album.title = f.get('title').trim();
-    album.songs = splitSongs(f.get('songs'));
     const sp = f.get('spotify').trim();
     sp ? (album.spotify = sp) : delete album.spotify;
     album.art = f.get('art').trim();
@@ -1086,7 +1109,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null } = {}) {
       <label class="field"><span>Artist</span><input name="artist" required autocomplete="off"></label>
       <label class="field"><span>Album</span><input name="title" autocomplete="off"></label>
       <div class="log-only">
-        <label class="field"><span>Standout songs <small>optional, comma separated</small></span><input name="songs" autocomplete="off"></label>
+        <label class="field"><span>Best songs <small>optional, comma separated</small></span><input name="songs" autocomplete="off"></label>
         <div class="row">
           ${yearField('', { optional: true })}
           <label class="check"><input type="checkbox" name="fav"> ${ICON.heart} Favourite</label>
@@ -1210,7 +1233,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null } = {}) {
     if (chosen?.art) album.art = chosen.art;
     if (chosen?.spotify) album.spotify = chosen.spotify;
     y.albums.push(album);
-    if (F.fav.checked) y.favourites.push({ albumId: album.id, song: album.songs[0] || '' });
+    if (F.fav.checked) y.favourites.push({ albumId: album.id, song: album.songs.join('; ') });
     const cleared = clearFromQueue(album, fromQueue);
     store.commit();
     closeModal(m, true);
