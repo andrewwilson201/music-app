@@ -7,6 +7,7 @@
 //                                cursor, lastRun, lastError, plays, gapAt }
 // users/{uid}/listening/{id}   { albumId, title, artist, art, spotify, albumMs,
 //                                ms, plays, first, last, weeks{}, tracks{} }
+//   tracks{id} = { name, n, ms, plays, weeks{week: ms}, wplays{week: plays} }
 //
 // Deploy: firebase deploy --only functions (needs the Blaze plan).
 
@@ -76,7 +77,15 @@ export async function syncUser(uid, stateRef, state) {
     const tracks = { ...(old?.tracks || {}) };
     for (const [id, t] of Object.entries(add.tracks)) {
       const o = tracks[id] || { name: t.name, n: t.n, ms: 0, plays: 0 };
-      tracks[id] = { name: t.name || o.name, n: t.n || o.n, ms: o.ms + t.ms, plays: o.plays + t.plays };
+      const add = (from = {}, more) => {
+        const out = { ...from };
+        for (const [w, v] of Object.entries(more)) out[w] = (out[w] || 0) + v;
+        return out;
+      };
+      tracks[id] = {
+        name: t.name || o.name, n: t.n || o.n, ms: o.ms + t.ms, plays: o.plays + t.plays,
+        weeks: add(o.weeks, t.weeks), wplays: add(o.wplays, t.wplays),
+      };
     }
     batch.set(ref, {
       albumId: add.albumId, title: add.title, artist: add.artist, art: add.art || old?.art || '', spotify: add.spotify,

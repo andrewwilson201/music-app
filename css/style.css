@@ -564,3 +564,10 @@ body.signed-out .view-bar { display: none; }
   .big-total { gap: 16px; }
   .big-total b { font-size: 28px; }
 }
+.listen-mode { display: flex; gap: 22px; margin: -4px 0 16px; border-bottom: 1px solid var(--line); }
+.listen-mode a { position: relative; padding: 8px 0 12px; text-decoration: none; color: var(--muted); font-weight: 600; }
+.listen-mode a.on { color: var(--text); }
+.listen-mode a.on::after { content: ''; position: absolute; left: 0; right: 0; bottom: -1px; height: 2px; border-radius: 2px; background: var(--spotify); }
+.lb.songs .m b.best::before { content: '♥ '; color: var(--accent); }
+.lb.songs .t { display: flex; flex-direction: column; align-items: flex-end; line-height: 1.2; }
+.lb.songs .t small { color: var(--muted); font-weight: 500; font-size: 12px; }

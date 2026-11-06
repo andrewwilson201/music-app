@@ -37,3 +37,9 @@ test('splits by album and week', () => {
   assert.equal(weekOf(T), '2026-11-02');
   assert.deepEqual(r.albums.A1.weeks, { '2026-11-02': 60000 });
 });
+
+test('tracks keep weekly time and plays', () => {
+  const r = tally([play(T, 't1', 60000), play(T + 60000, 't1', 60000)]);
+  assert.deepEqual(r.albums.A1.tracks.t1.weeks, { '2026-11-02': 120000 });
+  assert.deepEqual(r.albums.A1.tracks.t1.wplays, { '2026-11-02': 2 });
+});
