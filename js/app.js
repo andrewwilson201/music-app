@@ -1,6 +1,6 @@
-import * as store from './store.js?v=21';
-import * as spotify from './spotify.js?v=21';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs } from './art.js?v=21';
+import * as store from './store.js?v=23';
+import * as spotify from './spotify.js?v=23';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=23';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -574,12 +574,16 @@ function renderFavourites(year) {
       store.commit({ quiet: true });
     },
   });
-  bindSongPicker(list, (el) => y.favourites.find((x) => x.albumId === el.closest('.fav').dataset.id));
+  bindSongPicker(list, (el) => {
+    const id = el.closest('.fav').dataset.id;
+    return songsOf(y.albums.find((a) => a.id === id), y.favourites.find((x) => x.albumId === id));
+  });
   list.addEventListener('click', (e) => {
     const rm = e.target.closest('[data-unfav]');
     if (!rm) return;
     e.stopPropagation();
     const id = rm.dataset.unfav;
+    keepSongs(y, id);
     y.favourites = y.favourites.filter((f) => f.albumId !== id);
     store.commit();
     renderFavourites(year);
@@ -703,14 +707,56 @@ function songChipsHtml(fav, editable = true) {
 
 function songPickerHtml(album, fav, listId) {
   const n = bestSongs(fav.song).length;
-  return `<div class="song-picker">
+  return `<div class="song-picker" data-album="${album.id}">
     <ul class="song-chips">${songChipsHtml(fav)}</ul>
-    <input class="song-input" placeholder="${n ? '+ Add another song' : 'Best song…'}" aria-label="${n ? 'Add another best song' : 'Best song'}" list="${listId}" enterkeyhint="done" autocomplete="off">
+    <div class="song-add">
+      <input class="song-input" placeholder="${n ? '+ Add another song' : 'Best song…'}" aria-label="${n ? 'Add another best song' : 'Best song'}" list="${listId}" enterkeyhint="done" autocomplete="off">
+      ${album.title ? `<button type="button" class="tl-toggle" aria-expanded="false" title="Pick songs from the album's tracklist">${ICON.list}<span>Tracklist</span></button>` : ''}
+    </div>
     <datalist id="${listId}">${(album.songs || []).map((s) => `<option value="${esc(s)}">`).join('')}</datalist>
+    <div class="tracklist" hidden></div>
   </div>`;
 }
 
-// favFor(element) returns the favourite that a picker inside `root` belongs to.
+const fmtTime = (ms) => (ms ? `${Math.floor(ms / 60000)}:${String(Math.round(ms / 1000) % 60).padStart(2, '0')}` : '');
+const songKey = (t) => norm(cleanSong(t));
+
+function tracklistHtml(tracks, fav) {
+  const picked = new Set(bestSongs(fav.song).map(songKey));
+  const discs = new Set(tracks.map((t) => t.disc)).size > 1;
+  let html = '', disc = null;
+  tracks.forEach((t, i) => {
+    if (discs && t.disc !== disc) { disc = t.disc; html += `<li class="tl-disc">Disc ${disc}</li>`; }
+    const on = picked.has(songKey(t.name));
+    html += `<li><button type="button" class="tl-track${on ? ' on' : ''}" data-track="${i}" aria-pressed="${on}">
+      <span class="tl-no">${t.no || i + 1}</span><span class="tl-name">${esc(cleanSong(t.name))}</span>
+      <span class="tl-time">${fmtTime(t.ms)}</span><span class="tl-mark">${on ? ICON.check : ICON.plus}</span></button></li>`;
+  });
+  return `<div class="tl-head"><span>Tap the songs you love</span><button type="button" class="link-btn tl-done">Done</button></div><ol class="tl-list">${html}</ol>`;
+}
+
+// Any album can have best songs. They live in album.songs, and a favourite
+// also keeps them in fav.song (what playlists and friends' views read), so
+// songsOf() hands the picker one thing to edit that keeps both in step.
+function songsOf(album, fav) {
+  return {
+    get song() { return fav ? fav.song : (album?.songs || []).join('; '); },
+    set song(v) {
+      if (album) album.songs = bestSongs(v);
+      if (fav) fav.song = v;
+    },
+  };
+}
+
+// Before an album stops being a favourite, keep its best songs on the album.
+function keepSongs(yearData, albumId) {
+  const fav = yearData.favourites.find((f) => f.albumId === albumId);
+  const album = yearData.albums.find((a) => a.id === albumId);
+  if (fav && album && bestSongs(fav.song).length) album.songs = bestSongs(fav.song);
+}
+
+// favFor(element) returns what a picker inside `root` edits: anything with a
+// `song` string (see songsOf).
 function bindSongPicker(root, favFor) {
   const redraw = (picker, fav) => {
     const n = bestSongs(fav.song).length;
@@ -718,6 +764,20 @@ function bindSongPicker(root, favFor) {
     const input = $('.song-input', picker);
     input.placeholder = n ? '+ Add another song' : 'Best song…';
     input.setAttribute('aria-label', n ? 'Add another best song' : 'Best song');
+    const picked = new Set(bestSongs(fav.song).map(songKey));
+    const tracks = $('.tracklist', picker)._tracks || [];
+    picker.querySelectorAll('.tl-track').forEach((b) => {
+      const on = picked.has(songKey(tracks[b.dataset.track]?.name));
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on);
+      $('.tl-mark', b).innerHTML = on ? ICON.check : ICON.plus;
+    });
+  };
+  const save = (picker, fav, songs, message) => {
+    fav.song = songs.join('; ');
+    redraw(picker, fav);
+    store.commit({ quiet: true });
+    toast(message);
   };
   const add = (input) => {
     const fresh = bestSongs(input.value);
@@ -727,33 +787,73 @@ function bindSongPicker(root, favFor) {
     const songs = bestSongs(fav.song);
     const have = new Set(songs.map((x) => norm(x)));
     for (const x of fresh) if (!have.has(norm(x))) { songs.push(x); have.add(norm(x)); }
-    fav.song = songs.join('; ');
-    redraw(input.closest('.song-picker'), fav);
-    store.commit({ quiet: true });
-    toast(songs.length > 1 ? 'Best songs saved' : 'Best song saved');
+    save(input.closest('.song-picker'), fav, songs, songs.length > 1 ? 'Best songs saved' : 'Best song saved');
+  };
+  const openTracklist = async (picker, btn) => {
+    const panel = $('.tracklist', picker);
+    const open = panel.hidden;
+    panel.hidden = !open;
+    btn.setAttribute('aria-expanded', open);
+    if (!open || panel._tracks) return;
+    const found = store.findAlbum(picker.dataset.album);
+    if (!found) return;
+    panel.innerHTML = '<div class="tl-status"><span class="spin"></span>Finding the tracklist…</div>';
+    try {
+      const tracks = await findTracklist(found.album);
+      if (!tracks.length) throw new Error('none');
+      panel._tracks = tracks;
+      panel.innerHTML = tracklistHtml(tracks, favFor(picker));
+      // Typing a song suggests from the tracklist too.
+      const dl = picker.querySelector('datalist');
+      const seen = new Set();
+      dl.innerHTML = [...(found.album.songs || []), ...tracks.map((t) => cleanSong(t.name))]
+        .filter((x) => !seen.has(norm(x)) && seen.add(norm(x))).map((x) => `<option value="${esc(x)}">`).join('');
+    } catch (e) {
+      panel.innerHTML = `<div class="tl-status">${e.message === 'rate limited' ? 'Too many lookups just now. Try again in a minute.' : "Couldn't find this album's tracklist. Type the song instead."}</div>`;
+    }
   };
   root.addEventListener('change', (e) => { if (e.target.matches('.song-input')) add(e.target); });
   root.addEventListener('keydown', (e) => {
     if (e.key === 'Enter' && e.target.matches('.song-input')) { e.preventDefault(); add(e.target); }
   });
   root.addEventListener('click', (e) => {
+    const picker = e.target.closest('.song-picker');
+    if (!picker) return;
+    const toggle = e.target.closest('.tl-toggle');
+    if (toggle) { e.stopPropagation(); openTracklist(picker, toggle); return; }
+    if (e.target.closest('.tl-done')) {
+      e.stopPropagation();
+      $('.tracklist', picker).hidden = true;
+      $('.tl-toggle', picker)?.setAttribute('aria-expanded', 'false');
+      return;
+    }
+    const track = e.target.closest('[data-track]');
+    if (track) {
+      e.stopPropagation();
+      const t = $('.tracklist', picker)._tracks?.[track.dataset.track];
+      if (!t) return;
+      const fav = favFor(picker);
+      const songs = bestSongs(fav.song);
+      const i = songs.findIndex((x) => songKey(x) === songKey(t.name));
+      if (i >= 0) { songs.splice(i, 1); save(picker, fav, songs, 'Best song removed'); }
+      else { songs.push(cleanSong(t.name)); save(picker, fav, songs, songs.length > 1 ? 'Best songs saved' : 'Best song saved'); }
+      return;
+    }
     const rm = e.target.closest('[data-rm-song]');
     if (!rm) return;
     e.stopPropagation();
     const fav = favFor(rm);
     const songs = bestSongs(fav.song);
     songs.splice(Number(rm.dataset.rmSong), 1);
-    fav.song = songs.join('; ');
-    redraw(rm.closest('.song-picker'), fav);
-    store.commit({ quiet: true });
-    toast('Best song removed');
+    save(picker, fav, songs, 'Best song removed');
   });
 }
 
 function toggleFavourite(year, album, on) {
   const y = data.years[year];
   const has = y.favourites.some((f) => f.albumId === album.id);
-  if (on && !has) y.favourites.push({ albumId: album.id, song: (album.songs || [])[0] || '' });
+  if (on && !has) y.favourites.push({ albumId: album.id, song: (album.songs || []).join('; ') });
+  if (!on && has) keepSongs(y, album.id);
   if (!on && has) y.favourites = y.favourites.filter((f) => f.albumId !== album.id);
   store.commit();
 }
@@ -811,14 +911,13 @@ function openAlbum(id) {
         <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">#${rank} favourite</span>` : ''}</p>
         <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
         <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted. Tap Edit to add one.'}</p>
-        ${(album.songs || []).length ? `<div class="chips">${album.songs.map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
         ${listenPanelHtml(album, fav)}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn heart ${rank ? 'on' : ''}" id="favToggle" aria-pressed="${!!rank}">${ICON.heart}<span>${rank ? 'Favourite' : 'Add to favourites'}</span></button>
           <button class="btn queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}">${queued ? ICON.check : ICON.queue}<span>${queued ? 'In Up next' : 'Add to Up next'}</span></button>
         </div>
-        ${rank ? `<div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, fav, 'detailSongs')}</div>` : ''}
+        <div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, songsOf(album, fav), 'detailSongs')}</div>
         <div class="detail-foot">
           <button class="link-btn" id="editAlbum">${ICON.edit} Edit</button>
           <button class="link-btn danger" id="deleteAlbum">${ICON.trash} Delete</button>
@@ -856,7 +955,7 @@ function openAlbum(id) {
     closeModal(m, true);
     openAlbum(id);
   });
-  if ($('#bestSongField', m)) bindSongPicker($('#bestSongField', m), () => fav);
+  bindSongPicker($('#bestSongField', m), () => songsOf(album, fav));
   $('#editAlbum', m).addEventListener('click', () => { closeModal(m, true); editAlbum(id); });
   $('#deleteAlbum', m).addEventListener('click', () => {
     if (!confirm(`Delete “${album.title || album.artist}” from ${year}?`)) return;
@@ -931,7 +1030,6 @@ function editAlbum(id) {
       <div class="art-picker" id="artPicker" hidden></div>
       <label class="field"><span>Artist</span><input name="artist" value="${esc(album.artist)}" required></label>
       <label class="field"><span>Album</span><input name="title" value="${esc(album.title)}"></label>
-      <label class="field"><span>Standout songs <small>comma separated</small></span><input name="songs" value="${esc((album.songs || []).join(', '))}"></label>
       <div class="row">
         ${yearField(year)}
       </div>
@@ -975,7 +1073,6 @@ function editAlbum(id) {
     const f = new FormData(e.target);
     album.artist = f.get('artist').trim();
     album.title = f.get('title').trim();
-    album.songs = splitSongs(f.get('songs'));
     const sp = f.get('spotify').trim();
     sp ? (album.spotify = sp) : delete album.spotify;
     album.art = f.get('art').trim();
@@ -1020,7 +1117,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null } = {}) {
       <label class="field"><span>Artist</span><input name="artist" required autocomplete="off"></label>
       <label class="field"><span>Album</span><input name="title" autocomplete="off"></label>
       <div class="log-only">
-        <label class="field"><span>Standout songs <small>optional, comma separated</small></span><input name="songs" autocomplete="off"></label>
+        <label class="field"><span>Best songs <small>optional, comma separated</small></span><input name="songs" autocomplete="off"></label>
         <div class="row">
           ${yearField('', { optional: true })}
           <label class="check"><input type="checkbox" name="fav"> ${ICON.heart} Favourite</label>
@@ -1144,7 +1241,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null } = {}) {
     if (chosen?.art) album.art = chosen.art;
     if (chosen?.spotify) album.spotify = chosen.spotify;
     y.albums.push(album);
-    if (F.fav.checked) y.favourites.push({ albumId: album.id, song: album.songs[0] || '' });
+    if (F.fav.checked) y.favourites.push({ albumId: album.id, song: album.songs.join('; ') });
     const cleared = clearFromQueue(album, fromQueue);
     store.commit();
     closeModal(m, true);
@@ -1703,7 +1800,7 @@ function listenPanelHtml(album, fav) {
   if (!l || !l.ms) {
     return tracking.enabled && album.title ? '<p class="listen-none">No Spotify plays counted for this album yet.</p>' : '';
   }
-  const best = new Set(bestSongs(fav?.song).map(norm));
+  const best = new Set(bestSongs(songsOf(album, fav).song).map(norm));
   const times = l.albumMs ? l.ms / l.albumMs : 0;
   const timesText = times >= 10 ? Math.round(times) : times.toFixed(1).replace(/\.0$/, '');
   const tracks = Object.values(l.tracks).sort((a, b) => b.ms - a.ms).slice(0, 5);

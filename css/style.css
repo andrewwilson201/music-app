@@ -506,3 +506,25 @@ body.signed-out .view-bar { display: none; }
 .listen-set .share-head > svg { color: var(--spotify); }
 .listen-status { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
 .listen-status .sync-dot { position: static; box-shadow: none; flex: none; }
+/* tracklist picker for best songs */
+.song-add { display: flex; align-items: center; gap: 6px; width: 100%; max-width: 480px; }
+.song-add .song-input { flex: 1; min-width: 0; width: auto; }
+.tl-toggle { display: inline-flex; align-items: center; gap: 5px; flex: none; margin-top: 2px; padding: 3px 9px; border-radius: 999px; border: 1px solid var(--line); color: var(--muted); font-size: 12.5px; font-weight: 600; transition: .15s; }
+.tl-toggle svg { width: 14px; height: 14px; }
+.tl-toggle:hover, .tl-toggle[aria-expanded="true"] { color: var(--accent); border-color: rgba(232, 97, 60, .45); background: var(--accent-soft); }
+.tracklist { width: 100%; max-width: 480px; margin-top: 6px; border: 1px solid var(--line); border-radius: 12px; background: var(--bg); overflow: hidden; }
+.tl-head { display: flex; align-items: center; justify-content: space-between; padding: 8px 12px; border-bottom: 1px solid var(--line); font-size: 12.5px; color: var(--muted); }
+.tl-head .link-btn { font-size: 13px; font-weight: 600; color: var(--accent); }
+.tl-list { list-style: none; margin: 0; padding: 4px; max-height: 320px; overflow-y: auto; overscroll-behavior: contain; }
+.tl-disc { padding: 8px 8px 2px; font-size: 11px; font-weight: 700; letter-spacing: .06em; text-transform: uppercase; color: var(--faint); }
+.tl-track { display: flex; align-items: center; gap: 10px; width: 100%; padding: 7px 8px; border-radius: 8px; text-align: left; font-size: 14px; color: var(--text); }
+.tl-track:hover { background: var(--bg-2); }
+.tl-no { width: 20px; flex: none; text-align: right; color: var(--faint); font-variant-numeric: tabular-nums; font-size: 12.5px; }
+.tl-name { flex: 1; min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.tl-time { flex: none; color: var(--faint); font-size: 12.5px; font-variant-numeric: tabular-nums; }
+.tl-mark { display: grid; place-items: center; width: 22px; height: 22px; flex: none; border-radius: 50%; border: 1px solid var(--line); color: var(--faint); }
+.tl-mark svg { width: 13px; height: 13px; stroke-width: 2.4; }
+.tl-track.on { color: var(--accent); font-weight: 600; }
+.tl-track.on .tl-no { color: var(--accent); }
+.tl-track.on .tl-mark { background: var(--accent); border-color: var(--accent); color: #fff; }
+.tl-status { display: flex; align-items: center; gap: 10px; padding: 12px; font-size: 13.5px; color: var(--muted); }
