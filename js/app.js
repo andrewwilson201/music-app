@@ -1,6 +1,6 @@
-import * as store from './store.js?v=19';
-import * as spotify from './spotify.js?v=19';
-import { queueArt, prioritise, searchAlbums, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs } from './art.js?v=19';
+import * as store from './store.js?v=20';
+import * as spotify from './spotify.js?v=20';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs } from './art.js?v=20';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -987,17 +987,20 @@ function editAlbum(id) {
 
 const splitSongs = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
 
-function yearField(value) {
+function yearField(value, { optional = false } = {}) {
   const max = new Date().getFullYear() + 1;
-  return `<label class="field narrow"><span>Release year</span><input name="year" type="number" inputmode="numeric" min="1900" max="${max}" required value="${esc(value)}"></label>`;
+  return `<label class="field narrow"><span>Release year</span><input name="year" type="number" inputmode="numeric" min="1900" max="${max}" ${optional ? 'placeholder="Look it up"' : 'required'} value="${esc(value)}"></label>`;
 }
 
 // ------------------------------------------------------------------ add album
 
-function addAlbum({ year, query = '', fromQueue = null } = {}) {
+const TYPE_LABEL = { single: 'Single', ep: 'EP', compilation: 'Compilation' };
+
+function addAlbum({ year: fallbackYear, query = '', fromQueue = null } = {}) {
   // New albums go under their release year: filled in from the search result,
-  // otherwise this year until changed.
-  year = year || String(new Date().getFullYear());
+  // or looked up from the artist and album when typed in by hand. If it can't
+  // be found, the album goes under the year you added it from (or this year).
+  fallbackYear = fallbackYear || String(new Date().getFullYear());
   let chosen = null;
   const m = openModal(`
     <div class="modal-head"><h2>Add an album</h2>${closeBtn()}</div>
@@ -1011,10 +1014,11 @@ function addAlbum({ year, query = '', fromQueue = null } = {}) {
       <div class="log-only">
         <label class="field"><span>Standout songs <small>optional, comma separated</small></span><input name="songs" autocomplete="off"></label>
         <div class="row">
-          ${yearField(year)}
+          ${yearField('', { optional: true })}
           <label class="check"><input type="checkbox" name="fav"> ${ICON.heart} Favourite</label>
         </div>
       </div>
+      <p class="hint" id="yearHint" hidden></p>
       <p class="warn" id="dupWarn" hidden></p>
       <div class="form-actions"><button class="btn primary" id="addSubmit">Add to log</button></div>
     </form>`, 'wide');
@@ -1044,36 +1048,89 @@ function addAlbum({ year, query = '', fromQueue = null } = {}) {
     timer = setTimeout(async () => {
       const t = ++ticket;
       try {
-        const list = await searchAlbums(term, 8);
+        const list = await findAlbums(term, 20);
         if (t !== ticket) return;
         results.innerHTML = list.length ? list.map((r, i) => `
           <button type="button" class="result" data-i="${i}">
             <img src="${esc(r.art.replace('600x600', '120x120'))}" alt="">
-            <span><b>${esc(r.title)}</b><small>${esc(r.artist)} · ${r.year}</small></span>
+            <span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.year ? ` · ${r.year}` : ''}${TYPE_LABEL[r.type] ? ` · <em class="kind">${TYPE_LABEL[r.type]}</em>` : ''}</small></span>
           </button>`).join('') : '<p class="muted pad-sm">No matches. Fill in the details below instead.</p>';
         results._list = list;
       } catch {
         if (t === ticket) results.innerHTML = '<p class="muted pad-sm">Search is unavailable right now. Fill in the details below.</p>';
       }
-    }, 320);
+    }, 400);
   };
   q.addEventListener('input', search);
+
+  // Typed in by hand: look the release year up once there's an artist and album.
+  // A year the user typed themselves is never overwritten.
+  const hint = $('#yearHint', m);
+  let yearTimer, yearTicket = 0, yearTyped = false;
+  const lookupYear = async () => {
+    const al = { artist: F.artist.value.trim(), title: F.title.value.trim() };
+    if (!al.artist || !al.title) return '';
+    const t = ++yearTicket;
+    try {
+      const hit = await findRelease(al);
+      if (t !== yearTicket) return null; // superseded by a newer lookup
+      return hit?.year || '';
+    } catch { return t === yearTicket ? '' : null; }
+  };
+  const autoYear = () => {
+    clearTimeout(yearTimer);
+    if (yearTyped || chosen) return;
+    if (F.year.value) { F.year.value = ''; checkDup(); }
+    hint.hidden = true;
+    if (!F.artist.value.trim() || !F.title.value.trim()) return;
+    yearTimer = setTimeout(async () => {
+      hint.hidden = false;
+      hint.innerHTML = '<span class="spin"></span> Looking up the release year…';
+      const found = await lookupYear();
+      if (found === null || yearTyped || chosen) return;
+      if (found) {
+        F.year.value = found;
+        hint.textContent = `Found it: released in ${found}. Change it if that's wrong.`;
+        checkDup();
+      } else {
+        hint.textContent = `Couldn't find the release year, so this will go in ${fallbackYear} unless you fill it in.`;
+      }
+    }, 700);
+  };
   results.addEventListener('click', (e) => {
     const b = e.target.closest('.result');
     if (!b) return;
     chosen = results._list[b.dataset.i];
     F.artist.value = chosen.artist.toLowerCase();
     F.title.value = chosen.title.toLowerCase();
-    if (chosen.year) F.year.value = chosen.year;
+    clearTimeout(yearTimer); yearTicket++; yearTyped = false; hint.hidden = true;
+    F.year.value = chosen.year || '';
     $$('.result', results).forEach((x) => x.classList.toggle('chosen', x === b));
     coverPreview();
     F.songs.focus();
   });
-  F.artist.addEventListener('input', () => { chosen = null; coverPreview(); });
-  F.title.addEventListener('input', () => { chosen = null; coverPreview(); });
-  F.year.addEventListener('input', checkDup);
-  form.addEventListener('submit', (e) => {
+  F.artist.addEventListener('input', () => { chosen = null; coverPreview(); autoYear(); });
+  F.title.addEventListener('input', () => { chosen = null; coverPreview(); autoYear(); });
+  F.year.addEventListener('input', () => {
+    yearTyped = !!F.year.value; clearTimeout(yearTimer); yearTicket++; hint.hidden = true;
+    if (!yearTyped) autoYear();
+    checkDup();
+  });
+  let saving = false;
+  form.addEventListener('submit', async (e) => {
     e.preventDefault();
+    if (saving) return;
+    let guessed = false;
+    if (!F.year.value) {
+      saving = true;
+      const btn = $('#addSubmit', m);
+      btn.disabled = true;
+      btn.innerHTML = '<span class="spin"></span> Finding the year…';
+      clearTimeout(yearTimer);
+      const found = chosen?.year || await lookupYear();
+      F.year.value = found || fallbackYear;
+      guessed = !found;
+    }
     const y = store.ensureYear(F.year.value);
     const album = { id: store.uid(), artist: F.artist.value.trim(), title: F.title.value.trim(), songs: splitSongs(F.songs.value) };
     if (chosen?.art) album.art = chosen.art;
@@ -1083,7 +1140,8 @@ function addAlbum({ year, query = '', fromQueue = null } = {}) {
     const cleared = clearFromQueue(album, fromQueue);
     store.commit();
     closeModal(m, true);
-    toast(cleared ? `Added to ${F.year.value} and ticked off Up next` : `Added to ${F.year.value}`);
+    toast(guessed ? `Added to ${F.year.value}. Couldn't find its release year, so open the album to change it if that's wrong.`
+      : cleared ? `Added to ${F.year.value} and ticked off Up next` : `Added to ${F.year.value}`);
     if (location.hash !== `#/year/${F.year.value}`) location.hash = `#/year/${F.year.value}`;
     else render();
     if (!album.art) requestArt(album);

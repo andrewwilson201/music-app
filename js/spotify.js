@@ -2,7 +2,7 @@
 // Search needs no scopes. Making playlists asks for the playlist scopes the
 // first time it's used, then picks up where it left off after the redirect.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=19';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=20';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
@@ -113,16 +113,41 @@ async function api(path, { method = 'GET', body } = {}) {
   return res.status === 204 ? {} : res.json().catch(() => ({}));
 }
 
+const albumOf = (a) => ({
+  artist: a.artists.map((x) => x.name).join(', '),
+  artists: a.artists.map((x) => ({ id: x.id, name: x.name })),
+  title: a.name,
+  art: a.images?.[0]?.url || '',
+  year: (a.release_date || '').slice(0, 4),
+  tracks: a.total_tracks,
+  type: a.album_type === 'single' ? (a.total_tracks > 3 ? 'ep' : 'single') : a.album_type || 'album',
+  spotify: a.external_urls?.spotify || '',
+});
+
 export async function searchAlbums(term, limit = 10) {
   const json = await api(`/search?type=album&limit=${Math.min(limit, 10)}&q=${encodeURIComponent(term)}`);
-  return (json.albums?.items || []).filter(Boolean).map((a) => ({
-    artist: a.artists.map((x) => x.name).join(', '),
-    title: a.name,
-    art: a.images?.[0]?.url || '',
-    year: (a.release_date || '').slice(0, 4),
-    tracks: a.total_tracks,
-    spotify: a.external_urls?.spotify || '',
-  }));
+  return (json.albums?.items || []).filter(Boolean).map(albumOf);
+}
+
+// Albums and artists in one call: { albums, artists: [{ id, name }] }.
+export async function searchCatalog(term) {
+  const json = await api(`/search?type=album,artist&limit=10&q=${encodeURIComponent(term)}`);
+  return {
+    albums: (json.albums?.items || []).filter(Boolean).map(albumOf),
+    artists: (json.artists?.items || []).filter(Boolean).map((a) => ({ id: a.id, name: a.name })),
+  };
+}
+
+// An artist's own albums (no singles or compilations), newest first.
+// Development mode pages these 10 at a time.
+export async function artistAlbums(id, max = 50) {
+  const out = [];
+  for (let offset = 0; offset < max; offset += 10) {
+    const page = await api(`/artists/${id}/albums?include_groups=album&limit=10&offset=${offset}`);
+    out.push(...(page.items || []).filter(Boolean).map(albumOf));
+    if (!page.next) break;
+  }
+  return out;
 }
 
 export async function searchTracks(q, limit = 10) {
