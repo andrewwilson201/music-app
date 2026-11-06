@@ -1,6 +1,6 @@
-import * as store from './store.js?v=27';
-import * as spotify from './spotify.js?v=27';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=27';
+import * as store from './store.js?v=28';
+import * as spotify from './spotify.js?v=28';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=28';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1861,14 +1861,14 @@ function renderListening(period, mode = 'albums') {
   const inLog = rows.reduce((n, r) => n + (r.album ? r.ms : 0), 0);
   const top = rows.slice(0, 25);
   const max = top[0]?.ms || 1;
-  const unlogged = rows.filter((r) => !r.album && r.ms >= 15 * 60000).slice(0, 12);
+  const unlogged = rows.filter((r) => !r.album && r.ms >= 5 * 60000).slice(0, 12);
   const pseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
   const rowHtml = (r, i) => `<li>
       <span class="n">${i + 1}</span>
-      <button class="lb-open" ${r.album ? `data-open="${r.album.id}"` : ''}>${coverHtml(r.album || pseudo(r.g), 'sm')}
+      <button class="lb-open" ${openAttr(r)}>${coverHtml(r.album || pseudo(r.g), 'sm')}
         <span class="m"><b>${esc(r.g.title)}</b><small>${esc(r.g.artist)}${r.album ? '' : ' · <i>not logged</i>'}</small>
         <span class="bar"><i style="width:${Math.max(2, Math.round(r.ms / max * 100))}%"></i></span></span>
-        <span class="t">${fmtDur(r.ms)}</span></button></li>`;
+        <span class="t">${fmtDur(r.ms)}</span></button>${logBtn(r)}</li>`;
   app.innerHTML = `
     <section class="hero"><div><p class="eyebrow">your listening</p><h1>${PERIODS[P].title.toLowerCase()}</h1></div></section>
     ${listenNavHtml(P, 'albums')}
@@ -1889,12 +1889,17 @@ function renderListening(period, mode = 'albums') {
               <button class="btn small" data-log-heard="${esc(r.g.key)}">${ICON.plus} Log it</button></li>`).join('')}</ul>` : ''}`}`;
   watchCovers();
   $('#goSettings')?.addEventListener('click', openSettings);
-  app.querySelector('.unlogged')?.addEventListener('click', (e) => {
-    const b = e.target.closest('[data-log-heard]');
-    const g = b && listenIndex.groups[b.dataset.logHeard];
-    if (g) addAlbum({ query: `${g.artist} ${g.title}` });
-  });
 }
+
+// Albums heard on Spotify but not in the log: tapping them, or their + button,
+// opens Add album with a search for them already filled in.
+const openAttr = (r) => (r.album ? `data-open="${r.album.id}"` : `data-log-heard="${esc(r.g.key)}" title="Add to your library"`);
+const logBtn = (r) => (r.album ? '' : `<button class="icon-btn log-add" data-log-heard="${esc(r.g.key)}" title="Add ${esc(r.g.title)} to your library" aria-label="Add ${esc(r.g.title)} to your library">${ICON.plus}</button>`);
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-log-heard]');
+  const g = b && listenIndex?.groups[b.dataset.logHeard];
+  if (g && !ro()) addAlbum({ query: `${g.artist} ${g.title}` });
+});
 
 function listenNavHtml(P, mode) {
   const suffix = mode === 'songs' ? '/songs' : '';
@@ -1941,10 +1946,10 @@ function renderTopSongs(P) {
         </div>
         <ol class="lb songs">${top.map((s, i) => `<li>
           <span class="n">${i + 1}</span>
-          <button class="lb-open" ${s.album ? `data-open="${s.album.id}"` : ''}>${coverHtml(s.album || pseudo(s.g), 'sm')}
+          <button class="lb-open" ${openAttr(s)}>${coverHtml(s.album || pseudo(s.g), 'sm')}
             <span class="m"><b class="${s.best ? 'best' : ''}">${esc(s.t.name)}</b><small>${esc(s.g.artist)} · ${esc(s.g.title)}</small>
             <span class="bar"><i style="width:${Math.max(2, Math.round(s.plays / max * 100))}%"></i></span></span>
-            <span class="t">${s.plays} play${s.plays === 1 ? '' : 's'}<small>${fmtDur(s.ms)}</small></span></button></li>`).join('')}</ol>`}`;
+            <span class="t">${s.plays} play${s.plays === 1 ? '' : 's'}<small>${fmtDur(s.ms)}</small></span></button>${logBtn(s)}</li>`).join('')}</ol>`}`;
   watchCovers();
 }
 
