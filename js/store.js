@@ -12,6 +12,8 @@
 //   shares/{token}/viewers/{viewerUid} { name, addedAt }  who added that code
 //   users/{uid}/private/spotify   listening tracking: { enabled, refreshToken, clientId, since, cursor, lastRun, lastError, plays }
 //   users/{uid}/listening/{spotifyAlbumId}  time spent on that album, written by functions/index.js
+//   users/{uid}/meta/listening   { hidden[], historySuggest, history: { plays, albums, from, to, parts, importedAt } }
+//   users/{uid}/history/{0..n}   { data }  imported Spotify history, gzipped JSON in base64 (see js/history.js)
 //
 // Sharing: a friend can read your years (not Up next) only while your
 // meta/share token points at a share whose viewers include them. Turning
@@ -22,8 +24,9 @@ import {
   getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
-} from '../vendor/firebase.js?v=28';
-import { FIREBASE_CONFIG } from './config.js?v=28';
+} from '../vendor/firebase.js?v=29';
+import { FIREBASE_CONFIG } from './config.js?v=29';
+import { pack, unpack, toListening } from './history.js?v=29';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
 const LEGACY_DATA_KEY = 'music-log:data';
@@ -464,15 +467,54 @@ export async function stopTracking() {
   await setDoc(trackingDoc(), { enabled: false, refreshToken: '' }, { merge: true });
 }
 
-// All of this person's listening totals, keyed by Spotify album id.
+const listenMetaDoc = () => doc(db, 'users', user.uid, 'meta', 'listening');
+const historyPart = (i) => doc(db, 'users', user.uid, 'history', String(i));
+let listenMeta = {};
+let history = { stamp: 0, entries: {} };
+
+// All of this person's listening totals: the live ones keyed by Spotify album
+// id, plus any imported history keyed h:0, h:1...
 export async function loadListening() {
   if (!user || viewing) return listening || {};
   const out = {};
-  (await getDocs(collection(db, 'users', user.uid, 'listening'))).forEach((s) => { out[s.id] = s.data(); });
-  listening = out;
-  return out;
+  const [live, meta] = await Promise.all([getDocs(collection(db, 'users', user.uid, 'listening')), getDoc(listenMetaDoc())]);
+  live.forEach((s) => { out[s.id] = s.data(); });
+  listenMeta = meta.exists() ? meta.data() : {};
+  const h = listenMeta.history;
+  if (!h?.parts) history = { stamp: 0, entries: {} };
+  else if (h.importedAt !== history.stamp) {
+    const parts = await Promise.all(Array.from({ length: h.parts }, (_, i) => getDoc(historyPart(i))));
+    history = { stamp: h.importedAt, entries: toListening(await unpack(parts.map((p) => p.data()?.data || ''))) };
+  }
+  listening = { ...out, ...history.entries };
+  return listening;
 }
 export const getListening = () => (viewing ? null : listening);
+export const listeningMeta = () => listenMeta;
+
+// Saves an import (from history.aggregate), replacing any earlier one.
+export async function saveHistory(albums, info) {
+  const parts = await pack(albums);
+  const old = listenMeta.history?.parts || 0;
+  const batch = writeBatch(db);
+  parts.forEach((data, i) => batch.set(historyPart(i), { data }));
+  for (let i = parts.length; i < old; i++) batch.delete(historyPart(i));
+  batch.set(listenMetaDoc(), { history: { ...info, parts: parts.length, importedAt: Date.now() } }, { merge: true });
+  await batch.commit();
+}
+
+export async function removeHistory() {
+  const batch = writeBatch(db);
+  for (let i = 0; i < (listenMeta.history?.parts || 0); i++) batch.delete(historyPart(i));
+  batch.set(listenMetaDoc(), { history: null }, { merge: true });
+  await batch.commit();
+}
+
+// Settings for the "Heard, not logged" suggestions.
+export async function setListenMeta(fields) {
+  listenMeta = { ...listenMeta, ...fields };
+  await setDoc(listenMetaDoc(), fields, { merge: true });
+}
 
 export function exportJson() {
   const blob = new Blob([JSON.stringify(data, null, 1)], { type: 'application/json' });

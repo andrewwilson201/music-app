@@ -20,6 +20,8 @@ It's a static site (plain HTML, CSS and JavaScript, no build step) hosted on Git
 
 - **Listening page** (headphones button, `#/listening`): an Albums | Songs switch; songs are ranked by plays (`#/listening/{period}/songs`, best songs marked ♥). Top albums by time for this week, the last 4 weeks, this year or all time (from the weekly totals), how much of it was on albums in the log, and a "Heard, not logged" list with a Log it button; unlogged albums in the charts also get a + button. Covers show a time pill (Settings can hide it), the year heading shows the year's total, and the year page can sort by Most listened.
 
+- **History import**: Settings › Track listening time › Import your full history takes the "Extended streaming history" zip from Spotify's privacy page (or its `Streaming_History_Audio_*.json` files). It's read and added up in the browser ([`js/history.js`](js/history.js)), only plays from before live tracking started are counted, and the totals per album and song are saved gzipped in `users/{uid}/history/{n}` (a few hundred KB each) with a summary in `users/{uid}/meta/listening`. They show up everywhere live totals do. "Heard, not logged" only suggests albums played since tracking began unless "Suggest albums from imported history" is ticked, and the × on a suggestion hides that album for good.
+
 ## Deploying the listening function
 
 It needs the Firebase project on the Blaze plan (the usage fits in the free allowance). From this folder:
