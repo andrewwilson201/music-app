@@ -2,7 +2,7 @@
 // Search needs no scopes. Making playlists asks for the playlist scopes the
 // first time it's used, then picks up where it left off after the redirect.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=22';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=23';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
@@ -31,11 +31,14 @@ export const hasScopes = (scopes) => connected() && scopes.every((s) => granted(
 
 // `then` is remembered through the redirect and handed back by handleRedirect,
 // so the app can carry on with whatever needed the login.
-export async function login({ scopes = [], then = '' } = {}) {
+// `separate` asks for a sign-in whose tokens are handed back to the caller
+// instead of replacing this browser's own (used to give listening tracking
+// its own refresh token, so the two never trip over each other).
+export async function login({ scopes = [], then = '', separate = false } = {}) {
   const verifier = b64url(crypto.getRandomValues(new Uint8Array(48)));
   const challenge = b64url(await crypto.subtle.digest('SHA-256', new TextEncoder().encode(verifier)));
-  ls(VERIFIER_KEY, JSON.stringify({ verifier, hash: location.hash, then }));
-  const scope = [...new Set([...granted(), ...scopes])].join(' ');
+  ls(VERIFIER_KEY, JSON.stringify({ verifier, hash: location.hash, then, separate }));
+  const scope = [...new Set([...(separate ? [] : granted()), ...scopes])].join(' ');
   const params = new URLSearchParams({
     client_id: SPOTIFY_CLIENT_ID,
     response_type: 'code',
@@ -62,7 +65,7 @@ function saveTokens(json) {
   ls(TOKEN_KEY, JSON.stringify(tokens));
 }
 
-async function tokenRequest(body) {
+async function tokenRequest(body, { keep = true } = {}) {
   const res = await fetch('https://accounts.spotify.com/api/token', {
     method: 'POST',
     headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
@@ -70,11 +73,18 @@ async function tokenRequest(body) {
   });
   const json = await res.json();
   if (!res.ok) throw new Error(json.error_description || json.error || `Spotify said ${res.status}`);
-  saveTokens(json);
+  if (keep) saveTokens(json);
+  return json;
 }
+
+export const TRACKING_SCOPES = ['user-read-recently-played'];
+export const loginForTracking = () => login({ scopes: TRACKING_SCOPES, then: 'listening', separate: true });
+export const clientId = () => SPOTIFY_CLIENT_ID;
 
 // Call on page load: finishes a login redirect if there is one.
 // Returns the login's `then` value (or true) if this load was a Spotify callback.
+// A `separate` login returns { then, refreshToken } and leaves this browser's
+// own Spotify session as it was.
 export async function handleRedirect() {
   const q = new URLSearchParams(location.search);
   if (!q.has('code') && !q.has('error')) return false;
@@ -83,7 +93,8 @@ export async function handleRedirect() {
   ls(VERIFIER_KEY, null);
   history.replaceState(null, '', location.pathname + (saved.hash || ''));
   if (q.has('error')) throw new Error(q.get('error') === 'access_denied' ? 'Spotify login was cancelled.' : q.get('error'));
-  await tokenRequest({ grant_type: 'authorization_code', code: q.get('code'), redirect_uri: redirectUri(), code_verifier: saved.verifier });
+  const json = await tokenRequest({ grant_type: 'authorization_code', code: q.get('code'), redirect_uri: redirectUri(), code_verifier: saved.verifier }, { keep: !saved.separate });
+  if (saved.separate) return { then: saved.then, refreshToken: json.refresh_token, scope: json.scope || '' };
   return saved.then || true;
 }
 
