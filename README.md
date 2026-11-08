@@ -23,7 +23,10 @@ It's a static site (plain HTML, CSS and JavaScript, no build step) hosted on Git
 - **History import**: Settings › Track listening time › Import your full history takes the "Extended streaming history" zip from Spotify's privacy page (or its `Streaming_History_Audio_*.json` files). It's read and added up in the browser ([`js/history.js`](js/history.js)), only plays from before live tracking started are counted, and the totals per album and song are saved gzipped in `users/{uid}/history/{n}` (a few hundred KB each) with a summary in `users/{uid}/meta/listening`. They show up everywhere live totals do. "Heard, not logged" only suggests albums played since tracking began unless "Suggest albums from imported history" is ticked, and the × on a suggestion hides that album for good.
 - **Logging heard albums in place**: each row in Heard, not logged looks its album up as it scrolls into view (`findAlbums`, three at a time). A sure match (same Spotify album, or same artist and title) shows "Adds as … · year" and one tap on + logs it under its release year; otherwise + or tapping the row opens the closest few to pick from, with "add as named" and "Search…" fallbacks. The list shows 20 at a time with Show more.
 
-## Deploying the listening function
+- **Recommendations**: friends who share with each other can send an album from its popup (Recommend). It's written to `users/{to}/recs/{id}` (only allowed while both follow each other's current code, see `firestore.rules`) and shows as a popup, then a "Recommended for you" strip on the home year.
+- **Notifications**: Settings › Notifications saves this device's Firebase Cloud Messaging token in `users/{uid}/private/push`. After sending a recommendation the app calls the `notifyRec` function, which pushes "{name} recommends" to the recipient's devices; `sw.js` shows it and a tap opens `#/rec/{id}`. Needs `FIREBASE_VAPID_KEY` in `js/config.js` (Firebase console › Project settings › Cloud Messaging › Web Push certificates). On iPhone it only works once the app is added to the Home Screen.
+
+## Deploying the functions (listening tracking and notifications)
 
 It needs the Firebase project on the Blaze plan (the usage fits in the free allowance). From this folder:
 

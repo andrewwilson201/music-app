@@ -13,3 +13,8 @@ export const FIREBASE_CONFIG = {
   messagingSenderId: '663276465325',
   appId: '1:663276465325:web:ceb91545e2a8dc491f6a24',
 };
+
+// Web push key for notifications, from Firebase console › Project settings ›
+// Cloud Messaging › Web Push certificates (the public "Key pair"). Public by
+// design. Empty hides the notifications switch.
+export const FIREBASE_VAPID_KEY = '';
