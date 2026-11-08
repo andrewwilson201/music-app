@@ -251,6 +251,11 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .result span, .pick > span:nth-child(2) { display: flex; flex-direction: column; min-width: 0; flex: 1; }
 .result b, .pick b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .result small, .pick small { color: var(--muted); font-size: 13px; }
+.result .in-log { display: inline-flex; align-items: center; gap: 4px; flex: none; font-style: normal; font-size: 12px; font-weight: 600; color: var(--accent); }
+.result .in-log svg { width: 16px; height: 16px; fill: none; stroke: currentColor; stroke-width: 2.4; stroke-linecap: round; stroke-linejoin: round; }
+.result .in-log span { display: inline; flex: none; }
+.result.logged img { opacity: .55; }
+.result.logged b { color: var(--muted); }
 .pick-list { display: flex; flex-direction: column; gap: 2px; max-height: 60vh; overflow-y: auto; margin: 0 -8px; }
 .pick-state { color: var(--faint); flex: none; display: grid; place-items: center; width: 32px; height: 32px; border-radius: 50%; border: 1px solid var(--line); }
 .pick.chosen .pick-state { background: var(--accent); border-color: var(--accent); color: #1b0d07; }

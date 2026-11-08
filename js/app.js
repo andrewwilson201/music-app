@@ -1,8 +1,8 @@
-import * as store from './store.js?v=36';
-import * as spotify from './spotify.js?v=36';
-import * as spHistory from './history.js?v=36';
-import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=36';
-import * as mood from './mood.js?v=36';
+import * as store from './store.js?v=37';
+import * as spotify from './spotify.js?v=37';
+import * as spHistory from './history.js?v=37';
+import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=37';
+import * as mood from './mood.js?v=37';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1136,6 +1136,16 @@ function yearField(value, { optional = false } = {}) {
 
 const TYPE_LABEL = { single: 'Single', ep: 'EP', compilation: 'Compilation' };
 
+// The year a search result is already logged under, if it is. Edition tags
+// like "(Deluxe Edition)" or "- Remastered" are ignored.
+const bareTitle = (t) => norm(String(t || '').replace(/\s*[([][^)\]]*[)\]]\s*$/, '').replace(/\s+-\s+[^-]*$/, ''));
+function loggedYear(r) {
+  const a = norm(r.artist), t = norm(r.title), bt = bareTitle(r.title);
+  if (!a || !t) return '';
+  return store.years().find((y) => data.years[y].albums.some((x) =>
+    norm(x.artist) === a && (norm(x.title) === t || (bt && bareTitle(x.title) === bt)))) || '';
+}
+
 function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = null } = {}) {
   // New albums go under their release year: filled in from the search result,
   // or looked up from the artist and album when typed in by hand. If it can't
@@ -1160,12 +1170,17 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
       </div>
       <p class="hint" id="yearHint" hidden></p>
       <p class="warn" id="dupWarn" hidden></p>
-      <div class="form-actions"><button class="btn primary" id="addSubmit">Add to log</button></div>
+      <div class="form-actions">
+        <button class="btn" id="addMore" hidden>Add and pick another</button>
+        <button class="btn primary" id="addSubmit">Add to log</button>
+      </div>
     </form>`, 'wide');
   const form = $('#addForm', m);
   const F = form.elements;
   const q = $('#addQ', m);
   const results = $('#results', m);
+  const addMore = $('#addMore', m);
+  const addedYears = []; // years added to while "Add and pick another" kept this open
   const coverPreview = () => {
     const al = { id: 'preview', artist: F.artist.value, title: F.title.value };
     $('#addCover', m).hidden = !chosen?.art && !al.artist && !al.title;
@@ -1190,12 +1205,8 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
       try {
         const list = await findAlbums(term, 20);
         if (t !== ticket) return;
-        results.innerHTML = list.length ? list.map((r, i) => `
-          <button type="button" class="result" data-i="${i}">
-            <img src="${esc(r.art.replace('600x600', '120x120'))}" alt="">
-            <span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.year ? ` · ${r.year}` : ''}${TYPE_LABEL[r.type] ? ` · <em class="kind">${TYPE_LABEL[r.type]}</em>` : ''}</small></span>
-          </button>`).join('') : '<p class="muted pad-sm">No matches. Fill in the details below instead.</p>';
         results._list = list;
+        showResults();
       } catch {
         if (t !== ticket) return;
         const wait = Math.ceil(spotifyBlockedFor() / 60000);
@@ -1206,6 +1217,20 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
     }, 400);
   };
   q.addEventListener('input', search);
+  // Albums already in the log get a tick, so it's easy to see what's left to add.
+  function showResults() {
+    const list = results._list || [];
+    results.innerHTML = list.length ? list.map((r, i) => {
+      const inLog = loggedYear(r);
+      return `
+          <button type="button" class="result${inLog ? ' logged' : ''}${r === chosen ? ' chosen' : ''}" data-i="${i}">
+            <img src="${esc(r.art.replace('600x600', '120x120'))}" alt="">
+            <span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.year ? ` · ${r.year}` : ''}${TYPE_LABEL[r.type] ? ` · <em class="kind">${TYPE_LABEL[r.type]}</em>` : ''}</small></span>
+            ${inLog ? `<em class="in-log">${ICON.check}<span>${inLog === String(r.year) ? 'Logged' : `In ${esc(inLog)}`}</span></em>` : ''}
+          </button>`;
+    }).join('') : '<p class="muted pad-sm">No matches. Fill in the details below instead.</p>';
+    addMore.hidden = !list.length;
+  }
 
   // Typed in by hand: look the release year up once there's an artist and album.
   // A year the user typed themselves is never overwritten.
@@ -1264,16 +1289,21 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     if (saving) return;
+    const more = e.submitter === addMore && !addMore.hidden;
     let guessed = false;
     if (!F.year.value) {
       saving = true;
-      const btn = $('#addSubmit', m);
-      btn.disabled = true;
+      const btn = more ? addMore : $('#addSubmit', m);
+      const label = btn.innerHTML;
+      $$('.form-actions .btn', m).forEach((b) => { b.disabled = true; });
       btn.innerHTML = '<span class="spin"></span> Finding the year…';
       clearTimeout(yearTimer);
       const found = chosen?.year || await lookupYear();
       F.year.value = found || fallbackYear;
       guessed = !found;
+      saving = false;
+      $$('.form-actions .btn', m).forEach((b) => { b.disabled = false; });
+      btn.innerHTML = label;
     }
     const y = store.ensureYear(F.year.value);
     const album = { id: store.uid(), artist: F.artist.value.trim(), title: F.title.value.trim(), songs: splitSongs(F.songs.value) };
@@ -1284,12 +1314,29 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
     const cleared = clearFromQueue(album, fromQueue);
     store.commit();
     clearRecs(album, fromRec?.id);
+    if (!album.art) requestArt(album);
+    if (more) {
+      // Back to the same search results, with this one now ticked, ready for the next.
+      if (!addedYears.includes(F.year.value)) addedYears.push(F.year.value);
+      toast(guessed ? `Added to ${F.year.value} (couldn't find its release year)` : `Added to ${F.year.value}`);
+      chosen = null;
+      form.reset();
+      yearTyped = false; hint.hidden = true;
+      coverPreview();
+      showResults();
+      $('.modal', m).scrollTo({ top: 0, behavior: 'smooth' });
+      m.onClose = () => {
+        // Finished: show the year everything went into, or stay put if it was several.
+        const go = addedYears.length === 1 ? `#/year/${addedYears[0]}` : '';
+        if (go && location.hash !== go) location.hash = go; else render();
+      };
+      return;
+    }
     closeModal(m, true);
     toast(guessed ? `Added to ${F.year.value}. Couldn't find its release year, so open the album to change it if that's wrong.`
       : cleared ? `Added to ${F.year.value} and ticked off Up next` : `Added to ${F.year.value}`);
     if (location.hash !== `#/year/${F.year.value}`) location.hash = `#/year/${F.year.value}`;
     else render();
-    if (!album.art) requestArt(album);
   });
   if (fromRec) {
     // A friend's recommendation: start from what they sent.

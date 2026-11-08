@@ -12,8 +12,8 @@
 // Every lookup is cached on this device (music-log:tags) for 90 days, failures
 // for a day, so each album is looked up once, and nothing here touches the
 // Spotify or iTunes limits that album search needs.
-import { LASTFM_API_KEY } from './config.js?v=36';
-import { norm } from './art.js?v=36';
+import { LASTFM_API_KEY } from './config.js?v=37';
+import { norm } from './art.js?v=37';
 
 export const MOODS = [
   { id: 'chill', label: 'Chill', emoji: '🌿', words: 'chill, chillout, chill out, relax, relaxing, mellow, calm, laid back, soothing, peaceful, downtempo, lounge, trip hop, easy listening, bossa nova, lo fi, lofi, smooth:.7, soft, soft rock:.7, yacht rock, acoustic:.5, folk:.4, ambient:.6' },
