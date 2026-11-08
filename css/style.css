@@ -667,3 +667,11 @@ body.signed-out .view-bar { display: none; }
   .pick-info h3 { font-size: 19px; }
 }
 .all-more { display: flex; width: fit-content; margin: 24px auto 8px; }
+.seg .seg-year { position: relative; display: inline-flex; align-items: center; gap: 4px; padding: 8px 12px 8px 16px; border-radius: 999px; color: var(--muted); font-weight: 500; cursor: pointer; transition: .15s; }
+.seg .seg-year select { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; cursor: pointer; border: 0; padding: 0; }
+.seg .seg-year svg { width: 14px; height: 14px; }
+.seg .seg-year.on { background: var(--text); color: var(--bg); }
+.pick-less { height: auto; margin: -6px 0 16px; padding: 0; border: 0; font-size: 14px; }
+.pick-played { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; color: var(--faint); font-size: 13px; }
+.pick-played svg { width: 14px; height: 14px; }
+@media (max-width: 720px) { .seg .seg-year { flex: 1; justify-content: center; } }

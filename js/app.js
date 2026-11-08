@@ -536,7 +536,7 @@ function renderYear(year, tab) {
         <h1>${yearMenuBtn(year)}</h1>
         ${yearListenHtml(y)}
       </div>
-      ${ro() ? '' : `<button type="button" class="btn pick-btn" data-pick title="Pick an album from your library">${ICON.dice}<span>Pick for me</span></button>`}
+      ${ro() ? '' : `<button type="button" class="btn pick-btn" data-pick-for-me title="Pick an album from your library">${ICON.dice}<span>Pick for me</span></button>`}
     </section>
     <nav class="tabs" role="tablist">
       <a role="tab" href="#/year/${year}" class="${tab === 'listened' ? 'on' : ''}" aria-selected="${tab === 'listened'}">Listened <span>${y.albums.length}</span></a>
@@ -647,7 +647,7 @@ function renderAll() {
         <h1>${yearMenuBtn('All years')}</h1>
         ${all.length ? `<p class="hero-stats"><b>${all.length}</b> album${all.length === 1 ? '' : 's'}${favs ? ` · <b>${favs}</b> favourite${favs === 1 ? '' : 's'}` : ''}${span ? ` · ${span}` : ''}</p>` : ''}
       </div>
-      ${ro() ? '' : `<button type="button" class="btn pick-btn" data-pick title="Pick an album from your library">${ICON.dice}<span>Pick for me</span></button>`}
+      ${ro() ? '' : `<button type="button" class="btn pick-btn" data-pick-for-me title="Pick an album from your library">${ICON.dice}<span>Pick for me</span></button>`}
     </section>
     <div id="yearBody">
       <div class="toolbar">
@@ -2762,7 +2762,7 @@ function toast(msg, kind = '') {
 // come from Last.fm / MusicBrainz tags (see mood.js), read in the background
 // while this is open and cached on the device, so the first mood pick on a big
 // library may take a moment and every one after is instant.
-const pickPrefs = { scope: 'all', mood: '' };
+const pickPrefs = { scope: 'all', mood: '', less: false };
 try { Object.assign(pickPrefs, JSON.parse(localStorage.getItem('music-log:pick') || '{}')); } catch {}
 const recentPicks = []; // album ids shown lately, so "Another" doesn't repeat itself
 
@@ -2791,17 +2791,24 @@ function weightedPick(list, weight = () => 1) {
   return pool[pool.length - 1];
 }
 
+// "Less played first": an album's chance shrinks with the time you've spent on
+// it on Spotify: never played 1, an hour 1/3, ten hours 1/21.
+const playedWeight = (album) => (pickPrefs.less && hasListening() ? 1 / (1 + (listeningFor(album)?.ms || 0) / 1800000) : 1);
+
 function openPicker() {
   const [page, a] = route();
-  const year = page === 'year' && data.years[a] ? a : shownYears()[0];
-  if (pickPrefs.scope === 'year') pickPrefs.scope = 'all'; // the year follows the page, so start wide
+  // Opened from a year: start on that year. From All years: everything.
+  let year = page === 'year' && data.years[a] ? a : shownYears()[0];
+  pickPrefs.scope = page === 'year' && data.years[a] ? 'year' : pickPrefs.scope === 'year' ? 'all' : pickPrefs.scope;
+  const yearOptions = shownYears().map((y) => `<option value="${y}" ${y === year ? 'selected' : ''}>${y}</option>`).join('');
   const m = openModal(`
     <div class="modal-head"><h2>What should I play?</h2>${closeBtn()}</div>
     <div class="seg pick-scope" role="radiogroup" aria-label="Pick from">
       <a href="#" role="radio" data-scope="all">Everything</a>
       <a href="#" role="radio" data-scope="favs">Favourites</a>
-      <a href="#" role="radio" data-scope="year">${esc(year)}</a>
+      <label class="seg-year" role="radio" data-scope="year" title="Pick from one year"><span id="pickYearLabel">${esc(year)}</span><select id="pickYear" aria-label="Year">${yearOptions}</select>${ICON.chevron}</label>
     </div>
+    ${hasListening() ? `<label class="check pick-less"><input type="checkbox" id="pickLess" ${pickPrefs.less ? 'checked' : ''}><span>Favour albums I've played less</span></label>` : ''}
     <p class="pick-label">How are you feeling?</p>
     <div class="mood-chips">
       <button type="button" class="mood-chip" data-mood="">${ICON.dice}<span>Surprise me</span></button>
@@ -2850,6 +2857,7 @@ function openPicker() {
         <p class="eyebrow">${esc(y)}${rank ? ` · <span class="accent">#${rank} favourite</span>` : ''}</p>
         <h3>${esc(album.title || album.artist)}</h3>
         ${album.title ? `<p class="pick-artist">${esc(album.artist)}</p>` : ''}
+        ${(() => { const ms = hasListening() ? listeningFor(album)?.ms || 0 : 0; return ms >= 60000 ? `<p class="pick-played">${ICON.headphones} ${fmtDur(ms)} played</p>` : pickPrefs.less && hasListening() ? '<p class="pick-played">Not played on Spotify yet</p>' : ''; })()}
         ${why.length ? `<p class="pick-why">${why.map((w) => `<span>${esc(w)}</span>`).join('')}</p>` : ''}
         <div class="pick-actions">
           <a class="btn spotify small" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play</a>
@@ -2875,11 +2883,11 @@ function openPicker() {
     if (!pool.length) {
       return message(pickPrefs.scope === 'favs' ? 'No favourites to pick from yet.' : `Nothing logged${pickPrefs.scope === 'year' ? ` for ${esc(year)}` : ''} yet.`);
     }
-    if (!pickPrefs.mood) return show(weightedPick(pool));
+    if (!pickPrefs.mood) return show(weightedPick(pool, (x) => playedWeight(x.album)));
     const fits = fitsOf(pickPrefs.mood);
     const label = mood.MOODS.find((x) => x.id === pickPrefs.mood).label.toLowerCase();
     if (fits.length) {
-      const p = weightedPick(fits, (x) => x.fit.score);
+      const p = weightedPick(fits, (x) => x.fit.score * playedWeight(x.album));
       return show(p, p.fit.why);
     }
     if (untagged().length) {
@@ -2915,12 +2923,15 @@ function openPicker() {
 
   m.addEventListener('click', (e) => {
     const sc = e.target.closest('[data-scope]');
+    if (sc?.dataset.scope === 'year') { if (pickPrefs.scope !== 'year') { pickPrefs.scope = 'year'; pick(); } return; }
     if (sc) { e.preventDefault(); pickPrefs.scope = sc.dataset.scope; savePrefs(); pick(); if (pickPrefs.mood) scan(); return; }
     const md = e.target.closest('[data-mood]');
     if (md) { pickPrefs.mood = md.dataset.mood; savePrefs(); pick(); if (pickPrefs.mood) scan(); return; }
     if (e.target.closest('[data-pick-again]')) { pick(); return; }
     if (e.target.closest('[data-pick-open]') && shown) { const id = shown.album.id; closeModal(m, true); openAlbum(id); }
   });
+  $('#pickYear', m).addEventListener('change', (e) => { year = e.target.value; $('#pickYearLabel', m).textContent = year; pickPrefs.scope = 'year'; pick(); if (pickPrefs.mood) scan(); });
+  $('#pickLess', m)?.addEventListener('change', (e) => { pickPrefs.less = e.target.checked; savePrefs(); pick(); });
   // Stop reading tags once the popup goes, however it closes.
   const gone = new MutationObserver(() => { if (!m.isConnected) { alive = false; gone.disconnect(); } });
   gone.observe(modalRoot, { childList: true });
@@ -2944,7 +2955,7 @@ document.addEventListener('click', (e) => {
   const q = e.target.closest('[data-queue]');
   if (q) openQueueItem(q.dataset.queue);
   if (e.target.closest('[data-view-own]')) showOwn();
-  if (e.target.closest('[data-pick]') && !ro()) openPicker();
+  if (e.target.closest('[data-pick-for-me]') && !ro()) openPicker();
 });
 $('#addBtn').addEventListener('click', () => data && !ro() && addAlbum());
 $('#libsBtn').addEventListener('click', () => data && openLibraries());
