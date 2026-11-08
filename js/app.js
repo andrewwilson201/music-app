@@ -1,8 +1,8 @@
-import * as store from './store.js?v=39';
-import * as spotify from './spotify.js?v=39';
-import * as spHistory from './history.js?v=39';
-import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=39';
-import * as mood from './mood.js?v=39';
+import * as store from './store.js?v=40';
+import * as spotify from './spotify.js?v=40';
+import * as spHistory from './history.js?v=40';
+import { queueArt, prioritise, searchAlbums, findAlbums, quickFind, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=40';
+import * as mood from './mood.js?v=40';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1354,7 +1354,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
           ? `Spotify has paused searches for ${wait > 90 ? 'a while' : `about ${wait} minute${wait === 1 ? '' : 's'}`} after a lot of lookups, and iTunes didn't answer either.`
           : 'Search is unavailable right now.'} Try again shortly, or fill in the details below.</p>`;
       }
-    }, 400);
+    }, 700);
   };
   q.addEventListener('input', search);
   // Albums already in the log get a tick, so it's easy to see what's left to add.
@@ -2428,17 +2428,17 @@ function renderListening(period, mode = 'albums') {
   const list = listFilter === 'unlogged' ? unlogged : rows;
   const top = list.slice(0, listShown);
   const pseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
-  // Albums not in the log find their match by themselves (see matchHeard).
+  // Albums not in the log are looked up when you tap + (see matchHeard).
   const rowHtml = (r) => {
     const heard = !r.album && !hidden.has(r.g.key);
     return `<li${heard ? ` class="heard" data-heard="${esc(r.g.key)}"` : ''}>
       <span class="n">${r.rank}</span>
       <button class="lb-open" ${heard ? 'data-heard-more aria-expanded="false"' : openAttr(r)}><span class="heard-cover">${coverHtml(r.album || pseudo(r.g), 'sm')}</span>
         <span class="m"><b>${esc(r.g.title)}</b><small>${esc(r.g.artist)}${r.album ? '' : ' · <i>not logged</i>'}</small>
-        ${heard ? '<small class="heard-match"><span class="spin"></span> Finding it…</small>' : ''}
+        ${heard ? '<small class="heard-match">Tap + to add it</small>' : ''}
         <span class="bar"><i style="width:${Math.max(2, Math.round(r.ms / max * 100))}%"></i></span></span>
         <span class="t">${fmtDur(r.ms)}</span></button>
-      ${heard ? `<button class="icon-btn log-add" data-add-heard title="Add ${esc(r.g.title)} to your library" aria-label="Add ${esc(r.g.title)} to your library" disabled>${ICON.plus}</button>
+      ${heard ? `<button class="icon-btn log-add" data-add-heard title="Add ${esc(r.g.title)} to your library" aria-label="Add ${esc(r.g.title)} to your library">${ICON.plus}</button>
         <div class="heard-pick" hidden></div>` : logBtn(r)}</li>`;
   };
   app.innerHTML = `
@@ -2498,21 +2498,6 @@ document.addEventListener('click', async (e) => {
 const heardMatches = new Map(); // group key -> Promise of { sure, list, options, failed }
 const heardResolved = new Map(); // group key -> the settled value, for clicks
 
-const searchTermFor = (g) => `${String(g.artist).split(/,|&/)[0].trim()} ${String(g.title).replace(/\s*[([][^)\]]*[)\]]\s*$/, '')}`;
-
-// A few lookups at a time, so a long list doesn't fire hundreds at once.
-let lookupsRunning = 0;
-const lookupsWaiting = [];
-function limited(fn) {
-  return new Promise((resolve, reject) => {
-    const run = () => {
-      lookupsRunning++;
-      fn().then(resolve, reject).finally(() => { lookupsRunning--; lookupsWaiting.shift()?.(); });
-    };
-    if (lookupsRunning < 3) run(); else lookupsWaiting.push(run);
-  });
-}
-
 // Matches are remembered on this device for a fortnight, so opening the
 // Listening page again doesn't search for every album again.
 const MATCH_KEY = 'music-log:heard-matches';
@@ -2541,8 +2526,9 @@ function rememberMatch(key, list) {
 function lookupHeard(g) {
   const saved = matchStore()[g.key];
   if (saved) return Promise.resolve(saved.list);
-  return limited(() => findAlbums(searchTermFor(g), 8, { background: true }))
-    .then((list) => { rememberMatch(g.key, list); return list; });
+  const artist = String(g.artist).split(/,|&/)[0].trim();
+  const title = String(g.title).replace(/\s*[([][^)\]]*[)\]]\s*$/, '');
+  return quickFind(artist, title, 8).then((list) => { rememberMatch(g.key, list); return list; });
 }
 
 function matchHeard(g) {
@@ -2558,7 +2544,7 @@ function matchHeard(g) {
         return { sure, options };
       })
       .catch((e) => {
-        // Don't remember a failure: try again next time the row is shown.
+        // Don't remember a failure: the next tap tries again.
         setTimeout(() => { heardMatches.delete(g.key); heardResolved.delete(g.key); }, 0);
         return { sure: null, options: [], failed: true, busy: e?.message === 'rate limited' };
       })
@@ -2575,6 +2561,8 @@ function showHeardMatch(li, g, m) {
   const line = $('.heard-match', li);
   const add = $('[data-add-heard]', li);
   add.disabled = false;
+  add.innerHTML = ICON.plus;
+  line.classList.remove('sure');
   if (m.sure) {
     line.innerHTML = `${ICON.check} Adds as ${esc(m.sure.title)}${m.sure.year ? ` · ${m.sure.year}` : ''}`;
     line.classList.add('sure');
@@ -2582,27 +2570,20 @@ function showHeardMatch(li, g, m) {
   } else if (m.options.length) {
     line.textContent = 'Tap + to choose';
   } else {
-    line.textContent = m.busy ? 'Searching paused for a bit: + adds as named'
-      : m.failed ? 'Search is down: + adds as named' : 'Not found: + adds as named';
+    line.textContent = m.busy ? 'Search is busy. Tap + again in a minute'
+      : m.failed ? "Couldn't search just now. Tap + to try again" : 'Not found: + adds as named';
   }
 }
 
-const heardObserver = new IntersectionObserver((entries) => {
-  for (const e of entries) {
-    if (!e.isIntersecting) continue;
-    heardObserver.unobserve(e.target);
-    const g = listenIndex?.groups[e.target.dataset.heard];
-    if (g) matchHeard(g).then((m) => showHeardMatch(e.target, g, m));
-  }
-}, { rootMargin: '400px' });
-
+// Shows matches already found (this visit, or remembered on this device).
+// Nothing is looked up until you tap, so scrolling a long list costs nothing.
 function watchHeard() {
-  heardObserver.disconnect();
   $$('li.heard').forEach((li) => {
-    const m = heardResolved.get(li.dataset.heard);
     const g = listenIndex?.groups[li.dataset.heard];
-    if (m && g) showHeardMatch(li, g, m);
-    else heardObserver.observe(li);
+    if (!g) return;
+    const m = heardResolved.get(g.key);
+    if (m) showHeardMatch(li, g, m);
+    else if (matchStore()[g.key]) matchHeard(g).then((r) => showHeardMatch(li, g, r));
   });
 }
 
@@ -2663,11 +2644,24 @@ document.addEventListener('click', (e) => {
   const g = li && listenIndex?.groups[li.dataset.heard];
   if (!g || ro()) return;
   if (e.target.closest('[data-add-heard]')) {
-    const m = heardResolved.get(g.key);
-    if (!m) return;
-    if (m.sure) addHeard(g, m.sure, li);
-    else if (m.options.length) toggleHeardPick(li, g);
-    else addHeard(g, asHeard(g), li);
+    const known = heardResolved.get(g.key);
+    if (known) {
+      if (known.sure) addHeard(g, known.sure, li);
+      else if (known.options.length) toggleHeardPick(li, g);
+      else addHeard(g, asHeard(g), li);
+      return;
+    }
+    // First tap: look it up, then add it straight away when it's a sure match.
+    const btn = $('[data-add-heard]', li);
+    if (btn.disabled) return;
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span>';
+    $('.heard-match', li).textContent = 'Finding it…';
+    matchHeard(g).then((m) => {
+      showHeardMatch(li, g, m);
+      if (m.sure) addHeard(g, m.sure, li);
+      else if (m.options.length) toggleHeardPick(li, g);
+    });
   } else if (e.target.closest('[data-heard-more]')) {
     toggleHeardPick(li, g);
   } else if (e.target.closest('[data-pick-heard]')) {

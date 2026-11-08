@@ -2,7 +2,7 @@
 // Search needs no scopes. Making playlists asks for the playlist scopes the
 // first time it's used, then picks up where it left off after the redirect.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=39';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=40';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
@@ -27,9 +27,9 @@ export let lastError = '';
 const BLOCK_KEY = 'music-log:spotify-blocked-until';
 let blockedUntil = Number(ls(BLOCK_KEY)) || 0;
 export const blockedFor = () => Math.max(0, blockedUntil - Date.now());
-function block(res) {
-  const secs = Number(res.headers.get('Retry-After'));
-  blockedUntil = Date.now() + (secs > 0 ? secs : 60) * 1000;
+function block(res, fallback = 60) {
+  const secs = Number(res?.headers.get('Retry-After'));
+  blockedUntil = Date.now() + (secs > 0 ? secs : fallback) * 1000;
   ls(BLOCK_KEY, String(blockedUntil));
 }
 const rateLimited = () => Object.assign(new Error('rate limited'), { status: 429 });
@@ -120,11 +120,21 @@ async function accessToken() {
 // One Web API call. Throws with Spotify's message; err.status holds the HTTP code.
 async function api(path, { method = 'GET', body } = {}) {
   if (blockedFor()) throw rateLimited();
-  const res = await fetch(`https://api.spotify.com/v1${path}`, {
-    method,
-    headers: { Authorization: `Bearer ${await accessToken()}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
-    body: body ? JSON.stringify(body) : undefined,
-  });
+  const token = await accessToken();
+  let res;
+  try {
+    res = await fetch(`https://api.spotify.com/v1${path}`, {
+      method,
+      headers: { Authorization: `Bearer ${token}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
+      body: body ? JSON.stringify(body) : undefined,
+    });
+  } catch (e) {
+    // Spotify's "too many requests" answer can come without the headers a
+    // browser needs to read it, so it looks like a network failure. When the
+    // phone is online, treat it as one and back off for a bit.
+    if (navigator.onLine !== false) { block(null, 30); throw rateLimited(); }
+    throw e;
+  }
   if (!res.ok) {
     const json = await res.json().catch(() => ({}));
     lastError = `${res.status} ${json.error?.message || res.statusText}`.trim();
