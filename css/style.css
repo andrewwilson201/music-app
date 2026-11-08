@@ -191,7 +191,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .btn.heart.on svg { fill: var(--accent); }
 .btn.queue.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .btn.small { height: 34px; padding: 0 12px; font-size: 13px; }
-.btn.icon-only { width: 42px; padding: 0; }
+.detail-more { display: flex; flex-wrap: wrap; gap: 8px; margin-top: 10px; }
 .link-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
 .link-btn svg { width: 16px; height: 16px; }
 .link-btn:hover { color: var(--text); }

@@ -1090,8 +1090,10 @@ function openAlbum(id) {
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn heart ${rank ? 'on' : ''}" id="favToggle" aria-pressed="${!!rank}">${ICON.heart}<span>${rank ? 'Favourite' : 'Add to favourites'}</span></button>
-          <button class="btn icon-only queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}" title="${queued ? 'In Up next (tap to take it off)' : 'Add to Up next'}" aria-label="${queued ? 'In Up next' : 'Add to Up next'}">${queued ? ICON.check : ICON.queue}</button>
-          <button class="btn icon-only" id="recommend" title="Recommend to a friend" aria-label="Recommend to a friend">${ICON.gift}</button>
+        </div>
+        <div class="detail-more">
+          <button class="btn small queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}" title="${queued ? 'Tap to take it off Up next' : 'Save it to play again soon'}">${queued ? ICON.check : ICON.queue}<span>${queued ? 'In Up next' : 'Add to Up next'}</span></button>
+          <button class="btn small" id="recommend" title="Send it to a friend">${ICON.gift}<span>Recommend</span></button>
         </div>
         <div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, songsOf(album, fav), 'detailSongs')}</div>
         <div class="detail-foot">
