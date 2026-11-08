@@ -519,7 +519,7 @@ body.signed-out .view-bar { display: none; }
 .listen-none { margin: 0; color: var(--faint); font-size: 14px; }
 .listen-set .share-head > svg { color: var(--spotify); }
 .listen-set { border: 1px solid rgba(30, 215, 96, .25); }
-.listen-head { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
+.track-head { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .listen-status { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
 .listen-status .sync-dot { position: static; box-shadow: none; flex: none; }
 /* tracklist picker for best songs */

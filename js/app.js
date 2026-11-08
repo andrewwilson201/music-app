@@ -1520,7 +1520,7 @@ async function loadRecs() {
     const qid = `rec-${r.id}`;
     if (!isLogged(r) && !data.toListen.some((x) => x.id === qid)) {
       const from = r.fromName || 'A friend';
-      const same = data.toListen.find((x) => queueMatches(x, r) && (r.title || !x.title));
+      const same = data.toListen.find((x) => queueMatches(x, r) && !x.title === !r.title);
       if (same) {
         if (!same.from) { same.from = from; if (r.note) same.note = r.note; changed = true; }
       } else {
@@ -1536,7 +1536,8 @@ async function loadRecs() {
     const age = Date.now() - (r.sentAt?.toMillis?.() || 0);
     if (r.notified || age > 5 * 60000) store.dismissRec(r.id).catch(() => {});
   }
-  if (changed) store.commit({ quiet: !fresh.length });
+  if (changed) store.commit({ quiet: true });
+  if (fresh.length && !modalRoot.children.length) render();
   // Opened from a notification: show that album (it may have been moved on an earlier visit).
   if (pendingRec) {
     const item = data.toListen.find((x) => x.id === `rec-${pendingRec}`);
@@ -1817,7 +1818,7 @@ function openSettings() {
           : 'Connect for better artwork and album links'}${spotify.lastError ? `<br>Last Spotify error: ${esc(spotify.lastError)}` : ''}</small></div>
         <button type="button" class="btn ${spotify.connected() ? '' : 'spotify'} small" id="spotifyBtn">${spotify.connected() ? 'Log out' : 'Log in'}</button>
       </div>
-      <div class="share-head listen-head">
+      <div class="share-head track-head">
         ${ICON.headphones}
         <div><b>Track listening time</b><small>Adds up what you play on Spotify, on any device, and shows the time on each album. Only you can see it.</small></div>
         <label class="switch" title="Track listening time"><input type="checkbox" id="listenToggle" ${tracking.enabled ? 'checked' : ''} aria-label="Track listening time"><span></span></label>
