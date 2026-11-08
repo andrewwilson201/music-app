@@ -29,9 +29,9 @@ import {
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
   getMessaging, getToken, deleteToken, messagingSupported, getFunctions, httpsCallable, connectFunctionsEmulator,
-} from '../vendor/firebase.js?v=37';
-import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js?v=37';
-import { pack, unpack, toListening } from './history.js?v=37';
+} from '../vendor/firebase.js?v=38';
+import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js?v=38';
+import { pack, unpack, toListening } from './history.js?v=38';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
 const LEGACY_DATA_KEY = 'music-log:data';

@@ -655,3 +655,4 @@ body.signed-out .view-bar { display: none; }
   .cover.pick { width: 104px; }
   .pick-info h3 { font-size: 19px; }
 }
+.all-more { display: flex; width: fit-content; margin: 24px auto 8px; }
