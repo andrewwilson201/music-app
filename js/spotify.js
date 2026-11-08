@@ -2,7 +2,7 @@
 // Search needs no scopes. Making playlists asks for the playlist scopes the
 // first time it's used, then picks up where it left off after the redirect.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=36';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=37';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
