@@ -1,7 +1,7 @@
-import * as store from './store.js?v=33';
-import * as spotify from './spotify.js?v=33';
-import * as spHistory from './history.js?v=33';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=33';
+import * as store from './store.js?v=34';
+import * as spotify from './spotify.js?v=34';
+import * as spHistory from './history.js?v=34';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=34';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1908,11 +1908,10 @@ function historyBoxHtml() {
     ? `<div class="import-row">${ICON.check}<div><b>Spotify history imported</b><small>${h.plays.toLocaleString()} plays of ${h.albums.toLocaleString()} albums, ${year(h.from)}–${year(h.to)}</small></div>
         <label class="link-btn">Replace<input type="file" id="historyFile" accept=".zip,.json,application/zip,application/json" multiple hidden></label>
         <button type="button" class="link-btn danger" id="historyRemove">Remove</button></div>
-      <label class="check listen-pills"><input type="checkbox" id="historySuggest" ${meta.historySuggest ? 'checked' : ''}> Suggest albums from imported history</label>
-      ${hidden ? `<p class="small-print muted">${hidden} album${hidden === 1 ? '' : 's'} hidden from suggestions · <button type="button" class="link" id="unhideAll">Show them again</button></p>` : ''}`
+      ${hidden ? `<p class="small-print muted">${hidden} album${hidden === 1 ? '' : 's'} hidden from Not logged · <button type="button" class="link" id="unhideAll">Show them again</button></p>` : ''}`
     : `<div class="import-row">${ICON.download}<div><b>Import your full history</b><small>Upload the “Extended streaming history” zip from Spotify’s privacy page to add everything before tracking started.</small></div>
         <label class="btn small">Upload<input type="file" id="historyFile" accept=".zip,.json,application/zip,application/json" multiple hidden></label></div>
-      ${hidden ? `<p class="small-print muted">${hidden} album${hidden === 1 ? '' : 's'} hidden from suggestions · <button type="button" class="link" id="unhideAll">Show them again</button></p>` : ''}`;
+      ${hidden ? `<p class="small-print muted">${hidden} album${hidden === 1 ? '' : 's'} hidden from Not logged · <button type="button" class="link" id="unhideAll">Show them again</button></p>` : ''}`;
 }
 
 function bindHistoryBox(m) {
@@ -1955,12 +1954,8 @@ function bindHistoryBox(m) {
       toast('Imported history removed');
     } catch (err) { redraw(); toast(`Couldn’t remove it: ${err.message}`, 'error'); }
   });
-  $('#historySuggest', box)?.addEventListener('change', async (e) => {
-    try { await store.setListenMeta({ historySuggest: e.target.checked }); render(); }
-    catch (err) { toast(`Couldn’t save that: ${err.message}`, 'error'); }
-  });
   $('#unhideAll', box)?.addEventListener('click', async () => {
-    try { await store.setListenMeta({ hidden: [] }); redraw(); render(); toast('Hidden albums will be suggested again'); }
+    try { await store.setListenMeta({ hidden: [] }); redraw(); render(); toast('Hidden albums are back in Not logged'); }
     catch (err) { toast(`Couldn’t save that: ${err.message}`, 'error'); }
   });
 }
@@ -2167,6 +2162,9 @@ const PERIODS = {
 const msSince = (g, since) => (since ? Object.entries(g.weeks).reduce((n, [w, ms]) => n + (w >= since ? ms : 0), 0) : g.ms);
 const playsSince = (t, since) => (since ? Object.entries(t.wplays).reduce((n, [w, c]) => n + (w >= since ? c : 0), 0) : t.plays);
 
+let listFilter = 'all'; // or 'unlogged'
+let listShown = 25;
+
 function renderListening(period, mode = 'albums') {
   const P = PERIODS[period] ? period : 'month';
   if (mode === 'songs') return renderTopSongs(P);
@@ -2176,16 +2174,27 @@ function renderListening(period, mode = 'albums') {
     .filter((r) => r.ms >= 60000).sort((a, b) => b.ms - a.ms);
   const total = rows.reduce((n, r) => n + r.ms, 0);
   const inLog = rows.reduce((n, r) => n + (r.album ? r.ms : 0), 0);
-  const top = rows.slice(0, 25);
-  const max = top[0]?.ms || 1;
-  const unlogged = rows.filter((r) => !r.album && r.ms >= 5 * 60000 && suggestable(r.g));
+  const max = rows[0]?.ms || 1;
+  rows.forEach((r, i) => { r.rank = i + 1; });
+  const hidden = hiddenHeard();
+  const unlogged = rows.filter((r) => !r.album && !hidden.has(r.g.key));
+  if (!unlogged.length) listFilter = 'all';
+  const list = listFilter === 'unlogged' ? unlogged : rows;
+  const top = list.slice(0, listShown);
   const pseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
-  const rowHtml = (r, i) => `<li>
-      <span class="n">${i + 1}</span>
-      <button class="lb-open" ${openAttr(r)}>${coverHtml(r.album || pseudo(r.g), 'sm')}
+  // Albums not in the log find their match by themselves (see matchHeard).
+  const rowHtml = (r) => {
+    const heard = !r.album && !hidden.has(r.g.key);
+    return `<li${heard ? ` class="heard" data-heard="${esc(r.g.key)}"` : ''}>
+      <span class="n">${r.rank}</span>
+      <button class="lb-open" ${heard ? 'data-heard-more aria-expanded="false"' : openAttr(r)}><span class="heard-cover">${coverHtml(r.album || pseudo(r.g), 'sm')}</span>
         <span class="m"><b>${esc(r.g.title)}</b><small>${esc(r.g.artist)}${r.album ? '' : ' · <i>not logged</i>'}</small>
+        ${heard ? '<small class="heard-match"><span class="spin"></span> Finding it…</small>' : ''}
         <span class="bar"><i style="width:${Math.max(2, Math.round(r.ms / max * 100))}%"></i></span></span>
-        <span class="t">${fmtDur(r.ms)}</span></button>${logBtn(r)}</li>`;
+        <span class="t">${fmtDur(r.ms)}</span></button>
+      ${heard ? `<button class="icon-btn log-add" data-add-heard title="Add ${esc(r.g.title)} to your library" aria-label="Add ${esc(r.g.title)} to your library" disabled>${ICON.plus}</button>
+        <div class="heard-pick" hidden></div>` : logBtn(r)}</li>`;
+  };
   app.innerHTML = `
     <section class="hero"><div><p class="eyebrow">your listening</p><h1>${PERIODS[P].title.toLowerCase()}</h1></div></section>
     ${listenNavHtml(P, 'albums')}
@@ -2198,22 +2207,24 @@ function renderListening(period, mode = 'albums') {
             <div><b>${rows.length}</b><small>album${rows.length === 1 ? '' : 's'}</small></div>
             <div><b>${Math.round(inLog / total * 100)}%</b><small>on albums in your log</small></div>
           </div>
+          ${unlogged.length ? `<div class="lb-filter" role="group" aria-label="Show">
+            <button type="button" class="${listFilter === 'all' ? 'on' : ''}" data-lb-filter="all">All</button>
+            <button type="button" class="${listFilter === 'unlogged' ? 'on' : ''}" data-lb-filter="unlogged">Not logged <small>${unlogged.length}</small></button>
+          </div>` : ''}
           <ol class="lb">${top.map(rowHtml).join('')}</ol>
-          ${unlogged.length ? `<h2 class="sec-title">Heard, not logged <small>${unlogged.length}</small></h2>
-            <ul class="lb unlogged">${unlogged.slice(0, heardShown).map(heardRowHtml).join('')}</ul>
-            ${unlogged.length > heardShown ? `<button class="btn small heard-show-more" id="heardMore">Show more (${unlogged.length - heardShown} left)</button>` : ''}` : ''}`}`;
+          ${list.length > listShown ? `<button class="btn small lb-more" id="lbMore">Show more (${list.length - listShown} left)</button>` : ''}`}`;
   watchCovers();
   watchHeard();
   $('#goSettings')?.addEventListener('click', openSettings);
+  $('#lbMore')?.addEventListener('click', () => { listShown += 50; render(); });
+  $$('[data-lb-filter]').forEach((b) => b.addEventListener('click', () => { listFilter = b.dataset.lbFilter; listShown = 25; render(); }));
 }
 
 // Albums heard on Spotify but not in the log: tapping them, or their + button,
 // opens Add album with a search for them already filled in.
 const openAttr = (r) => (r.album ? `data-open="${r.album.id}"` : `data-log-heard="${esc(r.g.key)}" title="Add to your library"`);
-// Suggestions leave out albums hidden with ×, and (unless switched on in
-// Settings) albums only heard in imported history, not since tracking began.
+// Albums hidden with "Don't suggest it" lose their + and match.
 const hiddenHeard = () => new Set(store.listeningMeta().hidden || []);
-const suggestable = (g) => !hiddenHeard().has(g.key) && (store.listeningMeta().historySuggest || (g.liveMs || 0) > 0);
 const logBtn = (r) => (r.album || hiddenHeard().has(r.g.key) ? '' : `<button class="icon-btn log-add" data-log-heard="${esc(r.g.key)}" title="Add ${esc(r.g.title)} to your library" aria-label="Add ${esc(r.g.title)} to your library">${ICON.plus}</button>`);
 document.addEventListener('click', async (e) => {
   const hide = e.target.closest('[data-hide-heard]');
@@ -2234,13 +2245,12 @@ document.addEventListener('click', async (e) => {
 
 // ------------------------------------------------------------------ logging heard albums in place
 
-// Each row in Heard, not logged finds its album by itself (Spotify, or iTunes)
-// as it scrolls into view. A sure match (same Spotify album, or same artist
+// Each album in the Listening chart that isn't in the log finds its album by
+// itself (Spotify, or iTunes) as it scrolls into view. A sure match (same Spotify album, or same artist
 // and title) is logged with one tap on +, filed under its release year.
 // Otherwise + (or tapping the row) opens the closest few to pick from.
 const heardMatches = new Map(); // group key -> Promise of { sure, list, options, failed }
 const heardResolved = new Map(); // group key -> the settled value, for clicks
-let heardShown = 20;
 
 const searchTermFor = (g) => `${String(g.artist).split(/,|&/)[0].trim()} ${String(g.title).replace(/\s*[([][^)\]]*[)\]]\s*$/, '')}`;
 
@@ -2276,23 +2286,7 @@ function matchHeard(g) {
 }
 
 const matchDesc = (r) => `<b>${esc(r.title)}</b><small>${esc(r.artist)}${r.year ? ` · ${r.year}` : ''}${TYPE_LABEL[r.type] ? ` · <em class="kind">${TYPE_LABEL[r.type]}</em>` : ''}</small>`;
-const heardPseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
 const asHeard = (g) => ({ artist: g.artist, title: g.title, art: g.art || '', spotify: g.spotify || '', year: '' });
-
-function heardRowHtml(r) {
-  const g = r.g;
-  return `<li class="heard" data-heard="${esc(g.key)}">
-    <div class="heard-row">
-      <span class="heard-cover">${coverHtml(heardPseudo(g), 'sm')}</span>
-      <button type="button" class="m heard-more" data-heard-more aria-expanded="false">
-        <b>${esc(g.title)}</b><small>${esc(g.artist)} · ${fmtDur(r.ms)}</small>
-        <small class="heard-match"><span class="spin"></span> Finding it…</small></button>
-      <button class="icon-btn log-add" data-add-heard title="Add ${esc(g.title)} to your library" aria-label="Add ${esc(g.title)} to your library" disabled>${ICON.plus}</button>
-      <button class="icon-btn subtle" data-hide-heard="${esc(g.key)}" title="Don't suggest ${esc(g.title)} again" aria-label="Don't suggest ${esc(g.title)} again">${ICON.close}</button>
-    </div>
-    <div class="heard-pick" hidden></div>
-  </li>`;
-}
 
 function showHeardMatch(li, g, m) {
   if (!li.isConnected) return;
@@ -2304,9 +2298,9 @@ function showHeardMatch(li, g, m) {
     line.classList.add('sure');
     if (m.sure.art && !g.art) $('.heard-cover', li).innerHTML = coverHtml({ id: `hm-${g.ids[0]}`, artist: m.sure.artist, title: m.sure.title, art: m.sure.art }, 'sm');
   } else if (m.options.length) {
-    line.textContent = 'Tap + to pick the right one';
+    line.textContent = 'Tap + to choose';
   } else {
-    line.textContent = m.failed ? 'Search isn’t working, + adds it as named' : 'Not found, + adds it as named';
+    line.textContent = m.failed ? 'Search is down: + adds as named' : 'Not found: + adds as named';
   }
 }
 
@@ -2327,7 +2321,6 @@ function watchHeard() {
     if (m && g) showHeardMatch(li, g, m);
     else heardObserver.observe(li);
   });
-  $('#heardMore')?.addEventListener('click', () => { heardShown += 30; render(); });
 }
 
 function toggleHeardPick(li, g) {
@@ -2345,6 +2338,7 @@ function toggleHeardPick(li, g) {
       <p class="heard-pick-more">
         <button type="button" class="link-btn" data-pick-heard="named">Add it as it's named on Spotify</button>
         <button type="button" class="link-btn" data-search-heard>Search…</button>
+        <button type="button" class="link-btn" data-hide-heard="${esc(g.key)}">Don't suggest it</button>
       </p>`;
   });
 }
