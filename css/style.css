@@ -593,3 +593,19 @@ body.signed-out .view-bar { display: none; }
 .rec-album span { display: flex; flex-direction: column; min-width: 0; }
 .rec-album small { color: var(--muted); }
 .rec-people { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+
+/* Logging heard albums in place */
+.lb.unlogged li.heard { flex-direction: column; align-items: stretch; gap: 0; padding: 6px 6px 6px 4px; }
+.heard-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.heard-cover { flex: none; padding-left: 6px; }
+.heard-more { flex: 1; min-width: 0; text-align: left; }
+.heard-more small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.heard-match { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--faint); }
+.heard-match.sure { color: var(--muted); }
+.heard-match svg { width: 14px; height: 14px; flex: none; color: var(--accent); }
+.heard-match .spin { width: 10px; height: 10px; }
+.heard .log-add:disabled { opacity: .35; }
+.heard-pick { padding: 8px 4px 4px 6px; }
+.heard-pick .results { margin: 0 0 6px; max-height: none; }
+.heard-pick-more { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; }
+.heard-show-more { margin-top: 10px; }

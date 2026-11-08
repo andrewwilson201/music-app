@@ -1,7 +1,7 @@
-import * as store from './store.js?v=32';
-import * as spotify from './spotify.js?v=32';
-import * as spHistory from './history.js?v=32';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=32';
+import * as store from './store.js?v=33';
+import * as spotify from './spotify.js?v=33';
+import * as spHistory from './history.js?v=33';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=33';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -2178,7 +2178,7 @@ function renderListening(period, mode = 'albums') {
   const inLog = rows.reduce((n, r) => n + (r.album ? r.ms : 0), 0);
   const top = rows.slice(0, 25);
   const max = top[0]?.ms || 1;
-  const unlogged = rows.filter((r) => !r.album && r.ms >= 5 * 60000 && suggestable(r.g)).slice(0, 12);
+  const unlogged = rows.filter((r) => !r.album && r.ms >= 5 * 60000 && suggestable(r.g));
   const pseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
   const rowHtml = (r, i) => `<li>
       <span class="n">${i + 1}</span>
@@ -2200,12 +2200,10 @@ function renderListening(period, mode = 'albums') {
           </div>
           <ol class="lb">${top.map(rowHtml).join('')}</ol>
           ${unlogged.length ? `<h2 class="sec-title">Heard, not logged <small>${unlogged.length}</small></h2>
-            <ul class="lb unlogged">${unlogged.map((r) => `<li>
-              ${coverHtml(pseudo(r.g), 'sm')}
-              <span class="m"><b>${esc(r.g.title)}</b><small>${esc(r.g.artist)} · ${fmtDur(r.ms)}</small></span>
-              <button class="btn small" data-log-heard="${esc(r.g.key)}">${ICON.plus} Log it</button>
-              <button class="icon-btn subtle" data-hide-heard="${esc(r.g.key)}" title="Don't suggest ${esc(r.g.title)} again" aria-label="Don't suggest ${esc(r.g.title)} again">${ICON.close}</button></li>`).join('')}</ul>` : ''}`}`;
+            <ul class="lb unlogged">${unlogged.slice(0, heardShown).map(heardRowHtml).join('')}</ul>
+            ${unlogged.length > heardShown ? `<button class="btn small heard-show-more" id="heardMore">Show more (${unlogged.length - heardShown} left)</button>` : ''}` : ''}`}`;
   watchCovers();
+  watchHeard();
   $('#goSettings')?.addEventListener('click', openSettings);
 }
 
@@ -2232,6 +2230,175 @@ document.addEventListener('click', async (e) => {
   const b = e.target.closest('[data-log-heard]');
   const g = b && listenIndex?.groups[b.dataset.logHeard];
   if (g && !ro()) addAlbum({ query: `${g.artist} ${g.title}` });
+});
+
+// ------------------------------------------------------------------ logging heard albums in place
+
+// Each row in Heard, not logged finds its album by itself (Spotify, or iTunes)
+// as it scrolls into view. A sure match (same Spotify album, or same artist
+// and title) is logged with one tap on +, filed under its release year.
+// Otherwise + (or tapping the row) opens the closest few to pick from.
+const heardMatches = new Map(); // group key -> Promise of { sure, list, options, failed }
+const heardResolved = new Map(); // group key -> the settled value, for clicks
+let heardShown = 20;
+
+const searchTermFor = (g) => `${String(g.artist).split(/,|&/)[0].trim()} ${String(g.title).replace(/\s*[([][^)\]]*[)\]]\s*$/, '')}`;
+
+// A few lookups at a time, so a long list doesn't fire hundreds at once.
+let lookupsRunning = 0;
+const lookupsWaiting = [];
+function limited(fn) {
+  return new Promise((resolve, reject) => {
+    const run = () => {
+      lookupsRunning++;
+      fn().then(resolve, reject).finally(() => { lookupsRunning--; lookupsWaiting.shift()?.(); });
+    };
+    if (lookupsRunning < 3) run(); else lookupsWaiting.push(run);
+  });
+}
+
+function matchHeard(g) {
+  if (!heardMatches.has(g.key)) {
+    heardMatches.set(g.key, limited(() => findAlbums(searchTermFor(g), 8))
+      .then((list) => {
+        const id = spotifyAlbumId(g.spotify);
+        const same = (r) => (id && spotifyAlbumId(r.spotify) === id)
+          || (firstArtist(r.artist) === firstArtist(g.artist) && baseTitle(r.title) === baseTitle(g.title));
+        const sure = list.find(same) || null;
+        const byArtist = list.filter((r) => firstArtist(r.artist) === firstArtist(g.artist));
+        const options = [...(sure ? [sure] : []), ...(byArtist.length ? byArtist : list).filter((r) => r !== sure)].slice(0, 4);
+        return { sure, options };
+      })
+      .catch(() => ({ sure: null, options: [], failed: true }))
+      .then((m) => { heardResolved.set(g.key, m); return m; }));
+  }
+  return heardMatches.get(g.key);
+}
+
+const matchDesc = (r) => `<b>${esc(r.title)}</b><small>${esc(r.artist)}${r.year ? ` · ${r.year}` : ''}${TYPE_LABEL[r.type] ? ` · <em class="kind">${TYPE_LABEL[r.type]}</em>` : ''}</small>`;
+const heardPseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
+const asHeard = (g) => ({ artist: g.artist, title: g.title, art: g.art || '', spotify: g.spotify || '', year: '' });
+
+function heardRowHtml(r) {
+  const g = r.g;
+  return `<li class="heard" data-heard="${esc(g.key)}">
+    <div class="heard-row">
+      <span class="heard-cover">${coverHtml(heardPseudo(g), 'sm')}</span>
+      <button type="button" class="m heard-more" data-heard-more aria-expanded="false">
+        <b>${esc(g.title)}</b><small>${esc(g.artist)} · ${fmtDur(r.ms)}</small>
+        <small class="heard-match"><span class="spin"></span> Finding it…</small></button>
+      <button class="icon-btn log-add" data-add-heard title="Add ${esc(g.title)} to your library" aria-label="Add ${esc(g.title)} to your library" disabled>${ICON.plus}</button>
+      <button class="icon-btn subtle" data-hide-heard="${esc(g.key)}" title="Don't suggest ${esc(g.title)} again" aria-label="Don't suggest ${esc(g.title)} again">${ICON.close}</button>
+    </div>
+    <div class="heard-pick" hidden></div>
+  </li>`;
+}
+
+function showHeardMatch(li, g, m) {
+  if (!li.isConnected) return;
+  const line = $('.heard-match', li);
+  const add = $('[data-add-heard]', li);
+  add.disabled = false;
+  if (m.sure) {
+    line.innerHTML = `${ICON.check} Adds as ${esc(m.sure.title)}${m.sure.year ? ` · ${m.sure.year}` : ''}`;
+    line.classList.add('sure');
+    if (m.sure.art && !g.art) $('.heard-cover', li).innerHTML = coverHtml({ id: `hm-${g.ids[0]}`, artist: m.sure.artist, title: m.sure.title, art: m.sure.art }, 'sm');
+  } else if (m.options.length) {
+    line.textContent = 'Tap + to pick the right one';
+  } else {
+    line.textContent = m.failed ? 'Search isn’t working, + adds it as named' : 'Not found, + adds it as named';
+  }
+}
+
+const heardObserver = new IntersectionObserver((entries) => {
+  for (const e of entries) {
+    if (!e.isIntersecting) continue;
+    heardObserver.unobserve(e.target);
+    const g = listenIndex?.groups[e.target.dataset.heard];
+    if (g) matchHeard(g).then((m) => showHeardMatch(e.target, g, m));
+  }
+}, { rootMargin: '400px' });
+
+function watchHeard() {
+  heardObserver.disconnect();
+  $$('li.heard').forEach((li) => {
+    const m = heardResolved.get(li.dataset.heard);
+    const g = listenIndex?.groups[li.dataset.heard];
+    if (m && g) showHeardMatch(li, g, m);
+    else heardObserver.observe(li);
+  });
+  $('#heardMore')?.addEventListener('click', () => { heardShown += 30; render(); });
+}
+
+function toggleHeardPick(li, g) {
+  const box = $('.heard-pick', li);
+  const open = box.hidden;
+  $('[data-heard-more]', li).setAttribute('aria-expanded', String(open));
+  if (!open) { box.hidden = true; return; }
+  box.hidden = false;
+  box.innerHTML = '<p class="muted"><span class="spin"></span> Finding it…</p>';
+  matchHeard(g).then((m) => {
+    if (box.hidden) return;
+    box._options = m.options;
+    box.innerHTML = `${m.options.length ? `<div class="results">${m.options.map((r, i) => `
+        <button type="button" class="result${r === m.sure ? ' chosen' : ''}" data-pick-heard="${i}"><img src="${esc((r.art || '').replace('600x600', '120x120'))}" alt=""><span>${matchDesc(r)}</span></button>`).join('')}</div>` : ''}
+      <p class="heard-pick-more">
+        <button type="button" class="link-btn" data-pick-heard="named">Add it as it's named on Spotify</button>
+        <button type="button" class="link-btn" data-search-heard>Search…</button>
+      </p>`;
+  });
+}
+
+let addingHeard = false;
+async function addHeard(g, r, li) {
+  if (addingHeard) return;
+  addingHeard = true;
+  const btn = li && $('[data-add-heard]', li);
+  if (btn) { btn.disabled = true; btn.innerHTML = '<span class="spin"></span>'; }
+  try {
+    const album = { id: store.uid(), artist: r.artist.toLowerCase(), title: r.title.toLowerCase(), songs: [] };
+    let year = r.year;
+    if (!year) {
+      try { year = (await findRelease(album))?.year; } catch {}
+    }
+    const guessed = !year;
+    // Without a release year, file it under the year it was first heard.
+    year = String(year || new Date(Number.isFinite(g.first) ? g.first : Date.now()).getFullYear());
+    if (r.art) album.art = r.art;
+    album.spotify = r.spotify || g.spotify || '';
+    if (!album.spotify) delete album.spotify;
+    store.ensureYear(year).albums.push(album);
+    clearFromQueue(album);
+    store.commit();
+    clearRecs(album);
+    // Logged under a name that doesn't lead back to this listening: stop suggesting it.
+    if (listeningFor(album)?.key !== g.key) store.setListenMeta({ hidden: [...hiddenHeard(), g.key] }).catch(() => {});
+    toast(guessed ? `Added to ${year}, the year you first played it. Couldn’t find its release year.` : `Added ${album.title} to ${year}`);
+    if (!album.art) requestArt(album);
+  } finally {
+    addingHeard = false;
+    render();
+  }
+}
+
+document.addEventListener('click', (e) => {
+  const li = e.target.closest('li.heard');
+  const g = li && listenIndex?.groups[li.dataset.heard];
+  if (!g || ro()) return;
+  if (e.target.closest('[data-add-heard]')) {
+    const m = heardResolved.get(g.key);
+    if (!m) return;
+    if (m.sure) addHeard(g, m.sure, li);
+    else if (m.options.length) toggleHeardPick(li, g);
+    else addHeard(g, asHeard(g), li);
+  } else if (e.target.closest('[data-heard-more]')) {
+    toggleHeardPick(li, g);
+  } else if (e.target.closest('[data-pick-heard]')) {
+    const i = e.target.closest('[data-pick-heard]').dataset.pickHeard;
+    addHeard(g, i === 'named' ? asHeard(g) : $('.heard-pick', li)._options[i], li);
+  } else if (e.target.closest('[data-search-heard]')) {
+    addAlbum({ query: `${g.artist} ${g.title}` });
+  }
 });
 
 function listenNavHtml(P, mode) {
