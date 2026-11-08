@@ -1,8 +1,8 @@
-import * as store from './store.js?v=38';
-import * as spotify from './spotify.js?v=38';
-import * as spHistory from './history.js?v=38';
-import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=38';
-import * as mood from './mood.js?v=38';
+import * as store from './store.js?v=39';
+import * as spotify from './spotify.js?v=39';
+import * as spHistory from './history.js?v=39';
+import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=39';
+import * as mood from './mood.js?v=39';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -449,8 +449,12 @@ function sortedAlbums(yearData) {
   if (ui.sort === 'artist') list.sort((x, y) => norm(x.a.artist).localeCompare(norm(y.a.artist)));
   if (ui.sort === 'favs') list.sort((x, y) => (store.favRank(yearData, x.a.id) || 999) - (store.favRank(yearData, y.a.id) || 999));
   if (ui.sort === 'listened') list.sort((x, y) => (listeningFor(y.a)?.ms || 0) - (listeningFor(x.a)?.ms || 0));
+  if (ui.sort === 'recent') list.sort((x, y) => lastPlayed(y.a) - lastPlayed(x.a));
   return list.map(({ a }) => a);
 }
+
+// When you last played an album on Spotify (live tracking or imported history), 0 if never.
+const lastPlayed = (album) => listeningFor(album)?.last || 0;
 
 const timePill = (album) => {
   const l = pillsOn() && listeningFor(album);
@@ -547,7 +551,7 @@ function renderListened(year) {
           <option value="order">Listening order</option>
           <option value="artist">Artist A–Z</option>
           <option value="favs">Favourites first</option>
-          ${hasListening() ? '<option value="listened">Most listened</option>' : ''}
+          ${hasListening() ? '<option value="listened">Most listened</option><option value="recent">Recently listened</option>' : ''}
         </select>
       </label>
       ${viewToggleHtml()}
@@ -555,7 +559,7 @@ function renderListened(year) {
     <div id="grid"></div>`;
   if (!ro() && year === store.years()[0] && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
   if (!ro() && year === store.years()[0] && recs.length) body.insertAdjacentHTML('afterbegin', recsHtml());
-  if (ui.sort === 'listened' && !hasListening()) ui.sort = 'latest';
+  if ((ui.sort === 'listened' || ui.sort === 'recent') && !hasListening()) ui.sort = 'latest';
   $('#sort').value = ui.sort;
   const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
   sortTitle();
@@ -588,6 +592,7 @@ const ALL_SORTS = {
   title: 'Album A–Z',
   favs: 'Favourites first',
   listened: 'Most listened',
+  recent: 'Recently listened',
 };
 const ALL_PAGE = 60;
 
@@ -614,6 +619,7 @@ function sortedAll() {
     title: (x, y) => text(x.album.title || x.album.artist).localeCompare(text(y.album.title || y.album.artist)),
     favs: (x, y) => ((x.rank ? 0 : 1) - (y.rank ? 0 : 1)) || byYear(x, y) || (x.rank - y.rank),
     listened: (x, y) => ((listeningFor(y.album)?.ms || 0) - (listeningFor(x.album)?.ms || 0)) || byYear(x, y),
+    recent: (x, y) => (lastPlayed(y.album) - lastPlayed(x.album)) || byYear(x, y),
   };
   return list.sort(sorts[ui.allSort] || byYear);
 }
@@ -623,7 +629,7 @@ function renderAll() {
   const years = [...new Set(all.map((x) => x.year))];
   const favs = all.filter((x) => x.rank).length;
   const span = years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] || '';
-  if (ui.allSort === 'listened' && !hasListening()) ui.allSort = 'newest';
+  if ((ui.allSort === 'listened' || ui.allSort === 'recent') && !hasListening()) ui.allSort = 'newest';
   app.innerHTML = `
     <section class="hero">
       <div>
@@ -642,7 +648,7 @@ function renderAll() {
         <label class="tool-btn" title="Sort">
           ${ICON.sort}
           <select id="sort" aria-label="Sort">
-            ${Object.entries(ALL_SORTS).filter(([k]) => k !== 'listened' || hasListening()).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
+            ${Object.entries(ALL_SORTS).filter(([k]) => !['listened', 'recent'].includes(k) || hasListening()).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
           </select>
         </label>
         ${viewToggleHtml()}
