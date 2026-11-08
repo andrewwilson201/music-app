@@ -1,7 +1,7 @@
 // Album artwork and album search. Uses Spotify when you're logged in to it,
 // and the iTunes Search API (no key needed, via JSONP) otherwise or as a fallback.
 
-import * as spotify from './spotify.js?v=35';
+import * as spotify from './spotify.js?v=36';
 
 let seq = 0;
 // iTunes allows roughly 20 searches a minute and answers a blocked one with an

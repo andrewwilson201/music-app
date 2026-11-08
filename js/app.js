@@ -1,7 +1,8 @@
-import * as store from './store.js?v=35';
-import * as spotify from './spotify.js?v=35';
-import * as spHistory from './history.js?v=35';
-import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=35';
+import * as store from './store.js?v=36';
+import * as spotify from './spotify.js?v=36';
+import * as spHistory from './history.js?v=36';
+import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=36';
+import * as mood from './mood.js?v=36';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -30,6 +31,8 @@ const ICON = {
   plus: '<svg viewBox="0 0 24 24"><path d="M12 5v14M5 12h14"/></svg>',
   headphones: '<svg viewBox="0 0 24 24"><path d="M3 18v-6a9 9 0 0 1 18 0v6"/><path d="M21 19a2 2 0 0 1-2 2h-1v-6h3zM3 19a2 2 0 0 0 2 2h1v-6H3z"/></svg>',
   share: '<svg viewBox="0 0 24 24"><circle cx="6" cy="12" r="2.5"/><circle cx="18" cy="6" r="2.5"/><circle cx="18" cy="18" r="2.5"/><path d="m8.2 10.8 7.6-3.6M8.2 13.2l7.6 3.6"/></svg>',
+  dice: '<svg viewBox="0 0 24 24"><rect x="4" y="4" width="16" height="16" rx="3.5"/><circle cx="9" cy="9" r="1.2" class="dot"/><circle cx="15" cy="15" r="1.2" class="dot"/><circle cx="15" cy="9" r="1.2" class="dot"/><circle cx="9" cy="15" r="1.2" class="dot"/></svg>',
+  refresh: '<svg viewBox="0 0 24 24"><path d="M20 11a8 8 0 0 0-14.6-4.5M4 4v4h4M4 13a8 8 0 0 0 14.6 4.5M20 20v-4h-4"/></svg>',
   copy: '<svg viewBox="0 0 24 24"><rect x="8" y="8" width="12" height="12" rx="2"/><path d="M16 8V5a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v10a1 1 0 0 0 1 1h3"/></svg>',
 };
 
@@ -508,6 +511,7 @@ function renderYear(year, tab) {
         <h1>${yearMenuBtn(year)}</h1>
         ${yearListenHtml(y)}
       </div>
+      ${ro() ? '' : `<button type="button" class="btn pick-btn" data-pick title="Pick an album from your library">${ICON.dice}<span>Pick for me</span></button>`}
     </section>
     <nav class="tabs" role="tablist">
       <a role="tab" href="#/year/${year}" class="${tab === 'listened' ? 'on' : ''}" aria-selected="${tab === 'listened'}">Listened <span>${y.albums.length}</span></a>
@@ -2645,6 +2649,178 @@ function toast(msg, kind = '') {
   toastTimer = setTimeout(() => (t.className = 'toast'), kind === 'error' ? 6000 : 2400);
 }
 
+// ------------------------------------------------------------------ pick for me
+
+// "Pick for me": a random album from your log, or one that fits a mood. Moods
+// come from Last.fm / MusicBrainz tags (see mood.js), read in the background
+// while this is open and cached on the device, so the first mood pick on a big
+// library may take a moment and every one after is instant.
+const pickPrefs = { scope: 'all', mood: '' };
+try { Object.assign(pickPrefs, JSON.parse(localStorage.getItem('music-log:pick') || '{}')); } catch {}
+const recentPicks = []; // album ids shown lately, so "Another" doesn't repeat itself
+
+function pickPool(scope, year) {
+  const out = [];
+  for (const y of store.years()) {
+    if (scope === 'year' && y !== year) continue;
+    const yd = data.years[y];
+    const favIds = new Set(yd.favourites.map((f) => f.albumId));
+    for (const album of yd.albums) {
+      if (!album.artist) continue;
+      if (scope === 'favs' && !favIds.has(album.id)) continue;
+      out.push({ album, year: y });
+    }
+  }
+  return out;
+}
+
+function weightedPick(list, weight = () => 1) {
+  const fresh = list.filter((x) => !recentPicks.includes(x.album.id));
+  const from = fresh.length ? fresh : list.filter((x) => x.album.id !== recentPicks[0]);
+  const pool = from.length ? from : list;
+  const total = pool.reduce((n, x) => n + weight(x), 0);
+  let r = Math.random() * total;
+  for (const x of pool) { r -= weight(x); if (r <= 0) return x; }
+  return pool[pool.length - 1];
+}
+
+function openPicker() {
+  const [page, a] = route();
+  const year = page === 'year' && data.years[a] ? a : shownYears()[0];
+  if (pickPrefs.scope === 'year') pickPrefs.scope = 'all'; // the year follows the page, so start wide
+  const m = openModal(`
+    <div class="modal-head"><h2>What should I play?</h2>${closeBtn()}</div>
+    <div class="seg pick-scope" role="radiogroup" aria-label="Pick from">
+      <a href="#" role="radio" data-scope="all">Everything</a>
+      <a href="#" role="radio" data-scope="favs">Favourites</a>
+      <a href="#" role="radio" data-scope="year">${esc(year)}</a>
+    </div>
+    <p class="pick-label">How are you feeling?</p>
+    <div class="mood-chips">
+      <button type="button" class="mood-chip" data-mood="">${ICON.dice}<span>Surprise me</span></button>
+      ${mood.MOODS.map((x) => `<button type="button" class="mood-chip" data-mood="${x.id}"><i aria-hidden="true">${x.emoji}</i><span>${esc(x.label)}</span><small></small></button>`).join('')}
+    </div>
+    <div id="pickResult" class="pick-result" aria-live="polite"></div>
+    <p id="pickStatus" class="pick-status muted"></p>`, 'pick-modal');
+
+  let alive = true;
+  let shown = null; // { album, year } on screen
+  let scanning = false;
+  let pool = [];
+  const savePrefs = () => { try { localStorage.setItem('music-log:pick', JSON.stringify(pickPrefs)); } catch {} };
+  const untagged = () => pool.filter(({ album }) => mood.cachedTags(album) === undefined);
+  const fitsOf = (moodId) => pool.map((x) => ({ ...x, fit: mood.fits(mood.cachedTags(x.album), moodId) })).filter((x) => x.fit);
+
+  function drawChips() {
+    $$('[data-scope]', m).forEach((b) => { const on = b.dataset.scope === pickPrefs.scope; b.classList.toggle('on', on); b.setAttribute('aria-checked', on); });
+    for (const b of $$('[data-mood]', m)) {
+      const on = b.dataset.mood === pickPrefs.mood;
+      b.classList.toggle('on', on);
+      b.setAttribute('aria-pressed', on);
+      const small = $('small', b);
+      if (small) { const n = fitsOf(b.dataset.mood).length; small.textContent = n || ''; }
+    }
+  }
+
+  function drawStatus() {
+    const left = untagged().length;
+    const el = $('#pickStatus', m);
+    if (!pickPrefs.mood) { el.textContent = ''; return; }
+    if (!left) { el.textContent = `Moods come from ${mood.source()} tags.`; return; }
+    el.innerHTML = `<span class="spinner" aria-hidden="true"></span> Reading mood tags from ${mood.source()}: ${pool.length - left} of ${pool.length} albums. Keep this open and more will turn up.`;
+  }
+
+  function show(p, why = []) {
+    shown = p;
+    recentPicks.unshift(p.album.id);
+    recentPicks.length = Math.min(recentPicks.length, 12);
+    const { album, year: y } = p;
+    const rank = store.favRank(data.years[y], album.id);
+    const box = $('#pickResult', m);
+    box.innerHTML = `<div class="pick-card">
+      ${coverHtml(album, 'pick')}
+      <div class="pick-info">
+        <p class="eyebrow">${esc(y)}${rank ? ` · <span class="accent">#${rank} favourite</span>` : ''}</p>
+        <h3>${esc(album.title || album.artist)}</h3>
+        ${album.title ? `<p class="pick-artist">${esc(album.artist)}</p>` : ''}
+        ${why.length ? `<p class="pick-why">${why.map((w) => `<span>${esc(w)}</span>`).join('')}</p>` : ''}
+        <div class="pick-actions">
+          <a class="btn spotify small" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play</a>
+          <button type="button" class="btn small" data-pick-open>Open</button>
+          <button type="button" class="btn small" data-pick-again title="Pick another">${ICON.refresh} Another</button>
+        </div>
+      </div>
+    </div>`;
+    watchCovers(box);
+    requestArt(album);
+  }
+
+  function message(html) {
+    shown = null;
+    $('#pickResult', m).innerHTML = `<div class="pick-empty">${html}</div>`;
+  }
+
+  // Show a pick for the current choices, or say why there isn't one yet.
+  function pick() {
+    pool = pickPool(pickPrefs.scope, year);
+    drawChips();
+    drawStatus();
+    if (!pool.length) {
+      return message(pickPrefs.scope === 'favs' ? 'No favourites to pick from yet.' : `Nothing logged${pickPrefs.scope === 'year' ? ` for ${esc(year)}` : ''} yet.`);
+    }
+    if (!pickPrefs.mood) return show(weightedPick(pool));
+    const fits = fitsOf(pickPrefs.mood);
+    const label = mood.MOODS.find((x) => x.id === pickPrefs.mood).label.toLowerCase();
+    if (fits.length) {
+      const p = weightedPick(fits, (x) => x.fit.score);
+      return show(p, p.fit.why);
+    }
+    if (untagged().length) {
+      message(`<span class="spinner" aria-hidden="true"></span> Looking for something ${esc(label)}…`);
+      scan();
+    } else {
+      message(`Nothing here is tagged ${esc(label)} yet. Try another mood, or pick from Everything.`);
+    }
+  }
+
+  // Read tags for every untagged album in the pool, a few at a time, while the
+  // popup is open. Each find updates the counts, and fills an empty result.
+  async function scan() {
+    if (scanning) return;
+    scanning = true;
+    try {
+      while (alive) {
+        const todo = untagged();
+        if (!todo.length) break;
+        const batch = todo.sort(() => Math.random() - 0.5).slice(0, mood.source() === 'Last.fm' ? 3 : 1);
+        const results = await Promise.allSettled(batch.map(({ album }) => mood.tagsFor(album)));
+        if (!alive) break;
+        if (results.some((r) => r.status === 'rejected' && r.reason?.message === 'busy')) await new Promise((r) => setTimeout(r, 20000));
+        drawChips();
+        drawStatus();
+        if (!shown && pickPrefs.mood && fitsOf(pickPrefs.mood).length) pick();
+      }
+    } finally {
+      scanning = false;
+    }
+    if (alive) { drawChips(); drawStatus(); if (!shown && pickPrefs.mood) pick(); }
+  }
+
+  m.addEventListener('click', (e) => {
+    const sc = e.target.closest('[data-scope]');
+    if (sc) { e.preventDefault(); pickPrefs.scope = sc.dataset.scope; savePrefs(); pick(); if (pickPrefs.mood) scan(); return; }
+    const md = e.target.closest('[data-mood]');
+    if (md) { pickPrefs.mood = md.dataset.mood; savePrefs(); pick(); if (pickPrefs.mood) scan(); return; }
+    if (e.target.closest('[data-pick-again]')) { pick(); return; }
+    if (e.target.closest('[data-pick-open]') && shown) { const id = shown.album.id; closeModal(m, true); openAlbum(id); }
+  });
+  // Stop reading tags once the popup goes, however it closes.
+  const gone = new MutationObserver(() => { if (!m.isConnected) { alive = false; gone.disconnect(); } });
+  gone.observe(modalRoot, { childList: true });
+  pick();
+  if (pickPrefs.mood) scan();
+}
+
 // ------------------------------------------------------------------ global events
 
 document.addEventListener('click', (e) => {
@@ -2663,6 +2839,7 @@ document.addEventListener('click', (e) => {
   const rec = e.target.closest('[data-rec]');
   if (rec) openRec(rec.dataset.rec);
   if (e.target.closest('[data-view-own]')) showOwn();
+  if (e.target.closest('[data-pick]') && !ro()) openPicker();
 });
 $('#addBtn').addEventListener('click', () => data && !ro() && addAlbum());
 $('#libsBtn').addEventListener('click', () => data && openLibraries());
