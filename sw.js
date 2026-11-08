@@ -27,3 +27,34 @@ self.addEventListener('fetch', (event) => {
     }
   })());
 });
+
+// Notifications (sent by functions/index.js through Firebase Cloud Messaging
+// when a friend recommends an album). Always shows one: iPhones drop
+// subscriptions that receive pushes without a notification.
+self.addEventListener('push', (event) => {
+  let msg = {};
+  try { msg = event.data?.json() || {}; } catch {}
+  const d = msg.data || msg.notification || msg;
+  event.waitUntil(self.registration.showNotification(d.title || 'Music Library', {
+    body: d.body || 'A friend recommended an album',
+    icon: d.icon || 'icons/icon-192.png',
+    badge: 'icons/icon-192.png',
+    tag: d.tag || 'rec',
+    data: { url: d.url || self.registration.scope },
+  }));
+});
+
+self.addEventListener('notificationclick', (event) => {
+  event.notification.close();
+  const url = new URL(event.notification.data?.url || self.registration.scope, self.registration.scope).href;
+  event.waitUntil((async () => {
+    const open = await self.clients.matchAll({ type: 'window', includeUncontrolled: true });
+    const client = open.find((c) => c.url.startsWith(self.registration.scope));
+    if (client) {
+      await client.focus();
+      client.postMessage({ open: url });
+      return;
+    }
+    await self.clients.openWindow(url);
+  })());
+});

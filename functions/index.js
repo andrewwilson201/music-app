@@ -12,9 +12,11 @@
 // Deploy: firebase deploy --only functions (needs the Blaze plan).
 
 import { onSchedule } from 'firebase-functions/v2/scheduler';
+import { onCall, HttpsError } from 'firebase-functions/v2/https';
+import { getMessaging } from 'firebase-admin/messaging';
 import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
-import { getFirestore, FieldValue } from 'firebase-admin/firestore';
+import { getFirestore, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { tally } from './listening.js';
 
 initializeApp();
@@ -129,4 +131,55 @@ export const syncListening = onSchedule({ schedule: 'every 30 minutes', timeoutS
       }, { merge: true });
     }
   }
+});
+
+// ---------- notifications for recommendations
+//
+// The sender's app calls this right after writing users/{to}/recs/{id}. If the
+// recipient turned notifications on (tokens in users/{to}/private/push), each
+// of their devices gets a push, shown by sw.js. Each recommendation notifies
+// once, and only its sender can trigger it.
+
+const APP_URL = 'https://andrewwilson201.github.io/music-app/';
+const DEAD_TOKEN = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token', 'messaging/invalid-argument']);
+
+export async function notifyRecommendation(db, messaging, sender, to, id) {
+  const recRef = db.doc(`users/${to}/recs/${id}`);
+  const rec = await db.runTransaction(async (tx) => {
+    const snap = await tx.get(recRef);
+    if (!snap.exists || snap.get('from') !== sender || snap.get('notified')) return null;
+    tx.update(recRef, { notified: true });
+    return snap.data();
+  });
+  if (!rec) return { sent: 0 };
+  const pushRef = db.doc(`users/${to}/private/push`);
+  const tokens = Object.keys((await pushRef.get()).get('tokens') || {});
+  if (!tokens.length) return { sent: 0 };
+  const album = rec.title ? `${rec.title} by ${rec.artist}` : rec.artist;
+  const res = await messaging.sendEachForMulticast({
+    tokens,
+    webpush: {
+      headers: { Urgency: 'high', TTL: String(7 * 24 * 3600) },
+      data: {
+        title: `${rec.fromName || 'A friend'} recommends`,
+        body: rec.note ? `${album}: “${rec.note}”` : album,
+        url: `${APP_URL}#/rec/${id}`,
+        tag: `rec-${id}`,
+        icon: rec.art || `${APP_URL}icons/icon-192.png`,
+      },
+    },
+  });
+  const dead = tokens.filter((t, i) => !res.responses[i].success && DEAD_TOKEN.has(res.responses[i].error?.code));
+  if (dead.length) {
+    await pushRef.update(...dead.flatMap((t) => [new FieldPath('tokens', t), FieldValue.delete()]));
+  }
+  res.responses.forEach((r, i) => { if (!r.success) logger.warn(`push to ${to} failed: ${r.error?.code} ${r.error?.message}`); });
+  return { sent: res.successCount };
+}
+
+export const notifyRec = onCall({ memory: '256MiB' }, async (req) => {
+  if (!req.auth) throw new HttpsError('unauthenticated', 'Sign in first');
+  const { to, id } = req.data || {};
+  if (typeof to !== 'string' || typeof id !== 'string' || !/^[\w-]{1,128}$/.test(to + id)) throw new HttpsError('invalid-argument', 'Bad request');
+  return notifyRecommendation(db, getMessaging(), req.auth.uid, to, id);
 });
