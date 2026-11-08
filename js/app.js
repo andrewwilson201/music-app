@@ -122,6 +122,7 @@ function started() {
   render();
   loadListening();
   loadRecs();
+  store.refreshPush().catch(() => {});
   if (pendingTracking) finishTrackingLogin();
   if (resumePlaylist && !ro()) {
     const year = resumePlaylist;
@@ -1594,8 +1595,9 @@ async function recommend(album, year, skipUid = '') {
     btn.innerHTML = '<span class="spin"></span> Sending…';
     const send = { artist: album.artist, title: album.title, year, art: artFor(album) || '', spotify: album.spotify || '' };
     const failed = [];
+    const pinged = [];
     for (const uid of to) {
-      try { await store.sendRec(uid, send, form.elements.note.value); }
+      try { if ((await store.sendRec(uid, send, form.elements.note.value))?.sent) pinged.push(uid); }
       catch (ex) { failed.push([list.find((f) => f.uid === uid)?.name || 'a friend', ex.message]); }
     }
     if (failed.length) {
@@ -1607,7 +1609,10 @@ async function recommend(album, year, skipUid = '') {
     }
     closeModal(m);
     const names = to.map((uid) => list.find((f) => f.uid === uid)?.name || 'a friend');
-    toast(`Sent to ${names.join(' and ')}`);
+    // Say whether their phone was notified, so a missing notification isn't a mystery.
+    const tail = pinged.length === to.length ? (to.length > 1 ? '. Their phones were notified.' : '. Their phone was notified.')
+      : pinged.length ? '' : ". They'll see it next time they open the app.";
+    toast(`Sent to ${names.join(' and ')}${tail}`);
   });
 }
 
@@ -1782,13 +1787,26 @@ async function setUpPushBox(box) {
       ${ICON.bell}
       <div><b>Notifications</b><small>${note}</small></div>
       <label class="switch" title="Notifications"><input type="checkbox" id="pushToggle" ${state === 'on' ? 'checked' : ''} ${state === 'home-screen' ? 'disabled' : ''} aria-label="Notifications"><span></span></label>
-    </div>`;
+    </div>
+    <button type="button" class="link-btn" id="pushTest" ${state === 'on' ? '' : 'hidden'}>Send me a test notification</button>`;
   const toggle = $('#pushToggle', box);
+  const test = $('#pushTest', box);
+  test.addEventListener('click', async () => {
+    test.disabled = true;
+    try {
+      const r = await store.testPush();
+      toast(r.sent ? 'Test sent. It should appear in a few seconds.'
+        : r.devices ? `The test couldn’t be delivered (${r.errors.join(', ')}). Turn notifications off and on again.`
+        : 'This device isn’t registered any more. Turn notifications off and on again.', r.sent ? '' : 'error');
+    } catch (ex) { toast(`Couldn’t send a test: ${ex.message}`, 'error'); }
+    test.disabled = false;
+  });
   toggle.addEventListener('change', async () => {
     toggle.disabled = true;
     try {
       if (toggle.checked) { await store.enablePush(); toast('Notifications are on for this device'); }
       else { await store.disablePush(); toast('Notifications are off'); }
+      test.hidden = !toggle.checked;
     } catch (ex) { toggle.checked = !toggle.checked; toast(ex.message, 'error'); }
     toggle.disabled = false;
   });
