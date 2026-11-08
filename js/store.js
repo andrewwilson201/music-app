@@ -12,7 +12,7 @@
 //   shares/{token}/viewers/{viewerUid} { name, addedAt }  who added that code
 //   users/{uid}/private/spotify   listening tracking: { enabled, refreshToken, clientId, since, cursor, lastRun, lastError, plays }
 //   users/{uid}/listening/{spotifyAlbumId}  time spent on that album, written by functions/index.js
-//   users/{uid}/meta/listening   { hidden[], historySuggest, history: { plays, albums, from, to, parts, importedAt } }
+//   users/{uid}/meta/listening   { hidden[], history: { plays, albums, from, to, parts, importedAt } }
 //   users/{uid}/history/{0..n}   { data }  imported Spotify history, gzipped JSON in base64 (see js/history.js)
 //   users/{uid}/private/push {tokens: {token: {at, device}}}  phones that asked for notifications
 //   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, sentAt, seen? }
@@ -29,9 +29,9 @@ import {
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
   getMessaging, getToken, deleteToken, messagingSupported, getFunctions, httpsCallable, connectFunctionsEmulator,
-} from '../vendor/firebase.js?v=33';
-import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js?v=33';
-import { pack, unpack, toListening } from './history.js?v=33';
+} from '../vendor/firebase.js?v=34';
+import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js?v=34';
+import { pack, unpack, toListening } from './history.js?v=34';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
 const LEGACY_DATA_KEY = 'music-log:data';
