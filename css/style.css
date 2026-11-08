@@ -611,3 +611,42 @@ body.signed-out .view-bar { display: none; }
 .lb-filter small { color: var(--faint); margin-left: 2px; }
 .lb-more { margin-top: 10px; }
 .lb .heard-cover { display: block; flex: none; }
+
+/* Pick for me */
+.pick-btn svg .dot, .mood-chip svg .dot { fill: currentColor; stroke: none; }
+.pick-btn { margin-bottom: 6px; }
+.pick-btn svg { color: var(--accent); }
+.modal.pick-modal { width: min(560px, 100%); }
+.pick-scope { margin-bottom: 18px; }
+.pick-label { margin: 0 0 10px; color: var(--muted); font-size: 13px; font-weight: 600; letter-spacing: .02em; }
+.mood-chips { display: flex; flex-wrap: wrap; gap: 8px; }
+.mood-chip { display: inline-flex; align-items: center; gap: 7px; height: 38px; padding: 0 14px; border-radius: 999px; background: var(--surface); border: 1px solid var(--line); color: var(--text); font-weight: 500; cursor: pointer; transition: background .15s, border-color .15s, transform .1s; }
+.mood-chip:hover { border-color: var(--faint); }
+.mood-chip:active { transform: scale(.97); }
+.mood-chip i { font-style: normal; font-size: 15px; line-height: 1; }
+.mood-chip svg { width: 17px; height: 17px; color: var(--accent); }
+.mood-chip small { color: var(--faint); font-size: 12px; font-variant-numeric: tabular-nums; }
+.mood-chip small:empty { display: none; }
+.mood-chip.on { background: var(--accent-soft); border-color: var(--accent); }
+.mood-chip.on small { color: var(--accent); }
+.pick-result { margin-top: 20px; min-height: 20px; }
+.pick-card { display: grid; grid-template-columns: 148px minmax(0, 1fr); gap: 18px; align-items: center; padding: 14px; background: var(--surface); border: 1px solid var(--line); border-radius: 16px; animation: fadein .3s ease; }
+.cover.pick { width: 148px; border-radius: 10px; }
+.cover.pick .cover-initial { font-size: 56px; }
+.pick-info h3 { margin: 0; font-family: var(--serif); font-weight: 600; font-size: 22px; line-height: 1.15; letter-spacing: -0.01em; overflow-wrap: anywhere; }
+.pick-artist { margin: 4px 0 0; color: var(--muted); }
+.pick-why { display: flex; flex-wrap: wrap; gap: 4px; margin: 10px 0 0; }
+.pick-why span { padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; }
+.pick-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
+.pick-actions .btn svg { width: 16px; height: 16px; }
+.pick-empty { display: flex; align-items: center; gap: 10px; padding: 22px 16px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); }
+.pick-status { margin: 12px 0 0; font-size: 12.5px; display: flex; align-items: center; gap: 8px; }
+.pick-status:empty { display: none; }
+.spinner { width: 14px; height: 14px; flex: none; border-radius: 50%; border: 2px solid var(--line); border-top-color: var(--accent); animation: spin .8s linear infinite; }
+@media (max-width: 720px) {
+  .pick-scope { width: 100%; }
+  .pick-scope a { flex: 1; justify-content: center; }
+  .pick-card { grid-template-columns: 104px minmax(0, 1fr); gap: 14px; }
+  .cover.pick { width: 104px; }
+  .pick-info h3 { font-size: 19px; }
+}
