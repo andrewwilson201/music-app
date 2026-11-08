@@ -593,3 +593,26 @@ body.signed-out .view-bar { display: none; }
 .rec-album span { display: flex; flex-direction: column; min-width: 0; }
 .rec-album small { color: var(--muted); }
 .rec-people { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
+
+/* Sort through heard albums */
+.sec-title .sort-all { margin-left: auto; font-family: var(--sans, inherit); }
+.sec-title:has(.sort-all) { display: flex; align-items: center; gap: 8px; }
+.sort-back { margin: -6px 0 14px; }
+.sort-progress { color: var(--muted); margin: 0 0 10px; }
+.sort-progress b { color: var(--text, inherit); font-variant-numeric: tabular-nums; }
+.sort-card { max-width: 560px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
+.sort-heard { display: flex; gap: 14px; align-items: center; }
+.sort-heard #sortCover { width: 110px; flex: none; }
+.sort-heard #sortCover .cover { width: 110px; }
+.sort-actions .btn:disabled { opacity: .45; }
+.sort-info { min-width: 0; }
+.sort-info h2 { margin: 0 0 4px; font-size: 20px; line-height: 1.2; overflow-wrap: anywhere; }
+.sort-info p { margin: 0 0 4px; }
+.sort-match .results { max-height: none; margin: 0 0 8px; }
+.sort-match > p { margin: 0 0 8px; }
+.sort-found { display: flex; gap: 8px; align-items: flex-start; }
+.sort-found svg { width: 20px; height: 20px; flex: none; color: var(--accent); }
+.sort-found span b, .sort-found span small { display: block; }
+.sort-actions { display: flex; gap: 8px; }
+.sort-actions .btn { flex: 1; justify-content: center; }
+.sort-actions .btn.primary { flex: 1.4; }
