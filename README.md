@@ -8,7 +8,7 @@ It's a static site (plain HTML, CSS and JavaScript, no build step) hosted on Git
 
 - **Accounts**: everyone signs in with Google or an email and password (Firebase Auth). Each person's log is stored in Firestore under `users/{uid}`, and [`firestore.rules`](firestore.rules) lets only that person read or write it. Edits are also kept in the browser until they're saved, so nothing is lost offline.
 - **Sharing**: Settings › Share my library gives a 10-character code and link. A signed-in friend who adds it (via the people button, or by opening the link) can browse that person's years, favourites and best songs read-only, and switch back to their own library from the same menu. Up next stays private. Turning sharing off, or making a new code, cuts off everyone who had the old one. Codes live in `shares/{code}`, and the rules check that the reader is listed under `shares/{code}/viewers` for the owner's current code.
-- **First sign-in**: a new account can start an empty log, restore a backup file, or, on a device that used the older GitHub-token version, bring that log over.
+- **First sign-in**: a new account can start an empty log or restore a backup file.
 - **Backups**: Settings › Download backup saves the whole log as JSON; Restore backup loads one.
 - **Firebase setup**: the web config goes in [`js/config.js`](js/config.js), the rules go in Firebase console › Firestore › Rules, and `andrewwilson201.github.io` must be in Authentication › Settings › Authorized domains. The SDK is bundled into `vendor/firebase.js` (see `tools/firebase-entry.js` to rebuild it).
 - `tools/import_xlsx.py` turns the original `music.xlsx` into a JSON backup that can be loaded with Restore backup.
@@ -23,8 +23,8 @@ It's a static site (plain HTML, CSS and JavaScript, no build step) hosted on Git
 - **History import**: Settings › Track listening time › Import your full history takes the "Extended streaming history" zip from Spotify's privacy page (or its `Streaming_History_Audio_*.json` files). It's read and added up in the browser ([`js/history.js`](js/history.js)), only plays from before live tracking started are counted, and the totals per album and song are saved gzipped in `users/{uid}/history/{n}` (a few hundred KB each) with a summary in `users/{uid}/meta/listening`. They show up everywhere live totals do. "Don't suggest it" on an unlogged album hides its + for good.
 - **Logging heard albums in place**: in the Listening chart, each album not in the log looks itself up as it scrolls into view (`findAlbums`, three at a time). A sure match (same Spotify album, or same artist and title) shows "Adds as … · year" and one tap on + logs it under its release year; otherwise + or tapping the row opens the closest few to pick from, with add-as-named, Search… and Don't suggest it. The chart has an All | Not logged filter and Show more.
 
-- **Recommendations**: friends who share with each other can send an album from its popup (Recommend). It's written to `users/{to}/recs/{id}` (only allowed while both follow each other's current code, see `firestore.rules`) and shows as a popup, then a "Recommended for you" strip on the home year.
-- **Notifications**: Settings › Notifications saves this device's Firebase Cloud Messaging token in `users/{uid}/private/push`. After sending a recommendation the app calls the `notifyRec` function, which pushes "{name} recommends" to the recipient's devices; `sw.js` shows it and a tap opens `#/rec/{id}`. Needs `FIREBASE_VAPID_KEY` in `js/config.js` (Firebase console › Project settings › Cloud Messaging › Web Push certificates). On iPhone it only works once the app is added to the Home Screen.
+- **Recommendations**: friends who share with each other can send an album from its popup (Recommend). It's written to `users/{to}/recs/{id}` (only allowed while both follow each other's current code, see `firestore.rules`) and the recipient's app moves it into their Up next, tagged with who sent it and their note, so they can listen before deciding whether to log it.
+- **Notifications**: Settings › Notifications saves this device's Firebase Cloud Messaging token in `users/{uid}/private/push`. After sending a recommendation the app calls the `notifyRec` function, which pushes "{name} recommends" to the recipient's devices; `sw.js` shows it and a tap opens `#/rec/{id}`, which shows that album in Up next. Needs `FIREBASE_VAPID_KEY` in `js/config.js` (Firebase console › Project settings › Cloud Messaging › Web Push certificates). On iPhone it only works once the app is added to the Home Screen.
 
 ## Deploying the functions (listening tracking and notifications)
 
@@ -41,7 +41,7 @@ firebase deploy --only functions
 
 ## Shortcuts
 
-`n` adds an album, `/` searches every year, and `Esc` closes a dialog.
+`n` adds an album, `/` searches the whole library (the All years filter), and `Esc` closes a dialog.
 
 ## Run locally
 

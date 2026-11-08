@@ -1,7 +1,10 @@
 // Minimal service worker so every browser treats Music Library as installable.
 // Network first for this site's own files, with the last good copy as an
 // offline fallback. Firebase, Spotify and artwork requests are left alone.
-const CACHE = 'music-library-v1';
+// Every file is revalidated with GitHub Pages on each load (cache: 'no-cache',
+// a quick 304 when nothing changed), so a new version shows up straight away
+// without ?v= numbers on the file names.
+const CACHE = 'music-library-v2';
 
 self.addEventListener('install', () => self.skipWaiting());
 self.addEventListener('activate', (event) => {
@@ -17,7 +20,7 @@ self.addEventListener('fetch', (event) => {
   if (req.method !== 'GET' || new URL(req.url).origin !== self.location.origin) return;
   event.respondWith((async () => {
     try {
-      const res = await fetch(req);
+      const res = await fetch(req.url, { cache: 'no-cache' });
       if (res.ok) (await caches.open(CACHE)).put(req, res.clone());
       return res;
     } catch (e) {

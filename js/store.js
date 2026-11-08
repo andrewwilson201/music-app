@@ -15,9 +15,10 @@
 //   users/{uid}/meta/listening   { hidden[], history: { plays, albums, from, to, parts, importedAt } }
 //   users/{uid}/history/{0..n}   { data }  imported Spotify history, gzipped JSON in base64 (see js/history.js)
 //   users/{uid}/private/push {tokens: {token: {at, device}}}  phones that asked for notifications
-//   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, sentAt, seen? }
-//                            albums friends recommended. Anyone can send one only while
-//                            the two of you follow each other's current share codes.
+//   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, sentAt, notified? }
+//                            albums friends recommended, waiting to be moved into Up next
+//                            by the recipient's app. Anyone can send one only while the
+//                            two of you follow each other's current share codes.
 //
 // Sharing: a friend can read your years (not Up next) only while your
 // meta/share token points at a share whose viewers include them. Turning
@@ -29,15 +30,9 @@ import {
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
   getMessaging, getToken, deleteToken, messagingSupported, getFunctions, httpsCallable, connectFunctionsEmulator,
-} from '../vendor/firebase.js?v=41';
-import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js?v=41';
-import { pack, unpack, toListening } from './history.js?v=41';
-
-// Left over from the GitHub-token version of the app, used to offer an import.
-const LEGACY_DATA_KEY = 'music-log:data';
-const LEGACY_DIRTY_KEY = 'music-log:dirty';
-const LEGACY_CONFIG_KEY = 'music-log:github';
-const LEGACY_DATA_PATH = 'data/music.json';
+} from '../vendor/firebase.js';
+import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js';
+import { pack, unpack, toListening } from './history.js';
 
 const listeners = new Set();
 let auth = null;
@@ -452,11 +447,6 @@ export async function recs() {
 }
 
 export const dismissRec = (id) => deleteDoc(doc(recsCol(user.uid), id));
-export const markRecsSeen = (ids) => {
-  const batch = writeBatch(db);
-  ids.forEach((id) => batch.set(doc(recsCol(user.uid), id), { seen: true }, { merge: true }));
-  return batch.commit();
-};
 
 // ---------- notifications on this phone (for recommendations)
 
@@ -497,46 +487,6 @@ export function viewOwn() {
   if (!viewing) return;
   viewing = null;
   emit();
-}
-
-// ---------- bringing over the old GitHub-saved log
-
-// True on a device that used the earlier GitHub-token version of the app.
-export function hasLegacyLog() {
-  return !!(ls(LEGACY_DATA_KEY) || legacyToken());
-}
-
-function legacyToken() {
-  try { return (JSON.parse(ls(LEGACY_CONFIG_KEY) || '{}').token || '').replace(/[^\x21-\x7e]/g, ''); }
-  catch { return ''; }
-}
-
-export async function importLegacyLog() {
-  let log = null;
-  const local = ls(LEGACY_DATA_KEY);
-  if (local && ls(LEGACY_DIRTY_KEY) === '1') log = JSON.parse(local); // unsaved edits on this device
-  const token = legacyToken();
-  if (!log && token) {
-    try {
-      const res = await fetch(`https://api.github.com/repos/andrewwilson201/music-app/contents/${LEGACY_DATA_PATH}?ref=main`, {
-        cache: 'no-store',
-        headers: { Accept: 'application/vnd.github.raw', Authorization: `Bearer ${token}` },
-      });
-      if (res.ok) log = await res.json();
-    } catch {}
-  }
-  if (!log) {
-    try {
-      const res = await fetch(`${LEGACY_DATA_PATH}?v=${Date.now()}`, { cache: 'no-store' });
-      if (res.ok) log = await res.json();
-    } catch {}
-  }
-  if (!log && local) log = JSON.parse(local);
-  if (!log) throw new Error("Couldn't find the old log.");
-  await replaceAll(log);
-  // The GitHub token isn't needed any more.
-  ls(LEGACY_CONFIG_KEY, null); ls(LEGACY_DATA_KEY, null); ls(LEGACY_DIRTY_KEY, null);
-  return data;
 }
 
 // ---------- listening tracking (the counting is done by functions/index.js)

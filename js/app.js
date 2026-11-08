@@ -1,8 +1,8 @@
-import * as store from './store.js?v=41';
-import * as spotify from './spotify.js?v=41';
-import * as spHistory from './history.js?v=41';
-import { queueArt, prioritise, searchAlbums, findAlbums, quickFind, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=41';
-import * as mood from './mood.js?v=41';
+import * as store from './store.js';
+import * as spotify from './spotify.js';
+import * as spHistory from './history.js';
+import { queueArt, prioritise, searchAlbums, findAlbums, quickFind, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js';
+import * as mood from './mood.js';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -52,8 +52,8 @@ const setHome = (v) => { try { localStorage.setItem('music-log:home', v); } catc
 let sortable = null;
 let resumePlaylist = ''; // year whose playlist to make once we're back from a Spotify login
 let pendingTracking = null; // Spotify token for listening tracking, saved once signed in
-let recs = [];
-let pendingRec = ''; // recommendation to open once loaded (from a notification) // albums friends recommended to me, see store.recs
+let focusFilter = false; // focus the All years filter once it's drawn (search button)
+let pendingRec = ''; // recommendation to open once loaded (from a notification)
 let tracking = { enabled: false }; // listening tracking state, see store.trackingState
 
 // ------------------------------------------------------------------ boot
@@ -213,7 +213,6 @@ function renderFirstRun() {
   renderSignedOutShell();
   const user = store.currentUser();
   const name = (user.displayName || '').split(' ')[0];
-  const legacy = store.hasLegacyLog();
   app.innerHTML = `<section class="auth">
     <div class="auth-hero">
       <span class="brand-disc big" aria-hidden="true"></span>
@@ -221,8 +220,7 @@ function renderFirstRun() {
       <p>Signed in as ${esc(user.email || 'you')}. Your log is empty, so how would you like to start?</p>
     </div>
     <div class="auth-card choices">
-      ${legacy ? `<button class="choice primary" data-start="legacy"><b>Bring over my existing log</b><small>Copies the log this device was saving to GitHub into your account.</small></button>` : ''}
-      <button class="choice ${legacy ? '' : 'primary'}" data-start="fresh"><b>Start a new log</b><small>Begin with an empty ${new Date().getFullYear()}.</small></button>
+      <button class="choice primary" data-start="fresh"><b>Start a new log</b><small>Begin with an empty ${new Date().getFullYear()}.</small></button>
       <label class="choice" data-start="file"><b>Restore a backup file</b><small>A .json file from “Download backup”.</small><input type="file" accept="application/json,.json" hidden></label>
       <p class="warn" id="startErr" hidden></p>
       <button type="button" class="link" id="signOutBtn">Not you? Sign out</button>
@@ -236,7 +234,6 @@ function renderFirstRun() {
     catch (ex) { err.hidden = false; err.textContent = ex.message; }
     finally { app.querySelectorAll('.choice').forEach((b) => b.classList.remove('busy')); }
   };
-  $('[data-start="legacy"]')?.addEventListener('click', () => run(store.importLegacyLog));
   $('[data-start="fresh"]').addEventListener('click', () => run(store.startFresh));
   $('[data-start="file"] input').addEventListener('change', (e) => {
     const file = e.target.files[0];
@@ -286,7 +283,7 @@ function render() {
   if (page === 'all') return renderAll();
   if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
   if ((page === 'up-next' || page === 'to-listen') && !ro()) return renderUpNext();
-  if (page === 'search') return renderSearch(a || '');
+  if (page === 'search') { openSearch(); return; } // old links: search is the All years filter now
   if (page === 'listening' && !ro()) return renderListening(a || 'month', b === 'songs' ? 'songs' : 'albums');
   if (page === 'friend' && a) return acceptCode(a);
   if (page === 'rec' && a) { pendingRec = a; location.replace('#/'); if (isStarted) loadRecs(); return; }
@@ -562,8 +559,7 @@ function renderListened(year) {
       <label class="tool-btn" title="Sort">
         ${ICON.sort}
         <select id="sort" aria-label="Sort">
-          <option value="latest">Latest first</option>
-          <option value="order">Listening order</option>
+          <option value="latest">Latest logged</option>
           <option value="artist">Artist A–Z</option>
           <option value="favs">Favourites first</option>
           ${hasListening() ? '<option value="listened">Most listened</option><option value="recent">Recently listened</option>' : ''}
@@ -573,7 +569,6 @@ function renderListened(year) {
     </div>
     <div id="grid"></div>`;
   if (!ro() && year === store.years()[0] && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
-  if (!ro() && year === store.years()[0] && recs.length) body.insertAdjacentHTML('afterbegin', recsHtml());
   if ((ui.sort === 'listened' || ui.sort === 'recent') && !hasListening()) ui.sort = 'latest';
   $('#sort').value = ui.sort;
   const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
@@ -672,7 +667,6 @@ function renderAll() {
     </div>`;
   const body = $('#yearBody');
   if (!ro() && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
-  if (!ro() && recs.length) body.insertAdjacentHTML('afterbegin', recsHtml());
   $('#sort').value = ui.allSort;
   const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
   sortTitle();
@@ -717,6 +711,16 @@ function renderAll() {
   });
   bindViewToggle(body, draw);
   draw();
+  if (focusFilter) { focusFilter = false; $('#filter').focus(); }
+}
+
+// Search is the All years filter: go there (if not already) and focus it.
+function openSearch() {
+  closeYearMenu();
+  [...modalRoot.children].forEach((w) => closeModal(w, true));
+  if (route()[0] === 'all') { $('#filter')?.focus(); return; }
+  focusFilter = true;
+  if (location.hash === '#/all') render(); else location.replace('#/all');
 }
 
 function renderFavourites(year) {
@@ -757,10 +761,6 @@ function renderFavourites(year) {
       store.commit({ quiet: true });
     },
   });
-  bindSongPicker(list, (el) => {
-    const id = el.closest('.fav').dataset.id;
-    return songsOf(y.albums.find((a) => a.id === id), y.favourites.find((x) => x.albumId === id));
-  });
   list.addEventListener('click', (e) => {
     const rm = e.target.closest('[data-unfav]');
     if (!rm) return;
@@ -774,30 +774,22 @@ function renderFavourites(year) {
   });
 }
 
+// One favourite: rank, cover, title and its best songs as chips. Songs are
+// picked in the album popup (tap the album or "Add best songs").
 function favRowHtml(album, fav, i) {
-  if (ro()) {
-    return `<li class="fav" data-id="${album.id}">
-    <span class="fav-rank">${i + 1}</span>
-    <button class="fav-cover" data-open="${album.id}">${coverHtml(album)}</button>
-    <div class="fav-main">
-      <button class="fav-title" data-open="${album.id}">${esc(album.title || album.artist)}</button>
-      <span class="fav-artist">${esc(album.artist)}</span>
-      ${bestSongs(fav.song).length ? `<ul class="song-chips">${songChipsHtml(fav, false)}</ul>` : ''}
-    </div>
-    <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify">${ICON.spotify}</a>
-  </li>`;
-  }
+  const songs = bestSongs(fav.song).length;
   return `<li class="fav" data-id="${album.id}">
-    <span class="grip" title="Drag to reorder">${ICON.grip}</span>
+    ${ro() ? '' : `<span class="grip" title="Drag to reorder">${ICON.grip}</span>`}
     <span class="fav-rank">${i + 1}</span>
     <button class="fav-cover" data-open="${album.id}">${coverHtml(album)}</button>
     <div class="fav-main">
       <button class="fav-title" data-open="${album.id}">${esc(album.title || album.artist)}</button>
       <span class="fav-artist">${esc(album.artist)}</span>
-      ${songPickerHtml(album, fav, `songs-${album.id}`)}
+      ${songs ? `<ul class="song-chips">${songChipsHtml(fav, false)}</ul>`
+        : ro() ? '' : `<button class="link-btn add-songs" data-open="${album.id}">${ICON.plus} Add best songs</button>`}
     </div>
     <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify">${ICON.spotify}</a>
-    <button class="icon-btn subtle" data-unfav="${album.id}" title="Remove from favourites">${ICON.close}</button>
+    ${ro() ? '' : `<button class="icon-btn subtle" data-unfav="${album.id}" title="Remove from favourites">${ICON.close}</button>`}
   </li>`;
 }
 
@@ -1098,8 +1090,8 @@ function openAlbum(id) {
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn heart ${rank ? 'on' : ''}" id="favToggle" aria-pressed="${!!rank}">${ICON.heart}<span>${rank ? 'Favourite' : 'Add to favourites'}</span></button>
-          <button class="btn queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}">${queued ? ICON.check : ICON.queue}<span>${queued ? 'In Up next' : 'Add to Up next'}</span></button>
-          <button class="btn" id="recommend">${ICON.gift}<span>Recommend</span></button>
+          <button class="btn icon-only queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}" title="${queued ? 'In Up next (tap to take it off)' : 'Add to Up next'}" aria-label="${queued ? 'In Up next' : 'Add to Up next'}">${queued ? ICON.check : ICON.queue}</button>
+          <button class="btn icon-only" id="recommend" title="Recommend to a friend" aria-label="Recommend to a friend">${ICON.gift}</button>
         </div>
         <div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, songsOf(album, fav), 'detailSongs')}</div>
         <div class="detail-foot">
@@ -1277,8 +1269,6 @@ function editAlbum(id) {
   });
 }
 
-const splitSongs = (s) => String(s || '').split(',').map((x) => x.trim()).filter(Boolean);
-
 function yearField(value, { optional = false } = {}) {
   const max = new Date().getFullYear() + 1;
   return `<label class="field narrow"><span>Release year</span><input name="year" type="number" inputmode="numeric" min="1900" max="${max}" ${optional ? 'placeholder="Look it up"' : 'required'} value="${esc(value)}"></label>`;
@@ -1301,10 +1291,12 @@ function loggedYear(r) {
 // On the whole-library page, adding an album keeps you there instead of jumping to its year.
 const onAll = () => { const [p] = route(); return p === 'all' || (!p && homeIsAll()); };
 
-function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = null } = {}) {
+function addAlbum({ year: fallbackYear, query = '', fromQueue = null, prefill = null } = {}) {
   // New albums go under their release year: filled in from the search result,
   // or looked up from the artist and album when typed in by hand. If it can't
   // be found, the album goes under the year you added it from (or this year).
+  // Search comes first; the form only shows once a result is picked, or for
+  // typing an album in by hand. Best songs are picked from the album afterwards.
   fallbackYear = fallbackYear || String(new Date().getFullYear());
   let chosen = null;
   const m = openModal(`
@@ -1312,16 +1304,14 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
     <label class="search-field big"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="addQ" type="search" placeholder="Search for an album or artist…" autocomplete="off" value="${esc(query)}"></label>
     <div class="results" id="results"></div>
-    <form id="addForm" class="form">
+    <button type="button" class="link-btn manual-btn" id="manualBtn">${ICON.edit} Type it in instead</button>
+    <form id="addForm" class="form" hidden>
       <div class="form-cover" id="addCover" hidden></div>
       <label class="field"><span>Artist</span><input name="artist" required autocomplete="off"></label>
       <label class="field"><span>Album</span><input name="title" autocomplete="off"></label>
-      <div class="log-only">
-        <label class="field"><span>Best songs <small>optional, comma separated</small></span><input name="songs" autocomplete="off"></label>
-        <div class="row">
-          ${yearField('', { optional: true })}
-          <label class="check"><input type="checkbox" name="fav"> ${ICON.heart} Favourite</label>
-        </div>
+      <div class="row">
+        ${yearField('', { optional: true })}
+        <label class="check"><input type="checkbox" name="fav"> ${ICON.heart} Favourite</label>
       </div>
       <p class="hint" id="yearHint" hidden></p>
       <p class="warn" id="dupWarn" hidden></p>
@@ -1336,6 +1326,9 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
   const results = $('#results', m);
   const addMore = $('#addMore', m);
   const addedYears = []; // years added to while "Add and pick another" kept this open
+  const manualBtn = $('#manualBtn', m);
+  const showForm = (on = true) => { form.hidden = !on; manualBtn.hidden = on; };
+  manualBtn.addEventListener('click', () => { showForm(); F.artist.focus(); });
   const coverPreview = () => {
     const al = { id: 'preview', artist: F.artist.value, title: F.title.value };
     $('#addCover', m).hidden = !chosen?.art && !al.artist && !al.title;
@@ -1367,7 +1360,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
         const wait = Math.ceil(spotifyBlockedFor() / 60000);
         results.innerHTML = `<p class="muted pad-sm">${wait
           ? `Spotify has paused searches for ${wait > 90 ? 'a while' : `about ${wait} minute${wait === 1 ? '' : 's'}`} after a lot of lookups, and iTunes didn't answer either.`
-          : 'Search is unavailable right now.'} Try again shortly, or fill in the details below.</p>`;
+          : 'Search is unavailable right now.'} Try again shortly, or type it in instead.</p>`;
       }
     }, 700);
   };
@@ -1383,7 +1376,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
             <span><b>${esc(r.title)}</b><small>${esc(r.artist)}${r.year ? ` · ${r.year}` : ''}${TYPE_LABEL[r.type] ? ` · <em class="kind">${TYPE_LABEL[r.type]}</em>` : ''}</small></span>
             ${inLog ? `<em class="in-log">${ICON.check}<span>${inLog === String(r.year) ? 'Logged' : `In ${esc(inLog)}`}</span></em>` : ''}
           </button>`;
-    }).join('') : '<p class="muted pad-sm">No matches. Fill in the details below instead.</p>';
+    }).join('') : '<p class="muted pad-sm">No matches.</p>';
     addMore.hidden = !list.length;
   }
 
@@ -1431,7 +1424,8 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
     F.year.value = chosen.year || '';
     $$('.result', results).forEach((x) => x.classList.toggle('chosen', x === b));
     coverPreview();
-    F.songs.focus();
+    showForm();
+    $('#addSubmit', m).scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   });
   F.artist.addEventListener('input', () => { chosen = null; coverPreview(); autoYear(); });
   F.title.addEventListener('input', () => { chosen = null; coverPreview(); autoYear(); });
@@ -1461,14 +1455,13 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
       btn.innerHTML = label;
     }
     const y = store.ensureYear(F.year.value);
-    const album = { id: store.uid(), artist: F.artist.value.trim(), title: F.title.value.trim(), songs: splitSongs(F.songs.value) };
+    const album = { id: store.uid(), artist: F.artist.value.trim(), title: F.title.value.trim(), songs: [] };
     if (chosen?.art) album.art = chosen.art;
     if (chosen?.spotify) album.spotify = chosen.spotify;
     y.albums.push(album);
-    if (F.fav.checked) y.favourites.push({ albumId: album.id, song: album.songs.join('; ') });
+    if (F.fav.checked) y.favourites.push({ albumId: album.id, song: '' });
     const cleared = clearFromQueue(album, fromQueue);
     store.commit();
-    clearRecs(album, fromRec?.id);
     if (!album.art) requestArt(album);
     if (more) {
       // Back to the same search results, with this one now ticked, ready for the next.
@@ -1479,6 +1472,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
       yearTyped = false; hint.hidden = true;
       coverPreview();
       showResults();
+      showForm(false);
       $('.modal', m).scrollTo({ top: 0, behavior: 'smooth' });
       m.onClose = () => {
         // Finished: show the year everything went into, or stay put if it was several.
@@ -1493,25 +1487,26 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
     if (location.hash !== `#/year/${F.year.value}` && !onAll()) location.hash = `#/year/${F.year.value}`;
     else render();
   });
-  if (fromRec) {
+  if (prefill) {
     // A friend's recommendation: start from what they sent.
-    chosen = { artist: fromRec.artist, title: fromRec.title, art: fromRec.art || '', spotify: fromRec.spotify || '', year: fromRec.year || '' };
-    F.artist.value = fromRec.artist;
-    F.title.value = fromRec.title;
-    F.year.value = fromRec.year || ''; // without one, the year is looked up on save
+    chosen = { artist: prefill.artist, title: prefill.title, art: prefill.art || '', spotify: prefill.spotify || '', year: prefill.year || '' };
+    F.artist.value = prefill.artist;
+    F.title.value = prefill.title;
+    F.year.value = prefill.year || ''; // without one, the year is looked up on save
+    showForm();
   }
   coverPreview();
   if (query) search();
-  if (fromRec) F.songs.focus(); else q.focus();
+  if (prefill) $('#addSubmit', m).focus(); else q.focus();
 }
 
 // ------------------------------------------------------------------ recommendations
 
 // Friends who share libraries with each other can send each other albums.
-// They land in users/{uid}/recs and show as a strip on the home page, with a
-// popup the first time they're seen.
+// A friend can only write to users/{uid}/recs, so each one that arrives is
+// moved into Up next here, tagged with who sent it and their note, and the
+// rec itself is deleted. Hearing it and tapping "I've listened" logs it.
 
-const recItem = (r) => ({ id: `rec-${r.id}`, artist: r.artist, title: r.title, art: r.art || '' });
 const recMatches = (r, album) => queueMatches({ artist: r.artist, title: r.title }, album);
 const isLogged = (r) => store.years().some((y) => data.years[y].albums.some((a) => recMatches(r, a)));
 
@@ -1519,113 +1514,44 @@ async function loadRecs() {
   if (ro() || !store.canSync()) return;
   let list;
   try { list = await store.recs(); } catch { return; }
-  // Already in the log (added some other way): no need to suggest it.
-  const done = list.filter(isLogged);
-  done.forEach((r) => store.dismissRec(r.id).catch(() => {}));
-  const before = recs.map((r) => r.id).join();
-  recs = list.filter((r) => !done.includes(r));
-  if (recs.map((r) => r.id).join() !== before && !ro() && !modalRoot.children.length) render();
+  const fresh = [];
+  let changed = false;
+  for (const r of list) {
+    const qid = `rec-${r.id}`;
+    if (!isLogged(r) && !data.toListen.some((x) => x.id === qid)) {
+      const from = r.fromName || 'A friend';
+      const same = data.toListen.find((x) => queueMatches(x, r) && (r.title || !x.title));
+      if (same) {
+        if (!same.from) { same.from = from; if (r.note) same.note = r.note; changed = true; }
+      } else {
+        const item = { id: qid, artist: r.artist, title: r.title, added: new Date().toISOString().slice(0, 10), from };
+        for (const k of ['art', 'spotify', 'year', 'note']) if (r[k]) item[k] = r[k];
+        data.toListen.unshift(item);
+        fresh.push(item);
+        changed = true;
+      }
+    }
+    // The sender's notifyRec call still needs the rec, so a brand new one is
+    // only cleared once it's been notified, or after a few minutes.
+    const age = Date.now() - (r.sentAt?.toMillis?.() || 0);
+    if (r.notified || age > 5 * 60000) store.dismissRec(r.id).catch(() => {});
+  }
+  if (changed) store.commit({ quiet: !fresh.length });
+  // Opened from a notification: show that album (it may have been moved on an earlier visit).
   if (pendingRec) {
-    const id = pendingRec;
+    const item = data.toListen.find((x) => x.id === `rec-${pendingRec}`);
     pendingRec = '';
-    if (recs.some((r) => r.id === id)) {
+    if (item) {
       [...modalRoot.children].forEach((w) => closeModal(w, true));
-      store.markRecsSeen(recs.filter((r) => !r.seen).map((r) => r.id)).catch(() => {});
-      recs.forEach((r) => { r.seen = true; });
-      return openRec(id);
+      return openQueueItem(item.id);
     }
   }
-  const fresh = recs.filter((r) => !r.seen);
-  if (!fresh.length) return;
-  store.markRecsSeen(fresh.map((r) => r.id)).catch(() => {});
-  fresh.forEach((r) => { r.seen = true; });
-  if (!modalRoot.children.length && !ro()) openRec(fresh[0].id, fresh.length - 1);
-}
-
-function clearRecs(album, id) {
-  const gone = recs.filter((r) => r.id === id || recMatches(r, album));
-  if (!gone.length) return;
-  recs = recs.filter((r) => !gone.includes(r));
-  gone.forEach((r) => store.dismissRec(r.id).catch(() => {}));
-}
-
-function recsHtml() {
-  return `<section class="upnext recs">
-    <div class="upnext-head">
-      <h2>Recommended for you <span>${recs.length}</span></h2>
-    </div>
-    <div class="upnext-strip">${recs.map((r) => `
-      <button class="q-card" data-rec="${esc(r.id)}">
-        ${coverHtml(recItem(r))}
-        <span class="q-title">${esc(r.title || r.artist)}</span>
-        <span class="q-sub">${r.title ? esc(r.artist) : 'artist'}</span>
-        <span class="q-from">from ${esc(r.fromName || 'a friend')}</span>
-      </button>`).join('')}
-    </div>
-  </section>`;
-}
-
-function openRec(id, more = 0) {
-  const r = recs.find((x) => x.id === id);
-  if (!r) return;
-  const item = recItem(r);
-  const mine = store.ownData();
-  const inQueue = () => mine.toListen.find((x) => queueMatches(x, r));
-  const m = openModal(`
-    ${closeBtn('floating')}
-    <div class="detail">
-      ${coverHtml(item, 'xl')}
-      <div class="detail-info">
-        <p class="eyebrow"><span class="accent">${esc(r.fromName || 'A friend')} recommends</span>${r.year ? ` · ${esc(r.year)}` : ''}</p>
-        <h2 class="detail-title">${esc(r.title || r.artist)}</h2>
-        <p class="detail-artist">${r.title ? esc(r.artist) : 'Artist to check out'}</p>
-        ${r.note ? `<blockquote class="rec-note">${esc(r.note)}</blockquote>` : ''}
-        <div class="detail-actions">
-          <a class="btn spotify" href="${esc(r.spotify || (r.title ? spotifyUrl(r) : spotifyArtistUrl(r.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
-          <button class="btn primary" id="recAdd">${ICON.plus} Add to my library</button>
-          <button class="btn queue" id="recQueue">${inQueue() ? ICON.check : ICON.queue}<span>${inQueue() ? 'In Up next' : 'Add to Up next'}</span></button>
-        </div>
-        <button type="button" class="link-btn" id="recNotify" hidden>${ICON.bell} Notify me about the next one</button>
-        ${more > 0 ? `<p class="muted small-print">${more} more recommendation${more > 1 ? 's' : ''} waiting on your home page.</p>` : ''}
-        <div class="detail-foot">
-          <button class="link-btn danger" id="recDismiss">${ICON.close} No thanks</button>
-        </div>
-      </div>
-    </div>`, 'detail-modal');
-  store.pushState().then((st) => {
-    const b = $('#recNotify', m);
-    if (!b || st !== 'off') return;
-    b.hidden = false;
-    b.addEventListener('click', async () => {
-      try { await store.enablePush(); b.remove(); toast('You’ll get a notification next time'); }
-      catch (ex) { toast(ex.message, 'error'); }
-    });
-  }).catch(() => {});
-  $('#recAdd', m).addEventListener('click', () => {
-    closeModal(m, true);
-    addAlbum({ fromRec: r });
-  });
-  $('#recQueue', m).addEventListener('click', () => {
-    if (!inQueue()) {
-      const q = { id: store.uid(), artist: r.artist, title: r.title, added: new Date().toISOString().slice(0, 10) };
-      if (r.art) q.art = r.art;
-      if (r.spotify) q.spotify = r.spotify;
-      mine.toListen.unshift(q);
-      store.commit({ quiet: true });
-    }
-    // In Up next now, so it doesn't need to sit here too.
-    recs = recs.filter((x) => x !== r);
-    store.dismissRec(r.id).catch(() => {});
-    closeModal(m);
-    toast(`Added to Up next. Tell ${r.fromName || 'them'} thanks!`);
-  });
-  $('#recDismiss', m).addEventListener('click', async () => {
-    recs = recs.filter((x) => x !== r);
-    closeModal(m);
-    try { await store.dismissRec(r.id); toast('Recommendation dismissed'); }
-    catch (ex) { toast(`Couldn’t remove it: ${ex.message}`, 'error'); }
-  });
-  m.onClose = () => render();
+  if (fresh.length) {
+    const r = fresh[0];
+    toast(fresh.length === 1
+      ? `${r.from} recommended ${r.title || r.artist}. It’s in your Up next.`
+      : `${fresh.length} new recommendations in your Up next`);
+  }
 }
 
 // Send an album to one or more friends who share with you both ways.
@@ -1736,6 +1662,7 @@ function upNextHtml() {
         ${coverHtml(x)}
         <span class="q-title">${esc(queueName(x))}</span>
         <span class="q-sub">${esc(queueSub(x))}</span>
+        ${x.from ? `<span class="q-from">from ${esc(x.from)}</span>` : ''}
       </button>`).join('')}
       ${items.length > 15 ? `<a class="q-more" href="#/up-next">+${items.length - 15}<small>more</small></a>` : ''}
     </div>` : ''}
@@ -1761,14 +1688,16 @@ function openQueueItem(id) {
     <div class="detail">
       ${coverHtml(item, 'xl')}
       <div class="detail-info">
-        <p class="eyebrow">up next${item.added ? ` · added ${esc(item.added)}` : ''}</p>
+        <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : 'up next'}${item.added ? ` · added ${esc(item.added)}` : ''}</p>
         <h2 class="detail-title">${esc(queueName(item))}</h2>
         <p class="detail-artist">${item.title ? esc(item.artist) : 'Artist to check out'}</p>
+        ${item.note ? `<blockquote class="rec-note">${esc(item.note)}</blockquote>` : ''}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(item.title ? spotifyUrl(item) : (item.spotify || spotifyArtistUrl(item.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn primary" id="heardIt">${ICON.check} I've listened</button>
         </div>
         <p class="muted small-print">“I've listened” moves it into your log and takes it off Up next.</p>
+        ${item.from ? `<button type="button" class="link-btn" id="recNotify" hidden>${ICON.bell} Notify me about the next recommendation</button>` : ''}
         <div class="detail-foot">
           <button class="link-btn danger" id="dropIt">${ICON.trash} Remove from Up next</button>
         </div>
@@ -1776,9 +1705,22 @@ function openQueueItem(id) {
     </div>`, 'detail-modal');
   watchCovers(m);
   requestArt(item);
+  if (item.from) {
+    store.pushState().then((st) => {
+      const b = $('#recNotify', m);
+      if (!b || st !== 'off') return;
+      b.hidden = false;
+      b.addEventListener('click', async () => {
+        try { await store.enablePush(); b.remove(); toast('You’ll get a notification next time'); }
+        catch (ex) { toast(ex.message, 'error'); }
+      });
+    }).catch(() => {});
+  }
   $('#heardIt', m).addEventListener('click', () => {
     closeModal(m, true);
-    addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
+    // A friend's recommendation already says what it is; anything else is searched for.
+    if (item.from && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
+    else addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
   });
   $('#dropIt', m).addEventListener('click', () => {
     data.toListen = data.toListen.filter((x) => x.id !== id);
@@ -1797,7 +1739,7 @@ function renderUpNext() {
       <div class="row-item">
         <button class="row-open" data-queue="${x.id}">
           ${coverHtml(x, 'sm')}
-          <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}</span></span>
+          <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}${x.from ? ` · from ${esc(x.from)}` : ''}</span></span>
         </button>
         <button class="btn small" data-heard="${x.id}" title="Log it as listened">${ICON.check}<span class="hide-sm"> Listened</span></button>
         <button class="icon-btn subtle" data-drop="${x.id}" title="Remove">${ICON.close}</button>
@@ -1816,41 +1758,10 @@ function renderUpNext() {
     if (heard) {
       const item = data.toListen.find((x) => x.id === heard.dataset.heard);
       if (queuedAlbum(item)) { tickOff(item.id); renderUpNext(); return; }
-      addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
+      if (item.from && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
+      else addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
     }
   });
-}
-
-// ------------------------------------------------------------------ search
-
-function renderSearch(initial) {
-  app.innerHTML = `
-    <section class="hero"><div><p class="eyebrow">every year</p><h1>search</h1></div></section>
-    <div class="toolbar">
-      <label class="search-field">${ICON.search}
-        <input id="gq" type="search" placeholder="Artist, album or song…" value="${esc(initial)}" autocomplete="off"></label>
-      ${viewToggleHtml()}
-    </div>
-    <div id="gres"></div>`;
-  const input = $('#gq');
-  const draw = () => {
-    const q = norm(input.value);
-    history.replaceState(null, '', `#/search/${encodeURIComponent(input.value)}`);
-    if (q.length < 2) { $('#gres').innerHTML = ''; return; }
-    let total = 0;
-    const html = store.years().map((y) => {
-      const yd = data.years[y];
-      const hits = yd.albums.filter((a) => norm(`${a.artist} ${a.title} ${(a.songs || []).join(' ')}`).includes(q));
-      total += hits.length;
-      return hits.length ? `<h3 class="group-title"><a href="#/year/${y}">${y}</a></h3>${albumsHtml(hits, yd)}` : '';
-    }).join('');
-    $('#gres').innerHTML = total ? html : `<p class="muted pad">No albums match “${esc(input.value)}”.</p>`;
-    watchCovers();
-  };
-  input.addEventListener('input', draw);
-  bindViewToggle(app, draw);
-  draw();
-  input.focus();
 }
 
 // ------------------------------------------------------------------ settings
@@ -1898,15 +1809,15 @@ function openSettings() {
         <small class="status-line ${status}" title="${esc(statusText)}"><span class="sync-dot ${status}"></span>${esc(statusShort)}</small></div>
       <button type="button" class="btn small" id="signOutBtn">Sign out</button>
     </div>
-    ${spotify.configured() ? `<div class="spotify-box">
-      ${ICON.spotify}
-      <div><b>Spotify</b><small>${spotify.connected()
-        ? 'Connected for artwork and album links'
-        : 'Connect for better artwork and album links'}${spotify.lastError ? `<br>Last Spotify error: ${esc(spotify.lastError)}` : ''}</small></div>
-      <button type="button" class="btn ${spotify.connected() ? '' : 'spotify'} small" id="spotifyBtn">${spotify.connected() ? 'Log out' : 'Log in'}</button>
-    </div>` : ''}
     ${spotify.configured() ? `<div class="share-box listen-set" id="listenBox">
       <div class="share-head">
+        ${ICON.spotify}
+        <div><b>Spotify</b><small>${spotify.connected()
+          ? 'Connected for artwork and album links'
+          : 'Connect for better artwork and album links'}${spotify.lastError ? `<br>Last Spotify error: ${esc(spotify.lastError)}` : ''}</small></div>
+        <button type="button" class="btn ${spotify.connected() ? '' : 'spotify'} small" id="spotifyBtn">${spotify.connected() ? 'Log out' : 'Log in'}</button>
+      </div>
+      <div class="share-head listen-head">
         ${ICON.headphones}
         <div><b>Track listening time</b><small>Adds up what you play on Spotify, on any device, and shows the time on each album. Only you can see it.</small></div>
         <label class="switch" title="Track listening time"><input type="checkbox" id="listenToggle" ${tracking.enabled ? 'checked' : ''} aria-label="Track listening time"><span></span></label>
@@ -2643,7 +2554,6 @@ async function addHeard(g, r, li) {
     store.ensureYear(year).albums.push(album);
     clearFromQueue(album);
     store.commit();
-    clearRecs(album);
     // Logged under a name that doesn't lead back to this listening: stop suggesting it.
     if (listeningFor(album)?.key !== g.key) store.setListenMeta({ hidden: [...hiddenHeard(), g.key] }).catch(() => {});
     toast(guessed ? `Added to ${year}, the year you first played it. Couldn’t find its release year.` : `Added ${album.title} to ${year}`);
@@ -3032,14 +2942,12 @@ document.addEventListener('click', (e) => {
   if (add) addAlbum({ year: add.dataset.add });
   const q = e.target.closest('[data-queue]');
   if (q) openQueueItem(q.dataset.queue);
-  const rec = e.target.closest('[data-rec]');
-  if (rec) openRec(rec.dataset.rec);
   if (e.target.closest('[data-view-own]')) showOwn();
   if (e.target.closest('[data-pick]') && !ro()) openPicker();
 });
 $('#addBtn').addEventListener('click', () => data && !ro() && addAlbum());
 $('#libsBtn').addEventListener('click', () => data && openLibraries());
-$('#searchBtn').addEventListener('click', () => (location.hash = '#/search'));
+$('#searchBtn').addEventListener('click', openSearch);
 $('#listenBtn').addEventListener('click', () => (location.hash = '#/listening'));
 $('#settingsBtn').addEventListener('click', openSettings);
 document.addEventListener('keydown', (e) => {
@@ -3048,7 +2956,7 @@ document.addEventListener('keydown', (e) => {
   if (e.target.closest('input, textarea, select') || e.metaKey || e.ctrlKey || e.altKey) return;
   if (modalRoot.children.length || !isStarted) return;
   if (e.key === 'n' && !ro()) { e.preventDefault(); addAlbum(); }
-  if (e.key === '/') { e.preventDefault(); location.hash = '#/search'; }
+  if (e.key === '/') { e.preventDefault(); openSearch(); }
 });
 
 boot();
