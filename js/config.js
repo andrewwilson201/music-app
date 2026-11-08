@@ -22,4 +22,4 @@ export const FIREBASE_VAPID_KEY = 'BMMFCh344N09A5eiirGFSQOylA_VeLuDUe00kgFdZ277Z
 // Last.fm API key, for mood tags in "Pick for me" (free, from
 // https://www.last.fm/api/account/create). Public by design: it only reads
 // public tag data. Empty uses MusicBrainz tags instead, which need no key.
-export const LASTFM_API_KEY = '';
+export const LASTFM_API_KEY = '4dacac9e744fcb98b085a863df22b13d';
