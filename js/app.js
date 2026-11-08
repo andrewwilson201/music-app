@@ -1,7 +1,7 @@
-import * as store from './store.js?v=30';
-import * as spotify from './spotify.js?v=30';
-import * as spHistory from './history.js?v=30';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=30';
+import * as store from './store.js?v=31';
+import * as spotify from './spotify.js?v=31';
+import * as spHistory from './history.js?v=31';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=31';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1885,8 +1885,7 @@ function indexListening(all) {
 // or anything with the same artist and title.
 function listeningFor(album) {
   if (ro() || !listenIndex || !album?.title) return null;
-  const key = listenIndex.byId[spotifyAlbumId(album.spotify)] || groupKey(album.artist, album.title);
-  return listenIndex.groups[key] || nearGroup(firstArtist(album.artist), baseTitle(album.title));
+  return listenIndex.groups[exactKey(album)] || nearGroup(album);
 }
 
 // Edit distance, giving up (returning max + 1) once it's over max.
@@ -1912,13 +1911,22 @@ const slack = (s) => Math.min(3, Math.floor(s.length / 6));
 
 // Albums typed into the log with a small spelling difference from Spotify
 // ("thomas dolbaum", "reality awakes") still find their listening, as long as
-// either the artist or the title matches exactly. Results are cached until the
-// listening index is rebuilt.
-let near = { index: null, byArtist: null, byTitle: null, cache: new Map() };
-function nearGroup(artist, title) {
+// either the artist or the title matches exactly. Two things keep different
+// albums apart: an album never takes a group that another album in the log
+// matches exactly, and titles whose numbers differ ("Vol. 1" / "Vol. 2",
+// "III" / "IV") never match. Results are cached until the listening index or
+// the log changes.
+const numbersIn = (t) => (String(t || '').toLowerCase().match(/\d+|\b[ivx]+\b/g) || []).join(' ');
+const exactKey = (album) => listenIndex.byId[spotifyAlbumId(album.spotify)] || groupKey(album.artist, album.title);
+let near = { index: null, stamp: '', byArtist: null, byTitle: null, claimed: null, cache: new Map() };
+function nearGroup(album) {
+  const artist = firstArtist(album.artist);
+  const title = baseTitle(album.title);
   if (!artist || !title) return null;
+  const years = store.years();
+  const stamp = years.map((y) => `${y}:${data.years[y].albums.length}`).join();
   if (near.index !== listenIndex) {
-    near = { index: listenIndex, byArtist: new Map(), byTitle: new Map(), cache: new Map() };
+    near = { index: listenIndex, stamp: '', byArtist: new Map(), byTitle: new Map(), claimed: null, cache: new Map() };
     for (const g of Object.values(listenIndex.groups)) {
       const [a, t] = g.key.split('|');
       if (!near.byArtist.has(a)) near.byArtist.set(a, []);
@@ -1927,13 +1935,21 @@ function nearGroup(artist, title) {
       near.byTitle.get(t).push([a, g]);
     }
   }
-  const id = `${artist}|${title}`;
+  if (near.stamp !== stamp) {
+    near.stamp = stamp;
+    near.cache = new Map();
+    near.claimed = new Set();
+    for (const y of years) for (const a of data.years[y].albums) if (a.title) near.claimed.add(exactKey(a));
+  }
+  const id = `${artist}|${title}|${album.title}`;
   if (near.cache.has(id)) return near.cache.get(id);
+  const nums = numbersIn(album.title);
   let found = null;
   let foundD = Infinity;
   const look = (list, mine) => {
     const max = slack(mine);
     for (const [other, g] of list || []) {
+      if (near.claimed.has(g.key) || numbersIn(g.title) !== nums) continue;
       const d = editDistance(mine, other, max);
       if (d && d <= max && (d < foundD || (d === foundD && g.ms > found.ms))) { found = g; foundD = d; }
     }
