@@ -281,6 +281,7 @@ function render() {
   navActive = page === 'year' ? a : page ? page : homeIsAll() ? 'all' : years[0];
   if (!page) return homeIsAll() ? renderAll() : renderYear(years[0], 'listened');
   if (page === 'all') return renderAll();
+  if (page === 'decade' && /^\d{3}0$/.test(a || '')) { navActive = `${a}s`; return renderAll(Number(a)); }
   if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
   if ((page === 'up-next' || page === 'to-listen') && !ro()) return renderUpNext();
   if (page === 'search') { openSearch(); return; } // old links: search is the All years filter now
@@ -329,7 +330,7 @@ function openYearMenu(btn) {
         : `<span class="ym-empty"><b>${k}</b></span>`;
     }
     const sum = years.filter((y) => Math.floor(y / 10) * 10 === d).reduce((n, y) => n + counts[y], 0);
-    return `<div class="ym-dec"><span>${d}s</span><span>${albums(sum)}</span></div><div class="ym-grid">${cells}</div>`;
+    return `<a href="#/decade/${d}" class="ym-dec${navActive === `${d}s` ? ' on' : ''}" title="Every album from the ${d}s"><span>${d}s ›</span><span>${albums(sum)}</span></a><div class="ym-grid">${cells}</div>`;
   }).join('');
   menu.innerHTML = `<a href="#/all" data-home="all" class="${navActive === 'all' ? 'on' : ''}"><b>All years</b><small>${albums(total)}</small></a>` + grid
     + (ro() ? '' : `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`);
@@ -606,9 +607,13 @@ const ALL_SORTS = {
 };
 const ALL_PAGE = 60;
 
+// The All years page, or one decade of it (#/decade/1980).
+let allDecade = null;
+const inDecade = (y) => allDecade == null || Math.floor(y / 10) * 10 === allDecade;
+
 function allAlbums() {
   const out = [];
-  for (const y of store.years()) {
+  for (const y of store.years().filter(inDecade)) {
     const yd = data.years[y];
     // Latest logged first within a year, like the year view.
     yd.albums.forEach((album, i) => out.push({ album, year: y, yd, i, rank: store.favRank(yd, album.id) }));
@@ -634,7 +639,8 @@ function sortedAll() {
   return list.sort(sorts[ui.allSort] || byYear);
 }
 
-function renderAll() {
+function renderAll(decade = null) {
+  allDecade = decade;
   const all = allAlbums();
   const years = [...new Set(all.map((x) => x.year))];
   const favs = all.filter((x) => x.rank).length;
@@ -643,17 +649,17 @@ function renderAll() {
   app.innerHTML = `
     <section class="hero">
       <div>
-        <p class="eyebrow">${ro() ? `${esc(possessive(friendName()))} whole library` : 'your whole library'}</p>
-        <h1>${yearMenuBtn('All years')}</h1>
+        <p class="eyebrow">${decade != null ? `${ro() ? `${esc(possessive(friendName()))} albums` : 'albums'} released in the` : ro() ? `${esc(possessive(friendName()))} whole library` : 'your whole library'}</p>
+        <h1>${yearMenuBtn(decade != null ? `${decade}s` : 'All years')}</h1>
         ${all.length ? `<p class="hero-stats"><b>${all.length}</b> album${all.length === 1 ? '' : 's'}${favs ? ` · <b>${favs}</b> favourite${favs === 1 ? '' : 's'}` : ''}${span ? ` · ${span}` : ''}</p>` : ''}
       </div>
-      ${ro() ? '' : `<button type="button" class="btn pick-btn" data-pick-for-me title="Pick an album from your library">${ICON.dice}<span>Pick for me</span></button>`}
+      ${ro() || decade != null ? '' : `<button type="button" class="btn pick-btn" data-pick-for-me title="Pick an album from your library">${ICON.dice}<span>Pick for me</span></button>`}
     </section>
     <div id="yearBody">
       <div class="toolbar">
         <label class="search-field">
           ${ICON.search}
-          <input id="filter" type="search" placeholder="Filter your library" aria-label="Filter your library" value="${esc(ui.filter)}" autocomplete="off">
+          <input id="filter" type="search" placeholder="${decade != null ? `Filter the ${decade}s` : 'Filter your library'}" aria-label="${decade != null ? `Filter the ${decade}s` : 'Filter your library'}" value="${esc(ui.filter)}" autocomplete="off">
         </label>
         <label class="tool-btn" title="Sort">
           ${ICON.sort}
@@ -690,7 +696,7 @@ function renderAll() {
     $('#grid').innerHTML = list.length
       ? `<div class="${ui.view === 'list' ? 'rows' : 'grid'}"></div><button type="button" class="btn all-more" id="allMore">Show more</button>`
       : all.length
-        ? `<p class="muted pad">Nothing in your library matches “${esc(ui.filter)}”.</p>`
+        ? `<p class="muted pad">Nothing in ${decade != null ? `the ${decade}s` : 'your library'} matches “${esc(ui.filter)}”.</p>`
         : ro()
           ? `<div class="empty"><h2>Nothing logged yet</h2><p>${esc(friendName())} hasn't added any albums.</p></div>`
           : `<div class="empty"><h2>Nothing logged yet</h2><p>Add the first album you listen to.</p><button class="btn primary" data-add="">${ICON.plus} Add album</button></div>`;
@@ -1291,7 +1297,7 @@ function loggedYear(r) {
 }
 
 // On the whole-library page, adding an album keeps you there instead of jumping to its year.
-const onAll = () => { const [p] = route(); return p === 'all' || (!p && homeIsAll()); };
+const onAll = () => { const [p] = route(); return p === 'all' || p === 'decade' || (!p && homeIsAll()); };
 
 function addAlbum({ year: fallbackYear, query = '', fromQueue = null, prefill = null } = {}) {
   // New albums go under their release year: filled in from the search result,
