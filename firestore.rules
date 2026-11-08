@@ -4,7 +4,8 @@ rules_version = '2';
 //
 // Each person's log lives under users/{uid}. Only they can write it. Their
 // years (not Up next or settings) can also be read by friends who added their
-// current share code, and only while sharing is switched on.
+// current share code, and only while sharing is switched on. Friends who follow
+// each other can also drop album recommendations into each other's recs.
 service cloud.firestore {
   match /databases/{database}/documents {
 
@@ -20,6 +21,15 @@ service cloud.firestore {
         && exists(/databases/$(database)/documents/shares/$(token)/viewers/$(request.auth.uid));
     }
 
+    // True when the signed-in person is sharing and uid added their current code.
+    function viewsMe(uid) {
+      let token = get(/databases/$(database)/documents/users/$(request.auth.uid)/meta/share).data.token;
+      return get(shareAt(token)).data.uid == request.auth.uid
+        && exists(/databases/$(database)/documents/shares/$(token)/viewers/$(uid));
+    }
+
+    function shortString(v, n) { return v is string && v.size() <= n; }
+
     // Owner: everything under their own user, read and write.
     match /users/{uid}/{document=**} {
       allow read, write: if isOwner(uid);
@@ -28,6 +38,26 @@ service cloud.firestore {
     // Friends: read only, and only the year pages.
     match /users/{uid}/years/{year} {
       allow read: if canView(uid);
+    }
+
+    // A recommended album, sent by a friend. Only allowed while the two of you
+    // follow each other's current share codes. The sender can't read it back;
+    // the recipient reads, marks and deletes it under the owner rule above.
+    match /users/{uid}/recs/{rec} {
+      allow create: if signedIn()
+        && request.auth.uid != uid
+        && request.resource.data.from == request.auth.uid
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'artist', 'title', 'year', 'art', 'spotify', 'note', 'sentAt'])
+        && request.resource.data.sentAt == request.time
+        && shortString(request.resource.data.fromName, 60)
+        && shortString(request.resource.data.artist, 200)
+        && shortString(request.resource.data.title, 200)
+        && (!('year' in request.resource.data) || shortString(request.resource.data.year, 4))
+        && (!('art' in request.resource.data) || shortString(request.resource.data.art, 500))
+        && (!('spotify' in request.resource.data) || shortString(request.resource.data.spotify, 300))
+        && (!('note' in request.resource.data) || shortString(request.resource.data.note, 300))
+        && canView(uid)
+        && viewsMe(uid);
     }
 
     // A share code, looked up by someone who was given it. Codes can't be listed.

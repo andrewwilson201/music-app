@@ -14,6 +14,9 @@
 //   users/{uid}/listening/{spotifyAlbumId}  time spent on that album, written by functions/index.js
 //   users/{uid}/meta/listening   { hidden[], historySuggest, history: { plays, albums, from, to, parts, importedAt } }
 //   users/{uid}/history/{0..n}   { data }  imported Spotify history, gzipped JSON in base64 (see js/history.js)
+//   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, sentAt, seen? }
+//                            albums friends recommended. Anyone can send one only while
+//                            the two of you follow each other's current share codes.
 //
 // Sharing: a friend can read your years (not Up next) only while your
 // meta/share token points at a share whose viewers include them. Turning
@@ -24,9 +27,9 @@ import {
   getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
-} from '../vendor/firebase.js?v=31';
-import { FIREBASE_CONFIG } from './config.js?v=31';
-import { pack, unpack, toListening } from './history.js?v=31';
+} from '../vendor/firebase.js?v=32';
+import { FIREBASE_CONFIG } from './config.js?v=32';
+import { pack, unpack, toListening } from './history.js?v=32';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
 const LEGACY_DATA_KEY = 'music-log:data';
@@ -397,6 +400,54 @@ export async function viewFriend(uid) {
   emit();
   return viewing;
 }
+
+// ---------- recommendations between friends who share with each other
+
+const recsCol = (uid) => collection(db, 'users', uid, 'recs');
+
+// Friends I can send to: I follow their library and they follow mine.
+export async function mutualFriends() {
+  const [share, list] = await Promise.all([getShare(), friends()]);
+  if (!share) return { sharing: false, list: [] };
+  const viewers = new Set(share.viewers.map((v) => v.uid));
+  return { sharing: true, list: list.filter((f) => viewers.has(f.uid)) };
+}
+
+export async function sendRec(toUid, album, note = '') {
+  const share = await getDoc(shareMeta());
+  const token = share.exists() && share.data().token;
+  const name = (token && (await getDoc(shareDoc(token))).data()?.name) || defaultShareName();
+  const rec = {
+    from: user.uid, fromName: String(name).slice(0, 60),
+    artist: String(album.artist || '').slice(0, 200), title: String(album.title || '').slice(0, 200),
+    sentAt: serverTimestamp(),
+  };
+  if (album.year) rec.year = String(album.year).slice(0, 4);
+  if (album.art) rec.art = String(album.art).slice(0, 500);
+  if (album.spotify) rec.spotify = String(album.spotify).slice(0, 300);
+  if (note.trim()) rec.note = note.trim().slice(0, 300);
+  try { await setDoc(doc(recsCol(toUid)), rec); }
+  catch (e) {
+    if (e.code === 'permission-denied') throw new Error("Couldn't send it. You can only recommend to friends while you both have each other's current code.");
+    throw e;
+  }
+}
+
+// Albums friends sent me, newest first.
+export async function recs() {
+  if (!user) return [];
+  const out = [];
+  (await getDocs(recsCol(user.uid))).forEach((s) => out.push({ id: s.id, ...s.data() }));
+  const ms = (r) => r.sentAt?.toMillis?.() || 0;
+  return out.sort((a, b) => ms(b) - ms(a));
+}
+
+export const dismissRec = (id) => deleteDoc(doc(recsCol(user.uid), id));
+export const markRecsSeen = (ids) => {
+  const batch = writeBatch(db);
+  ids.forEach((id) => batch.set(doc(recsCol(user.uid), id), { seen: true }, { merge: true }));
+  return batch.commit();
+};
 
 export function viewOwn() {
   if (!viewing) return;

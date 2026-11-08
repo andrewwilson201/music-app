@@ -1,7 +1,7 @@
-import * as store from './store.js?v=31';
-import * as spotify from './spotify.js?v=31';
-import * as spHistory from './history.js?v=31';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=31';
+import * as store from './store.js?v=32';
+import * as spotify from './spotify.js?v=32';
+import * as spHistory from './history.js?v=32';
+import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=32';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -19,6 +19,7 @@ const ICON = {
   sort: '<svg viewBox="0 0 24 24"><path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5"/></svg>',
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   chevron: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
+  gift: '<svg viewBox="0 0 24 24"><path d="M3 11h18M12 7v14M5 11v10h14V11M3 7h18v4H3z"/><path d="M12 7c-1.5-3-5-3.5-5-1.2C7 7 9.5 7 12 7Zm0 0c1.5-3 5-3.5 5-1.2C17 7 14.5 7 12 7Z"/></svg>',
   queue: '<svg viewBox="0 0 24 24"><path d="M4 6h12M4 11h12M4 16h7"/><path d="m15 14 5 3-5 3z" fill="currentColor"/></svg>',
   grip: '<svg viewBox="0 0 24 24" class="fill"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>',
   edit: '<svg viewBox="0 0 24 24"><path d="M4 20h4L19 9l-4-4L4 16v4Z"/><path d="m13.5 6.5 4 4"/></svg>',
@@ -42,6 +43,7 @@ try { ui.view = localStorage.getItem('music-log:view') || 'grid'; } catch {}
 let sortable = null;
 let resumePlaylist = ''; // year whose playlist to make once we're back from a Spotify login
 let pendingTracking = null; // Spotify token for listening tracking, saved once signed in
+let recs = []; // albums friends recommended to me, see store.recs
 let tracking = { enabled: false }; // listening tracking state, see store.trackingState
 
 // ------------------------------------------------------------------ boot
@@ -103,10 +105,12 @@ function started() {
       if (ro()) { await store.viewFriend(store.viewingFriend().uid); render(); }
       else if (await store.refresh()) { data = store.getData(); render(); }
       loadListening();
+      loadRecs();
     } catch {}
   });
   render();
   loadListening();
+  loadRecs();
   if (pendingTracking) finishTrackingLogin();
   if (resumePlaylist && !ro()) {
     const year = resumePlaylist;
@@ -533,6 +537,7 @@ function renderListened(year) {
     </div>
     <div id="grid"></div>`;
   if (!ro() && year === store.years()[0] && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
+  if (!ro() && year === store.years()[0] && recs.length) body.insertAdjacentHTML('afterbegin', recsHtml());
   if (ui.sort === 'listened' && !hasListening()) ui.sort = 'latest';
   $('#sort').value = ui.sort;
   const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
@@ -934,6 +939,7 @@ function openAlbum(id) {
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn heart ${rank ? 'on' : ''}" id="favToggle" aria-pressed="${!!rank}">${ICON.heart}<span>${rank ? 'Favourite' : 'Add to favourites'}</span></button>
           <button class="btn queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}">${queued ? ICON.check : ICON.queue}<span>${queued ? 'In Up next' : 'Add to Up next'}</span></button>
+          <button class="btn" id="recommend">${ICON.gift}<span>Recommend</span></button>
         </div>
         <div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, songsOf(album, fav), 'detailSongs')}</div>
         <div class="detail-foot">
@@ -974,6 +980,7 @@ function openAlbum(id) {
     openAlbum(id);
   });
   bindSongPicker($('#bestSongField', m), () => songsOf(album, fav));
+  $('#recommend', m).addEventListener('click', () => recommend(album, year));
   $('#editAlbum', m).addEventListener('click', () => { closeModal(m, true); editAlbum(id); });
   $('#deleteAlbum', m).addEventListener('click', () => {
     if (!confirm(`Delete “${album.title || album.artist}” from ${year}?`)) return;
@@ -1008,11 +1015,13 @@ function openFriendAlbum(id) {
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn queue" id="queueMine"></button>
+          <button class="btn" id="recommend">${ICON.gift}<span>Recommend</span></button>
         </div>
       </div>
     </div>`, 'detail-modal');
   watchCovers(m);
   requestArt(album);
+  $('#recommend', m).addEventListener('click', () => recommend(album, year, store.viewingFriend()?.uid));
   const btn = $('#queueMine', m);
   const paint = () => {
     const on = !!inQueue();
@@ -1119,7 +1128,7 @@ function yearField(value, { optional = false } = {}) {
 
 const TYPE_LABEL = { single: 'Single', ep: 'EP', compilation: 'Compilation' };
 
-function addAlbum({ year: fallbackYear, query = '', fromQueue = null } = {}) {
+function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = null } = {}) {
   // New albums go under their release year: filled in from the search result,
   // or looked up from the artist and album when typed in by hand. If it can't
   // be found, the album goes under the year you added it from (or this year).
@@ -1262,6 +1271,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null } = {}) {
     if (F.fav.checked) y.favourites.push({ albumId: album.id, song: album.songs.join('; ') });
     const cleared = clearFromQueue(album, fromQueue);
     store.commit();
+    clearRecs(album, fromRec?.id);
     closeModal(m, true);
     toast(guessed ? `Added to ${F.year.value}. Couldn't find its release year, so open the album to change it if that's wrong.`
       : cleared ? `Added to ${F.year.value} and ticked off Up next` : `Added to ${F.year.value}`);
@@ -1269,9 +1279,173 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null } = {}) {
     else render();
     if (!album.art) requestArt(album);
   });
+  if (fromRec) {
+    // A friend's recommendation: start from what they sent.
+    chosen = { artist: fromRec.artist, title: fromRec.title, art: fromRec.art || '', spotify: fromRec.spotify || '', year: fromRec.year || '' };
+    F.artist.value = fromRec.artist;
+    F.title.value = fromRec.title;
+    F.year.value = fromRec.year || ''; // without one, the year is looked up on save
+  }
   coverPreview();
   if (query) search();
-  q.focus();
+  if (fromRec) F.songs.focus(); else q.focus();
+}
+
+// ------------------------------------------------------------------ recommendations
+
+// Friends who share libraries with each other can send each other albums.
+// They land in users/{uid}/recs and show as a strip on the home page, with a
+// popup the first time they're seen.
+
+const recItem = (r) => ({ id: `rec-${r.id}`, artist: r.artist, title: r.title, art: r.art || '' });
+const recMatches = (r, album) => queueMatches({ artist: r.artist, title: r.title }, album);
+const isLogged = (r) => store.years().some((y) => data.years[y].albums.some((a) => recMatches(r, a)));
+
+async function loadRecs() {
+  if (ro() || !store.canSync()) return;
+  let list;
+  try { list = await store.recs(); } catch { return; }
+  // Already in the log (added some other way): no need to suggest it.
+  const done = list.filter(isLogged);
+  done.forEach((r) => store.dismissRec(r.id).catch(() => {}));
+  const before = recs.map((r) => r.id).join();
+  recs = list.filter((r) => !done.includes(r));
+  if (recs.map((r) => r.id).join() !== before && !ro() && !modalRoot.children.length) render();
+  const fresh = recs.filter((r) => !r.seen);
+  if (!fresh.length) return;
+  store.markRecsSeen(fresh.map((r) => r.id)).catch(() => {});
+  fresh.forEach((r) => { r.seen = true; });
+  if (!modalRoot.children.length && !ro()) openRec(fresh[0].id, fresh.length - 1);
+}
+
+function clearRecs(album, id) {
+  const gone = recs.filter((r) => r.id === id || recMatches(r, album));
+  if (!gone.length) return;
+  recs = recs.filter((r) => !gone.includes(r));
+  gone.forEach((r) => store.dismissRec(r.id).catch(() => {}));
+}
+
+function recsHtml() {
+  return `<section class="upnext recs">
+    <div class="upnext-head">
+      <h2>Recommended for you <span>${recs.length}</span></h2>
+    </div>
+    <div class="upnext-strip">${recs.map((r) => `
+      <button class="q-card" data-rec="${esc(r.id)}">
+        ${coverHtml(recItem(r))}
+        <span class="q-title">${esc(r.title || r.artist)}</span>
+        <span class="q-sub">${r.title ? esc(r.artist) : 'artist'}</span>
+        <span class="q-from">from ${esc(r.fromName || 'a friend')}</span>
+      </button>`).join('')}
+    </div>
+  </section>`;
+}
+
+function openRec(id, more = 0) {
+  const r = recs.find((x) => x.id === id);
+  if (!r) return;
+  const item = recItem(r);
+  const mine = store.ownData();
+  const inQueue = () => mine.toListen.find((x) => queueMatches(x, r));
+  const m = openModal(`
+    ${closeBtn('floating')}
+    <div class="detail">
+      ${coverHtml(item, 'xl')}
+      <div class="detail-info">
+        <p class="eyebrow"><span class="accent">${esc(r.fromName || 'A friend')} recommends</span>${r.year ? ` · ${esc(r.year)}` : ''}</p>
+        <h2 class="detail-title">${esc(r.title || r.artist)}</h2>
+        <p class="detail-artist">${r.title ? esc(r.artist) : 'Artist to check out'}</p>
+        ${r.note ? `<blockquote class="rec-note">${esc(r.note)}</blockquote>` : ''}
+        <div class="detail-actions">
+          <a class="btn spotify" href="${esc(r.spotify || (r.title ? spotifyUrl(r) : spotifyArtistUrl(r.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
+          <button class="btn primary" id="recAdd">${ICON.plus} Add to my library</button>
+          <button class="btn queue" id="recQueue">${inQueue() ? ICON.check : ICON.queue}<span>${inQueue() ? 'In Up next' : 'Add to Up next'}</span></button>
+        </div>
+        ${more > 0 ? `<p class="muted small-print">${more} more recommendation${more > 1 ? 's' : ''} waiting on your home page.</p>` : ''}
+        <div class="detail-foot">
+          <button class="link-btn danger" id="recDismiss">${ICON.close} No thanks</button>
+        </div>
+      </div>
+    </div>`, 'detail-modal');
+  $('#recAdd', m).addEventListener('click', () => {
+    closeModal(m, true);
+    addAlbum({ fromRec: r });
+  });
+  $('#recQueue', m).addEventListener('click', () => {
+    if (!inQueue()) {
+      const q = { id: store.uid(), artist: r.artist, title: r.title, added: new Date().toISOString().slice(0, 10) };
+      if (r.art) q.art = r.art;
+      if (r.spotify) q.spotify = r.spotify;
+      mine.toListen.unshift(q);
+      store.commit({ quiet: true });
+    }
+    // In Up next now, so it doesn't need to sit here too.
+    recs = recs.filter((x) => x !== r);
+    store.dismissRec(r.id).catch(() => {});
+    closeModal(m);
+    toast(`Added to Up next. Tell ${r.fromName || 'them'} thanks!`);
+  });
+  $('#recDismiss', m).addEventListener('click', async () => {
+    recs = recs.filter((x) => x !== r);
+    closeModal(m);
+    try { await store.dismissRec(r.id); toast('Recommendation dismissed'); }
+    catch (ex) { toast(`Couldn’t remove it: ${ex.message}`, 'error'); }
+  });
+  m.onClose = () => render();
+}
+
+// Send an album to one or more friends who share with you both ways.
+async function recommend(album, year, skipUid = '') {
+  const m = openModal(`
+    <div class="modal-head"><h2>Recommend this album</h2>${closeBtn()}</div>
+    <div class="rec-album">${coverHtml(album, 'sm')}<span><b>${esc(album.title || album.artist)}</b><small>${album.title ? esc(album.artist) : ''}</small></span></div>
+    <div id="recBody"><p class="muted pad-sm"><span class="spin"></span> Finding your friends…</p></div>`);
+  const body = $('#recBody', m);
+  let res;
+  try { res = await store.mutualFriends(); }
+  catch (ex) { body.innerHTML = `<p class="warn">${esc(ex.message)}</p>`; return; }
+  const list = res.list.filter((f) => f.uid !== skipUid);
+  if (!list.length) {
+    body.innerHTML = `<p class="muted">You can recommend albums to friends who share their library with you and have added your code too.</p>
+      ${res.sharing ? '' : '<p class="muted">Turn on <b>Share my library</b> in Settings and send your code to a friend first.</p>'}`;
+    return;
+  }
+  body.innerHTML = `<form class="form" id="recForm">
+      <div class="field"><span>Send to</span>
+        <div class="rec-people">${list.map((f, i) => `
+          <label class="check"><input type="checkbox" name="to" value="${esc(f.uid)}" ${list.length === 1 || i === 0 ? 'checked' : ''}> ${esc(f.name || 'A friend')}</label>`).join('')}
+        </div>
+      </div>
+      <label class="field"><span>Note <small>optional</small></span><input name="note" maxlength="300" placeholder="Why they'll love it" autocomplete="off"></label>
+      <p class="warn" id="recErr" hidden></p>
+      <div class="form-actions"><button class="btn primary" id="recSend">${ICON.gift} Send</button></div>
+    </form>`;
+  const form = $('#recForm', body);
+  form.addEventListener('submit', async (e) => {
+    e.preventDefault();
+    const to = $$('input[name=to]:checked', form).map((x) => x.value);
+    const err = $('#recErr', form);
+    if (!to.length) { err.hidden = false; err.textContent = 'Pick someone to send it to.'; return; }
+    const btn = $('#recSend', form);
+    btn.disabled = true;
+    btn.innerHTML = '<span class="spin"></span> Sending…';
+    const send = { artist: album.artist, title: album.title, year, art: artFor(album) || '', spotify: album.spotify || '' };
+    const failed = [];
+    for (const uid of to) {
+      try { await store.sendRec(uid, send, form.elements.note.value); }
+      catch (ex) { failed.push([list.find((f) => f.uid === uid)?.name || 'a friend', ex.message]); }
+    }
+    if (failed.length) {
+      btn.disabled = false;
+      btn.innerHTML = `${ICON.gift} Send`;
+      err.hidden = false;
+      err.textContent = failed.length === to.length ? failed[0][1] : `Couldn't send to ${failed.map((f) => f[0]).join(', ')}. ${failed[0][1]}`;
+      return;
+    }
+    closeModal(m);
+    const names = to.map((uid) => list.find((f) => f.uid === uid)?.name || 'a friend');
+    toast(`Sent to ${names.join(' and ')}`);
+  });
 }
 
 // ------------------------------------------------------------------ up next
@@ -2233,6 +2407,8 @@ document.addEventListener('click', (e) => {
   if (add) addAlbum({ year: add.dataset.add });
   const q = e.target.closest('[data-queue]');
   if (q) openQueueItem(q.dataset.queue);
+  const rec = e.target.closest('[data-rec]');
+  if (rec) openRec(rec.dataset.rec);
   if (e.target.closest('[data-view-own]')) showOwn();
 });
 $('#addBtn').addEventListener('click', () => data && !ro() && addAlbum());
