@@ -1,20 +1,14 @@
 // Album artwork and album search. Uses Spotify when you're logged in to it,
 // and the iTunes Search API (no key needed, via JSONP) otherwise or as a fallback.
 
-import * as spotify from './spotify.js?v=39';
+import * as spotify from './spotify.js?v=40';
 
 let seq = 0;
-// iTunes allows roughly 20 searches a minute and answers a blocked one with an
-// error, so after a failure background lookups leave it alone for a while
-// (searches you type still try it).
-let itunesRestUntil = 0;
-const itunesResting = () => Date.now() < itunesRestUntil;
 function jsonp(url, timeout = 8000) {
   return new Promise((resolve, reject) => {
     const cb = `__itunes_${Date.now()}_${seq++}`;
     const script = document.createElement('script');
     const done = (fn, v) => {
-      if (fn === reject) itunesRestUntil = Date.now() + 2 * 60 * 1000;
       clearTimeout(timer);
       delete window[cb];
       script.remove();
@@ -186,23 +180,17 @@ function rank(list, q) {
   return out.sort((a, b) => b.s - a.s).map((x) => x.r);
 }
 
-const rateLimited = () => Object.assign(new Error('rate limited'), { status: 429 });
+// Typed searches are remembered for a few minutes, so retyping or going back
+// over the same words doesn't search again.
+const found = new Map(); // term -> { t, list }
+const FOUND_MS = 10 * 60 * 1000;
 
 // Albums for the Add album search, best first.
-// `background` is for lookups nobody typed (matching the Listening chart):
-// they use one source only, and give up at once rather than queue more calls
-// while Spotify or iTunes is asking us to slow down, so the searches you type
-// still get answers.
-export async function findAlbums(term, limit = 20, { background = false } = {}) {
+export async function findAlbums(term, limit = 20) {
+  const key = `${norm(term)}|${limit}`;
+  const hit = found.get(key);
+  if (hit && Date.now() - hit.t < FOUND_MS) return hit.list;
   const q = queryWords(term);
-  if (background) {
-    if (spotify.connected()) {
-      if (spotify.blockedFor()) throw rateLimited();
-      return rank(await findIn(spotifySource, term, q), q).slice(0, limit);
-    }
-    if (itunesResting()) throw rateLimited();
-    return rank(await findIn(itunesSource, term, q), q).slice(0, limit);
-  }
   let list = [];
   let failed = null;
   if (spotify.connected()) {
@@ -212,7 +200,28 @@ export async function findAlbums(term, limit = 20, { background = false } = {}) 
   if (!list.some((r) => coverage(r, q) === 1)) {
     try { list = list.concat(await findIn(itunesSource, term, q)); } catch (e) { if (!list.length) throw failed || e; }
   }
-  return rank(list, q).slice(0, limit);
+  const out = rank(list, q).slice(0, limit);
+  found.set(key, { t: Date.now(), list: out });
+  return out;
+}
+
+// A cheap lookup for one album we already know the artist and title of (the
+// Listening chart): one Spotify search, or one iTunes search when Spotify is
+// off, paused or has nothing. At most two requests, where findAlbums can make
+// a dozen.
+export async function quickFind(artist, title, limit = 8) {
+  const term = `${artist} ${title}`;
+  const q = queryWords(term);
+  let failed = null;
+  if (spotify.connected() && !spotify.blockedFor()) {
+    try {
+      const strict = await spotify.searchAlbums(`album:${title} artist:${artist}`, 10);
+      const list = strict.length ? strict : await spotify.searchAlbums(term, 10);
+      if (list.length) return rank(list, q).slice(0, limit);
+    } catch (e) { failed = e; }
+  }
+  try { return rank(await searchItunes(term, 15), q).slice(0, limit); }
+  catch (e) { throw failed || e; }
 }
 
 // How long Spotify has asked us to wait, in ms (0 when it's fine).
@@ -406,7 +415,7 @@ async function run() {
     const job = queue.shift();
     try {
       job.resolve(await findArt(job.album));
-      gap = Math.max(450, gap * 0.9);
+      gap = Math.max(1000, gap * 0.9); // about one album a second, to leave room for searches
     } catch {
       job.resolve(null); // unknown; try again another time
       gap = Math.min(10000, gap * 2);
