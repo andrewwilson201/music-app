@@ -17,4 +17,4 @@ export const FIREBASE_CONFIG = {
 // Web push key for notifications, from Firebase console › Project settings ›
 // Cloud Messaging › Web Push certificates (the public "Key pair"). Public by
 // design. Empty hides the notifications switch.
-export const FIREBASE_VAPID_KEY = '';
+export const FIREBASE_VAPID_KEY = 'BMMFCh344N09A5eiirGFSQOylA_VeLuDUe00kgFdZ277ZsAGmeEm5kyvUVc6ufULD0D1uHPYpT6_zA1h6GXBF00';
