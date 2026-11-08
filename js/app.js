@@ -1,8 +1,8 @@
-import * as store from './store.js?v=40';
-import * as spotify from './spotify.js?v=40';
-import * as spHistory from './history.js?v=40';
-import { queueArt, prioritise, searchAlbums, findAlbums, quickFind, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=40';
-import * as mood from './mood.js?v=40';
+import * as store from './store.js?v=41';
+import * as spotify from './spotify.js?v=41';
+import * as spHistory from './history.js?v=41';
+import { queueArt, prioritise, searchAlbums, findAlbums, quickFind, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=41';
+import * as mood from './mood.js?v=41';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -317,10 +317,25 @@ function openYearMenu(btn) {
   const [page, , tab] = route();
   const suffix = page === 'year' && tab === 'favourites' ? '/favourites' : '';
   const total = store.years().reduce((n, y) => n + data.years[y].albums.length, 0);
-  menu.innerHTML = `<a href="#/all" data-home="all" class="${navActive === 'all' ? 'on' : ''}"><b>All years</b><small>${total} album${total === 1 ? '' : 's'}</small></a><span class="menu-sep"></span>` + shownYears().map((y) => {
-    const n = data.years[y]?.albums.length || 0;
-    return `<a href="#/year/${y}${suffix}" data-home="year" class="${y === navActive ? 'on' : ''}"><b>${y}</b><small>${n ? `${n} album${n === 1 ? '' : 's'}` : y === now ? 'nothing yet' : ''}</small></a>`;
-  }).join('') + (ro() ? '' : `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`);
+  // Years sit four to a row under decade headings; years with nothing logged are greyed out.
+  const years = shownYears();
+  const counts = Object.fromEntries(years.map((y) => [y, data.years[y]?.albums.length || 0]));
+  const top = Math.max(Number(now), ...years.map(Number));
+  const decades = [...new Set(years.map((y) => Math.floor(y / 10) * 10))].sort((a, b) => b - a);
+  const albums = (n) => `${n} album${n === 1 ? '' : 's'}`;
+  const grid = decades.map((d) => {
+    let cells = '';
+    for (let y = Math.min(d + 9, top); y >= d; y--) {
+      const k = String(y);
+      cells += k in counts
+        ? `<a href="#/year/${k}${suffix}" data-home="year" class="${k === navActive ? 'on' : ''}" title="${counts[k] ? albums(counts[k]) : 'nothing yet'}"><b>${k}</b><small>${counts[k] || '–'}</small></a>`
+        : `<span class="ym-empty"><b>${k}</b></span>`;
+    }
+    const sum = years.filter((y) => Math.floor(y / 10) * 10 === d).reduce((n, y) => n + counts[y], 0);
+    return `<div class="ym-dec"><span>${d}s</span><span>${albums(sum)}</span></div><div class="ym-grid">${cells}</div>`;
+  }).join('');
+  menu.innerHTML = `<a href="#/all" data-home="all" class="${navActive === 'all' ? 'on' : ''}"><b>All years</b><small>${albums(total)}</small></a>` + grid
+    + (ro() ? '' : `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`);
   // Picking from here also sets where the app opens next time.
   menu.addEventListener('click', (e) => { const h = e.target.closest('[data-home]')?.dataset.home; if (h) setHome(h); });
   document.body.appendChild(menu);
