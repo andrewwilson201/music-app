@@ -1,8 +1,8 @@
-import * as store from './store.js?v=37';
-import * as spotify from './spotify.js?v=37';
-import * as spHistory from './history.js?v=37';
-import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=37';
-import * as mood from './mood.js?v=37';
+import * as store from './store.js?v=38';
+import * as spotify from './spotify.js?v=38';
+import * as spHistory from './history.js?v=38';
+import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=38';
+import * as mood from './mood.js?v=38';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -42,8 +42,13 @@ const friendName = () => store.viewingFriend()?.name || 'A friend';
 const possessive = (name) => `${name}’${/s$/i.test(name) ? '' : 's'}`;
 
 let data;
-let ui = { sort: 'latest', filter: '', view: 'grid' };
+let ui = { sort: 'latest', filter: '', view: 'grid', allSort: 'newest' };
 try { ui.view = localStorage.getItem('music-log:view') || 'grid'; } catch {}
+try { ui.allSort = localStorage.getItem('music-log:all-sort') || 'newest'; } catch {}
+// Where the app opens: the newest year, or the whole library ("All years").
+// Follows whichever you last picked from the year menu, on this device.
+const homeIsAll = () => { try { return localStorage.getItem('music-log:home') === 'all'; } catch { return false; } };
+const setHome = (v) => { try { localStorage.setItem('music-log:home', v); } catch {} };
 let sortable = null;
 let resumePlaylist = ''; // year whose playlist to make once we're back from a Spotify login
 let pendingTracking = null; // Spotify token for listening tracking, saved once signed in
@@ -276,8 +281,9 @@ function render() {
   closeYearMenu();
   $('#listenBtn').hidden = !(hasListening() || (!ro() && tracking.enabled));
   $('#listenBtn').classList.toggle('on', page === 'listening');
-  navActive = page === 'year' ? a : page ? page : years[0];
-  if (!page) return renderYear(years[0], 'listened');
+  navActive = page === 'year' ? a : page ? page : homeIsAll() ? 'all' : years[0];
+  if (!page) return homeIsAll() ? renderAll() : renderYear(years[0], 'listened');
+  if (page === 'all') return renderAll();
   if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
   if ((page === 'up-next' || page === 'to-listen') && !ro()) return renderUpNext();
   if (page === 'search') return renderSearch(a || '');
@@ -310,10 +316,13 @@ function openYearMenu(btn) {
   // Switching year keeps you on the tab you're looking at (Listened or Favourites).
   const [page, , tab] = route();
   const suffix = page === 'year' && tab === 'favourites' ? '/favourites' : '';
-  menu.innerHTML = shownYears().map((y) => {
+  const total = store.years().reduce((n, y) => n + data.years[y].albums.length, 0);
+  menu.innerHTML = `<a href="#/all" data-home="all" class="${navActive === 'all' ? 'on' : ''}"><b>All years</b><small>${total} album${total === 1 ? '' : 's'}</small></a><span class="menu-sep"></span>` + shownYears().map((y) => {
     const n = data.years[y]?.albums.length || 0;
-    return `<a href="#/year/${y}${suffix}" class="${y === navActive ? 'on' : ''}"><b>${y}</b><small>${n ? `${n} album${n === 1 ? '' : 's'}` : y === now ? 'nothing yet' : ''}</small></a>`;
+    return `<a href="#/year/${y}${suffix}" data-home="year" class="${y === navActive ? 'on' : ''}"><b>${y}</b><small>${n ? `${n} album${n === 1 ? '' : 's'}` : y === now ? 'nothing yet' : ''}</small></a>`;
   }).join('') + (ro() ? '' : `<span class="menu-sep"></span><a href="#/up-next" class="${navActive === 'up-next' || navActive === 'to-listen' ? 'on' : ''}"><b>Up next</b><small>${queued ? `${queued} waiting` : 'empty'}</small></a>`);
+  // Picking from here also sets where the app opens next time.
+  menu.addEventListener('click', (e) => { const h = e.target.closest('[data-home]')?.dataset.home; if (h) setHome(h); });
   document.body.appendChild(menu);
   const r = btn.getBoundingClientRect();
   menu.style.top = `${r.bottom + scrollY + 8}px`;
@@ -563,6 +572,128 @@ function renderListened(year) {
   };
   $('#filter').addEventListener('input', (e) => { ui.filter = e.target.value; draw(); });
   $('#sort').addEventListener('change', (e) => { ui.sort = e.target.value; sortTitle(); draw(); toast(e.target.selectedOptions[0].text); });
+  bindViewToggle(body, draw);
+  draw();
+}
+
+// ------------------------------------------------------------------ whole library
+
+// Every album from every year in one list. The release year is just a detail
+// on each album, and the list loads in pages as you scroll so a big library
+// stays quick. Covers load lazily like everywhere else (watchCovers).
+const ALL_SORTS = {
+  newest: 'Newest releases',
+  oldest: 'Oldest releases',
+  artist: 'Artist A–Z',
+  title: 'Album A–Z',
+  favs: 'Favourites first',
+  listened: 'Most listened',
+};
+const ALL_PAGE = 60;
+
+function allAlbums() {
+  const out = [];
+  for (const y of store.years()) {
+    const yd = data.years[y];
+    // Latest logged first within a year, like the year view.
+    yd.albums.forEach((album, i) => out.push({ album, year: y, yd, i, rank: store.favRank(yd, album.id) }));
+  }
+  return out;
+}
+
+function sortedAll() {
+  let list = allAlbums();
+  const q = norm(ui.filter);
+  if (q) list = list.filter(({ album: a, year }) => norm(`${a.artist} ${a.title} ${(a.songs || []).join(' ')} ${year}`).includes(q));
+  const byYear = (x, y) => (y.year - x.year) || (y.i - x.i);
+  const text = (s) => norm(s || '').replace(/^the /, '');
+  const sorts = {
+    newest: byYear,
+    oldest: (x, y) => (x.year - y.year) || (x.i - y.i),
+    artist: (x, y) => text(x.album.artist).localeCompare(text(y.album.artist)) || (x.year - y.year),
+    title: (x, y) => text(x.album.title || x.album.artist).localeCompare(text(y.album.title || y.album.artist)),
+    favs: (x, y) => ((x.rank ? 0 : 1) - (y.rank ? 0 : 1)) || byYear(x, y) || (x.rank - y.rank),
+    listened: (x, y) => ((listeningFor(y.album)?.ms || 0) - (listeningFor(x.album)?.ms || 0)) || byYear(x, y),
+  };
+  return list.sort(sorts[ui.allSort] || byYear);
+}
+
+function renderAll() {
+  const all = allAlbums();
+  const years = [...new Set(all.map((x) => x.year))];
+  const favs = all.filter((x) => x.rank).length;
+  const span = years.length > 1 ? `${years[years.length - 1]}–${years[0]}` : years[0] || '';
+  if (ui.allSort === 'listened' && !hasListening()) ui.allSort = 'newest';
+  app.innerHTML = `
+    <section class="hero">
+      <div>
+        <p class="eyebrow">${ro() ? `${esc(possessive(friendName()))} whole library` : 'your whole library'}</p>
+        <h1>${yearMenuBtn('All years')}</h1>
+        ${all.length ? `<p class="hero-stats"><b>${all.length}</b> album${all.length === 1 ? '' : 's'}${favs ? ` · <b>${favs}</b> favourite${favs === 1 ? '' : 's'}` : ''}${span ? ` · ${span}` : ''}</p>` : ''}
+      </div>
+      ${ro() ? '' : `<button type="button" class="btn pick-btn" data-pick title="Pick an album from your library">${ICON.dice}<span>Pick for me</span></button>`}
+    </section>
+    <div id="yearBody">
+      <div class="toolbar">
+        <label class="search-field">
+          ${ICON.search}
+          <input id="filter" type="search" placeholder="Filter your library" aria-label="Filter your library" value="${esc(ui.filter)}" autocomplete="off">
+        </label>
+        <label class="tool-btn" title="Sort">
+          ${ICON.sort}
+          <select id="sort" aria-label="Sort">
+            ${Object.entries(ALL_SORTS).filter(([k]) => k !== 'listened' || hasListening()).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
+          </select>
+        </label>
+        ${viewToggleHtml()}
+      </div>
+      <div id="grid"></div>
+    </div>`;
+  const body = $('#yearBody');
+  if (!ro() && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
+  if (!ro() && recs.length) body.insertAdjacentHTML('afterbegin', recsHtml());
+  $('#sort').value = ui.allSort;
+  const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
+  sortTitle();
+  let list = [];
+  let shown = 0;
+  let more = null;
+  const card = ({ album, yd, year }) => (ui.view === 'list' ? rowHtml(album, yd, year) : cardHtml(album, yd, year));
+  const page = () => {
+    const box = $('#grid > .grid, #grid > .rows');
+    if (!box) return;
+    const next = list.slice(shown, shown + ALL_PAGE);
+    shown += next.length;
+    box.insertAdjacentHTML('beforeend', next.map(card).join(''));
+    watchCovers(box);
+    if (shown >= list.length) { more?.disconnect(); $('#allMore')?.remove(); }
+  };
+  const draw = () => {
+    more?.disconnect();
+    list = sortedAll();
+    shown = 0;
+    $('#grid').innerHTML = list.length
+      ? `<div class="${ui.view === 'list' ? 'rows' : 'grid'}"></div><button type="button" class="btn all-more" id="allMore">Show more</button>`
+      : all.length
+        ? `<p class="muted pad">Nothing in your library matches “${esc(ui.filter)}”.</p>`
+        : ro()
+          ? `<div class="empty"><h2>Nothing logged yet</h2><p>${esc(friendName())} hasn't added any albums.</p></div>`
+          : `<div class="empty"><h2>Nothing logged yet</h2><p>Add the first album you listen to.</p><button class="btn primary" data-add="">${ICON.plus} Add album</button></div>`;
+    if (!list.length) return;
+    page();
+    const btn = $('#allMore');
+    if (!btn) return;
+    btn.addEventListener('click', page);
+    // Keep loading as you near the bottom; the button is there if that doesn't fire.
+    more = new IntersectionObserver((e) => { if (e.some((x) => x.isIntersecting)) page(); }, { rootMargin: '600px' });
+    more.observe(btn);
+  };
+  $('#filter').addEventListener('input', (e) => { ui.filter = e.target.value; draw(); });
+  $('#sort').addEventListener('change', (e) => {
+    ui.allSort = e.target.value;
+    try { localStorage.setItem('music-log:all-sort', ui.allSort); } catch {}
+    sortTitle(); draw(); toast(e.target.selectedOptions[0].text);
+  });
   bindViewToggle(body, draw);
   draw();
 }
@@ -1146,6 +1277,9 @@ function loggedYear(r) {
     norm(x.artist) === a && (norm(x.title) === t || (bt && bareTitle(x.title) === bt)))) || '';
 }
 
+// On the whole-library page, adding an album keeps you there instead of jumping to its year.
+const onAll = () => { const [p] = route(); return p === 'all' || (!p && homeIsAll()); };
+
 function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = null } = {}) {
   // New albums go under their release year: filled in from the search result,
   // or looked up from the artist and album when typed in by hand. If it can't
@@ -1327,7 +1461,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
       $('.modal', m).scrollTo({ top: 0, behavior: 'smooth' });
       m.onClose = () => {
         // Finished: show the year everything went into, or stay put if it was several.
-        const go = addedYears.length === 1 ? `#/year/${addedYears[0]}` : '';
+        const go = addedYears.length === 1 && !onAll() ? `#/year/${addedYears[0]}` : '';
         if (go && location.hash !== go) location.hash = go; else render();
       };
       return;
@@ -1335,7 +1469,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
     closeModal(m, true);
     toast(guessed ? `Added to ${F.year.value}. Couldn't find its release year, so open the album to change it if that's wrong.`
       : cleared ? `Added to ${F.year.value} and ticked off Up next` : `Added to ${F.year.value}`);
-    if (location.hash !== `#/year/${F.year.value}`) location.hash = `#/year/${F.year.value}`;
+    if (location.hash !== `#/year/${F.year.value}` && !onAll()) location.hash = `#/year/${F.year.value}`;
     else render();
   });
   if (fromRec) {
