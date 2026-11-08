@@ -10,7 +10,7 @@ It's a static site (plain HTML, CSS and JavaScript, no build step) hosted on Git
 - **Sharing**: Settings › Share my library gives a 10-character code and link. A signed-in friend who adds it (via the people button, or by opening the link) can browse that person's years, favourites and best songs read-only, and switch back to their own library from the same menu. Up next stays private. Turning sharing off, or making a new code, cuts off everyone who had the old one. Codes live in `shares/{code}`, and the rules check that the reader is listed under `shares/{code}/viewers` for the owner's current code.
 - **First sign-in**: a new account can start an empty log or restore a backup file.
 - **Backups**: Settings › Download backup saves the whole log as JSON; Restore backup loads one.
-- **Firebase setup**: the web config goes in [`js/config.js`](js/config.js), the rules go in Firebase console › Firestore › Rules, and `andrewwilson201.github.io` must be in Authentication › Settings › Authorized domains. The SDK is bundled into `vendor/firebase.js` (see `tools/firebase-entry.js` to rebuild it).
+- **Firebase setup**: the web config goes in [`js/config.js`](js/config.js), the rules are deployed by the GitHub Action below, and `andrewwilson201.github.io` must be in Authentication › Settings › Authorized domains. The SDK is bundled into `vendor/firebase.js` (see `tools/firebase-entry.js` to rebuild it).
 - `tools/import_xlsx.py` turns the original `music.xlsx` into a JSON backup that can be loaded with Restore backup.
 - **Artwork** comes from the iTunes Search API, looked up as albums scroll into view, and is saved into the data file once it's found.
 - **Spotify**: "Play on Spotify" opens a Spotify search for the album. To link to an exact album, paste its Spotify link into the album's Edit form.
@@ -26,18 +26,18 @@ It's a static site (plain HTML, CSS and JavaScript, no build step) hosted on Git
 - **Recommendations**: friends who share with each other can send an album from its popup (Recommend). It's written to `users/{to}/recs/{id}` (only allowed while both follow each other's current code, see `firestore.rules`) and the recipient's app moves it into their Up next, tagged with who sent it and their note, so they can listen before deciding whether to log it.
 - **Notifications**: Settings › Notifications saves this device's Firebase Cloud Messaging token in `users/{uid}/private/push`. After sending a recommendation the app calls the `notifyRec` function, which pushes "{name} recommends" to the recipient's devices; `sw.js` shows it and a tap opens `#/rec/{id}`, which shows that album in Up next. Needs `FIREBASE_VAPID_KEY` in `js/config.js` (Firebase console › Project settings › Cloud Messaging › Web Push certificates). On iPhone it only works once the app is added to the Home Screen.
 
-## Deploying the functions (listening tracking and notifications)
+## Deploying the functions and rules
 
-It needs the Firebase project on the Blaze plan (the usage fits in the free allowance). From this folder:
+A GitHub Action ([`.github/workflows/deploy-firebase.yml`](.github/workflows/deploy-firebase.yml)) runs the function tests and deploys `firestore.rules` and the functions whenever they change on `main`. It can also be run by hand from the Actions tab (Run workflow). It needs the Firebase project on the Blaze plan (the usage fits in the free allowance).
 
-```sh
-npm install -g firebase-tools
-firebase login
-cd functions && npm install && cd ..
-firebase deploy --only functions
-```
+One-time setup:
 
-`cd functions && npm test` runs the tests for the counting logic.
+1. Google Cloud console › IAM & Admin › Service Accounts (project `music-app-d0f3f`) › Create service account, named e.g. `github-deploy`.
+2. Give it these roles: Firebase Admin, Cloud Functions Admin, Cloud Run Admin, Cloud Scheduler Admin, Artifact Registry Administrator, Service Account User.
+3. Open it › Keys › Add key › JSON, which downloads a file.
+4. GitHub › this repository › Settings › Secrets and variables › Actions › New repository secret: name `FIREBASE_SERVICE_ACCOUNT`, value = the whole contents of that file. Then delete the file.
+
+Until the secret exists the workflow only runs the tests. `cd functions && npm test` runs them locally.
 
 ## Shortcuts
 

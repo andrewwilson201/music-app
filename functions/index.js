@@ -9,7 +9,7 @@
 //                                ms, plays, first, last, weeks{}, tracks{} }
 //   tracks{id} = { name, n, ms, plays, weeks{week: ms}, wplays{week: plays} }
 //
-// Deploy: firebase deploy --only functions (needs the Blaze plan).
+// Deployed by .github/workflows/deploy-firebase.yml when functions/ changes on main.
 
 import { onSchedule } from 'firebase-functions/v2/scheduler';
 import { onCall, HttpsError } from 'firebase-functions/v2/https';
