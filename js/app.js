@@ -19,6 +19,7 @@ const ICON = {
   sort: '<svg viewBox="0 0 24 24"><path d="M7 4v16M3.5 16.5 7 20l3.5-3.5M17 20V4M13.5 7.5 17 4l3.5 3.5"/></svg>',
   search: '<svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>',
   chevron: '<svg viewBox="0 0 24 24"><path d="m6 9 6 6 6-6"/></svg>',
+  bell: '<svg viewBox="0 0 24 24"><path d="M6 9a6 6 0 0 1 12 0c0 6 2.5 7.5 2.5 7.5h-17S6 15 6 9Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg>',
   gift: '<svg viewBox="0 0 24 24"><path d="M3 11h18M12 7v14M5 11v10h14V11M3 7h18v4H3z"/><path d="M12 7c-1.5-3-5-3.5-5-1.2C7 7 9.5 7 12 7Zm0 0c1.5-3 5-3.5 5-1.2C17 7 14.5 7 12 7Z"/></svg>',
   queue: '<svg viewBox="0 0 24 24"><path d="M4 6h12M4 11h12M4 16h7"/><path d="m15 14 5 3-5 3z" fill="currentColor"/></svg>',
   grip: '<svg viewBox="0 0 24 24" class="fill"><circle cx="9" cy="6" r="1.5"/><circle cx="15" cy="6" r="1.5"/><circle cx="9" cy="12" r="1.5"/><circle cx="15" cy="12" r="1.5"/><circle cx="9" cy="18" r="1.5"/><circle cx="15" cy="18" r="1.5"/></svg>',
@@ -43,7 +44,8 @@ try { ui.view = localStorage.getItem('music-log:view') || 'grid'; } catch {}
 let sortable = null;
 let resumePlaylist = ''; // year whose playlist to make once we're back from a Spotify login
 let pendingTracking = null; // Spotify token for listening tracking, saved once signed in
-let recs = []; // albums friends recommended to me, see store.recs
+let recs = [];
+let pendingRec = ''; // recommendation to open once loaded (from a notification) // albums friends recommended to me, see store.recs
 let tracking = { enabled: false }; // listening tracking state, see store.trackingState
 
 // ------------------------------------------------------------------ boot
@@ -100,13 +102,14 @@ function started() {
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); store.flush(); return; }
-    if (Date.now() - hiddenAt < 30000 || modalRoot.children.length) return;
+    // New recommendations are worth checking for every time the app comes back.
+    if (Date.now() - hiddenAt < 30000 || modalRoot.children.length) { loadRecs(); return; }
     try {
       if (ro()) { await store.viewFriend(store.viewingFriend().uid); render(); }
       else if (await store.refresh()) { data = store.getData(); render(); }
       loadListening();
-      loadRecs();
     } catch {}
+    loadRecs();
   });
   render();
   loadListening();
@@ -277,6 +280,7 @@ function render() {
   if (page === 'search') return renderSearch(a || '');
   if (page === 'listening' && !ro()) return renderListening(a || 'month', b === 'songs' ? 'songs' : 'albums');
   if (page === 'friend' && a) return acceptCode(a);
+  if (page === 'rec' && a) { pendingRec = a; location.replace('#/'); if (isStarted) loadRecs(); return; }
   location.hash = '#/';
 }
 
@@ -1311,6 +1315,16 @@ async function loadRecs() {
   const before = recs.map((r) => r.id).join();
   recs = list.filter((r) => !done.includes(r));
   if (recs.map((r) => r.id).join() !== before && !ro() && !modalRoot.children.length) render();
+  if (pendingRec) {
+    const id = pendingRec;
+    pendingRec = '';
+    if (recs.some((r) => r.id === id)) {
+      [...modalRoot.children].forEach((w) => closeModal(w, true));
+      store.markRecsSeen(recs.filter((r) => !r.seen).map((r) => r.id)).catch(() => {});
+      recs.forEach((r) => { r.seen = true; });
+      return openRec(id);
+    }
+  }
   const fresh = recs.filter((r) => !r.seen);
   if (!fresh.length) return;
   store.markRecsSeen(fresh.map((r) => r.id)).catch(() => {});
@@ -1361,12 +1375,22 @@ function openRec(id, more = 0) {
           <button class="btn primary" id="recAdd">${ICON.plus} Add to my library</button>
           <button class="btn queue" id="recQueue">${inQueue() ? ICON.check : ICON.queue}<span>${inQueue() ? 'In Up next' : 'Add to Up next'}</span></button>
         </div>
+        <button type="button" class="link-btn" id="recNotify" hidden>${ICON.bell} Notify me about the next one</button>
         ${more > 0 ? `<p class="muted small-print">${more} more recommendation${more > 1 ? 's' : ''} waiting on your home page.</p>` : ''}
         <div class="detail-foot">
           <button class="link-btn danger" id="recDismiss">${ICON.close} No thanks</button>
         </div>
       </div>
     </div>`, 'detail-modal');
+  store.pushState().then((st) => {
+    const b = $('#recNotify', m);
+    if (!b || st !== 'off') return;
+    b.hidden = false;
+    b.addEventListener('click', async () => {
+      try { await store.enablePush(); b.remove(); toast('You’ll get a notification next time'); }
+      catch (ex) { toast(ex.message, 'error'); }
+    });
+  }).catch(() => {});
   $('#recAdd', m).addEventListener('click', () => {
     closeModal(m, true);
     addAlbum({ fromRec: r });
@@ -1621,6 +1645,31 @@ function renderSearch(initial) {
 
 // ------------------------------------------------------------------ settings
 
+// Notifications on this phone when a friend recommends an album.
+async function setUpPushBox(box) {
+  const state = await store.pushState();
+  if (state === 'unsupported') return;
+  const note = {
+    'home-screen': 'On iPhone, add this app to your Home Screen first (Share › Add to Home Screen), then open it from there and turn this on.',
+    blocked: 'Notifications are blocked for this app. Allow them in your phone’s settings, then turn this on.',
+  }[state] || 'Get a notification on this device when a friend recommends an album.';
+  box.hidden = false;
+  box.innerHTML = `<div class="share-head">
+      ${ICON.bell}
+      <div><b>Notifications</b><small>${note}</small></div>
+      <label class="switch" title="Notifications"><input type="checkbox" id="pushToggle" ${state === 'on' ? 'checked' : ''} ${state === 'home-screen' ? 'disabled' : ''} aria-label="Notifications"><span></span></label>
+    </div>`;
+  const toggle = $('#pushToggle', box);
+  toggle.addEventListener('change', async () => {
+    toggle.disabled = true;
+    try {
+      if (toggle.checked) { await store.enablePush(); toast('Notifications are on for this device'); }
+      else { await store.disablePush(); toast('Notifications are off'); }
+    } catch (ex) { toggle.checked = !toggle.checked; toast(ex.message, 'error'); }
+    toggle.disabled = false;
+  });
+}
+
 function openSettings() {
   if (!data) return;
   const user = store.currentUser();
@@ -1664,6 +1713,7 @@ function openSettings() {
       </div>
       <div class="share-body" id="shareBody" hidden></div>
     </div>
+    <div class="share-box" id="pushBox" hidden></div>
     <p class="warn" id="cfgErr" hidden></p>
     <div class="backup-row">
       <span class="muted">Backup</span>
@@ -1673,6 +1723,7 @@ function openSettings() {
   $('#export', m).addEventListener('click', store.exportJson);
   setUpShareBox(m);
   setUpListenBox(m);
+  setUpPushBox($('#pushBox', m));
   $('#spotifyBtn', m)?.addEventListener('click', () => {
     if (spotify.connected()) { spotify.logout(); closeModal(m); toast('Logged out of Spotify'); }
     else spotify.login();
@@ -2595,5 +2646,10 @@ document.addEventListener('keydown', (e) => {
 boot();
 
 if ('serviceWorker' in navigator) {
+  // A tapped notification, with the app already open: show that recommendation.
+  navigator.serviceWorker.addEventListener('message', (e) => {
+    const url = e.data?.open;
+    if (typeof url === 'string' && url.includes('#/rec/')) location.hash = url.slice(url.indexOf('#'));
+  });
   window.addEventListener('load', () => navigator.serviceWorker.register('sw.js').catch(() => {}));
 }

@@ -14,6 +14,7 @@
 //   users/{uid}/listening/{spotifyAlbumId}  time spent on that album, written by functions/index.js
 //   users/{uid}/meta/listening   { hidden[], historySuggest, history: { plays, albums, from, to, parts, importedAt } }
 //   users/{uid}/history/{0..n}   { data }  imported Spotify history, gzipped JSON in base64 (see js/history.js)
+//   users/{uid}/private/push {tokens: {token: {at, device}}}  phones that asked for notifications
 //   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, sentAt, seen? }
 //                            albums friends recommended. Anyone can send one only while
 //                            the two of you follow each other's current share codes.
@@ -27,8 +28,9 @@ import {
   getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
   memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
+  getMessaging, getToken, deleteToken, messagingSupported, getFunctions, httpsCallable, connectFunctionsEmulator,
 } from '../vendor/firebase.js?v=33';
-import { FIREBASE_CONFIG } from './config.js?v=33';
+import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js?v=33';
 import { pack, unpack, toListening } from './history.js?v=33';
 
 // Left over from the GitHub-token version of the app, used to offer an import.
@@ -40,6 +42,8 @@ const LEGACY_DATA_PATH = 'data/music.json';
 const listeners = new Set();
 let auth = null;
 let db = null;
+let fbApp = null;
+let functions = null;
 let user = null;
 let data = null;
 let viewing = null; // { uid, name, data } while looking at a friend's library
@@ -74,8 +78,9 @@ const setStatus = (s, err = '') => { status = s; lastError = err; emit(); };
 
 // Resolves with the signed-in user (or null) once Firebase knows.
 export async function init() {
-  const app = initializeApp(FIREBASE_CONFIG);
+  const app = fbApp = initializeApp(FIREBASE_CONFIG);
   auth = getAuth(app);
+  functions = getFunctions(app);
   let cache;
   try { cache = persistentLocalCache({ tabManager: persistentMultipleTabManager() }); }
   catch { cache = memoryLocalCache(); }
@@ -84,6 +89,7 @@ export async function init() {
   if (/^(localhost|127\.0\.0\.1)$/.test(location.hostname) && new URLSearchParams(location.search).has('emulator')) {
     connectAuthEmulator(auth, 'http://127.0.0.1:9099', { disableWarnings: true });
     connectFirestoreEmulator(db, '127.0.0.1', 8081);
+    connectFunctionsEmulator(functions, '127.0.0.1', 5001);
   }
   let redirectError = null;
   try { await getRedirectResult(auth); } catch (e) { redirectError = e; }
@@ -426,11 +432,14 @@ export async function sendRec(toUid, album, note = '') {
   if (album.art) rec.art = String(album.art).slice(0, 500);
   if (album.spotify) rec.spotify = String(album.spotify).slice(0, 300);
   if (note.trim()) rec.note = note.trim().slice(0, 300);
-  try { await setDoc(doc(recsCol(toUid)), rec); }
+  const ref = doc(recsCol(toUid));
+  try { await setDoc(ref, rec); }
   catch (e) {
     if (e.code === 'permission-denied') throw new Error("Couldn't send it. You can only recommend to friends while you both have each other's current code.");
     throw e;
   }
+  // Ping their phone if they turned notifications on (functions/index.js). Best effort.
+  httpsCallable(functions, 'notifyRec')({ to: toUid, id: ref.id }).catch(() => {});
 }
 
 // Albums friends sent me, newest first.
@@ -448,6 +457,41 @@ export const markRecsSeen = (ids) => {
   ids.forEach((id) => batch.set(doc(recsCol(user.uid), id), { seen: true }, { merge: true }));
   return batch.commit();
 };
+
+// ---------- notifications on this phone (for recommendations)
+
+const pushDoc = () => doc(db, 'users', user.uid, 'private', 'push');
+const tokenKey = () => `music-log:push:${user.uid}`;
+
+// 'on' | 'off' | 'blocked' (said no in the browser) | 'unsupported' | 'home-screen' (iPhone, not installed)
+export async function pushState() {
+  if (!FIREBASE_VAPID_KEY) return 'unsupported';
+  const ios = /iPhone|iPad|iPod/.test(navigator.userAgent);
+  const installed = matchMedia('(display-mode: standalone)').matches || navigator.standalone;
+  if (!('serviceWorker' in navigator) || !('Notification' in window) || !(await messagingSupported().catch(() => false))) {
+    return ios && !installed ? 'home-screen' : 'unsupported';
+  }
+  if (Notification.permission === 'denied') return 'blocked';
+  return Notification.permission === 'granted' && ls(tokenKey()) ? 'on' : 'off';
+}
+
+export async function enablePush() {
+  if ((await Notification.requestPermission()) !== 'granted') throw new Error('Notifications are blocked. Allow them for this app in your phone’s settings, then try again.');
+  const token = await getToken(getMessaging(fbApp), { vapidKey: FIREBASE_VAPID_KEY, serviceWorkerRegistration: await navigator.serviceWorker.ready });
+  const device = /iPhone|iPad/.test(navigator.userAgent) ? 'iPhone' : /Android/.test(navigator.userAgent) ? 'Android' : 'Computer';
+  await setDoc(pushDoc(), { tokens: { [token]: { at: Date.now(), device } } }, { merge: true });
+  ls(tokenKey(), token);
+}
+
+export async function disablePush() {
+  const token = ls(tokenKey());
+  ls(tokenKey(), null);
+  try { await deleteToken(getMessaging(fbApp)); } catch {}
+  const snap = await getDoc(pushDoc());
+  const tokens = { ...(snap.exists() && snap.data().tokens) };
+  delete tokens[token];
+  await setDoc(pushDoc(), { tokens });
+}
 
 export function viewOwn() {
   if (!viewing) return;
