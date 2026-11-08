@@ -100,13 +100,14 @@ function started() {
   let hiddenAt = 0;
   document.addEventListener('visibilitychange', async () => {
     if (document.visibilityState === 'hidden') { hiddenAt = Date.now(); store.flush(); return; }
-    if (Date.now() - hiddenAt < 30000 || modalRoot.children.length) return;
+    // New recommendations are worth checking for every time the app comes back.
+    if (Date.now() - hiddenAt < 30000 || modalRoot.children.length) { loadRecs(); return; }
     try {
       if (ro()) { await store.viewFriend(store.viewingFriend().uid); render(); }
       else if (await store.refresh()) { data = store.getData(); render(); }
       loadListening();
-      loadRecs();
     } catch {}
+    loadRecs();
   });
   render();
   loadListening();
