@@ -1,6 +1,6 @@
 rules_version = '2';
 
-// Paste this into Firebase console › Firestore Database › Rules, then Publish.
+// Deployed by .github/workflows/deploy-firebase.yml when this file changes on main.
 //
 // Each person's log lives under users/{uid}. Only they can write it. Their
 // years (not Up next or settings) can also be read by friends who added their

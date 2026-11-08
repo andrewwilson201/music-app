@@ -1,0 +1,41 @@
+# Deploys firestore.rules and the Cloud Functions whenever they change on main,
+# so nothing has to be pasted into the Firebase console or deployed by hand.
+#
+# One-time setup (see README › Deploying the functions and rules):
+# a Google Cloud service-account key saved as the repository secret
+# FIREBASE_SERVICE_ACCOUNT. Until it exists, this only runs the tests.
+name: Deploy Firebase rules and functions
+
+on:
+  push:
+    branches: [main]
+    paths: ['firestore.rules', 'firebase.json', 'functions/**']
+  workflow_dispatch:
+
+concurrency: firebase-deploy
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Install function dependencies
+        working-directory: functions
+        run: npm ci
+      - name: Test
+        working-directory: functions
+        run: npm test
+      - name: Deploy
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then
+            echo "::warning::FIREBASE_SERVICE_ACCOUNT isn't set, so nothing was deployed."
+            exit 0
+          fi
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          printf '%s' "$SA" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          npx -y firebase-tools@14 deploy --only firestore:rules,functions --project music-app-d0f3f --non-interactive --force

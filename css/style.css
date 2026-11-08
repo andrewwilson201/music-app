@@ -163,6 +163,9 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .fav-title { text-align: left; font-weight: 600; font-size: 16px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fav-title:hover { text-decoration: underline; text-underline-offset: 3px; }
 .fav-artist { color: var(--muted); font-size: 14px; }
+.fav-main .song-chips { margin-top: 6px; }
+.fav-main .add-songs { margin-top: 4px; font-size: 13px; align-self: flex-start; }
+.manual-btn { margin: 4px 0 8px; }
 .song-input { margin-top: 4px; width: min(100%, 360px); background: transparent; border: 1px dashed transparent; border-radius: 8px; padding: 3px 8px; margin-left: -8px; font-size: 14px; color: var(--accent); outline: none; transition: .15s; }
 .song-input::placeholder { color: var(--faint); }
 .song-input:hover { border-color: var(--line); }
@@ -188,6 +191,7 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .btn.heart.on svg { fill: var(--accent); }
 .btn.queue.on { background: var(--accent-soft); border-color: var(--accent); color: var(--accent); }
 .btn.small { height: 34px; padding: 0 12px; font-size: 13px; }
+.btn.icon-only { width: 42px; padding: 0; }
 .link-btn { display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
 .link-btn svg { width: 16px; height: 16px; }
 .link-btn:hover { color: var(--text); }
@@ -306,10 +310,6 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .row-rank svg { width: 15px; height: 15px; fill: var(--accent); stroke: var(--accent); }
 
 /* spotify login box in settings */
-.spotify-box { display: flex; align-items: center; gap: 12px; padding: 12px 14px; margin: 0 0 12px; border-radius: 12px; background: rgba(30, 215, 96, .08); border: 1px solid rgba(30, 215, 96, .25); }
-.spotify-box > svg { color: var(--spotify); width: 28px; height: 28px; }
-.spotify-box > div { flex: 1; display: flex; flex-direction: column; min-width: 0; }
-.spotify-box small { color: var(--muted); font-size: 13px; }
 
 /* artwork picker */
 .art-picker { margin: -4px 0 4px; }
@@ -518,6 +518,8 @@ body.signed-out .view-bar { display: none; }
 .tracks .bar > i { display: block; height: 100%; border-radius: 2px; background: var(--accent); }
 .listen-none { margin: 0; color: var(--faint); font-size: 14px; }
 .listen-set .share-head > svg { color: var(--spotify); }
+.listen-set { border: 1px solid rgba(30, 215, 96, .25); }
+.track-head { margin-top: 12px; padding-top: 12px; border-top: 1px solid var(--line); }
 .listen-status { display: flex; align-items: center; gap: 8px; margin: 12px 0 0; padding-top: 12px; border-top: 1px solid var(--line); color: var(--muted); font-size: 14px; }
 .listen-status .sync-dot { position: static; box-shadow: none; flex: none; }
 /* tracklist picker for best songs */
