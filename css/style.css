@@ -594,25 +594,18 @@ body.signed-out .view-bar { display: none; }
 .rec-album small { color: var(--muted); }
 .rec-people { display: flex; flex-direction: column; gap: 8px; margin-top: 4px; }
 
-/* Sort through heard albums */
-.sec-title .sort-all { margin-left: auto; font-family: var(--sans, inherit); }
-.sec-title:has(.sort-all) { display: flex; align-items: center; gap: 8px; }
-.sort-back { margin: -6px 0 14px; }
-.sort-progress { color: var(--muted); margin: 0 0 10px; }
-.sort-progress b { color: var(--text, inherit); font-variant-numeric: tabular-nums; }
-.sort-card { max-width: 560px; background: var(--bg-2); border: 1px solid var(--line); border-radius: 18px; padding: 16px; display: flex; flex-direction: column; gap: 14px; }
-.sort-heard { display: flex; gap: 14px; align-items: center; }
-.sort-heard #sortCover { width: 110px; flex: none; }
-.sort-heard #sortCover .cover { width: 110px; }
-.sort-actions .btn:disabled { opacity: .45; }
-.sort-info { min-width: 0; }
-.sort-info h2 { margin: 0 0 4px; font-size: 20px; line-height: 1.2; overflow-wrap: anywhere; }
-.sort-info p { margin: 0 0 4px; }
-.sort-match .results { max-height: none; margin: 0 0 8px; }
-.sort-match > p { margin: 0 0 8px; }
-.sort-found { display: flex; gap: 8px; align-items: flex-start; }
-.sort-found svg { width: 20px; height: 20px; flex: none; color: var(--accent); }
-.sort-found span b, .sort-found span small { display: block; }
-.sort-actions { display: flex; gap: 8px; }
-.sort-actions .btn { flex: 1; justify-content: center; }
-.sort-actions .btn.primary { flex: 1.4; }
+/* Logging heard albums in place */
+.lb.unlogged li.heard { flex-direction: column; align-items: stretch; gap: 0; padding: 6px 6px 6px 4px; }
+.heard-row { display: flex; align-items: center; gap: 10px; min-width: 0; }
+.heard-cover { flex: none; padding-left: 6px; }
+.heard-more { flex: 1; min-width: 0; text-align: left; }
+.heard-more small { overflow: hidden; white-space: nowrap; text-overflow: ellipsis; }
+.heard-match { display: flex; align-items: center; gap: 4px; font-size: 12px; color: var(--faint); }
+.heard-match.sure { color: var(--muted); }
+.heard-match svg { width: 14px; height: 14px; flex: none; color: var(--accent); }
+.heard-match .spin { width: 10px; height: 10px; }
+.heard .log-add:disabled { opacity: .35; }
+.heard-pick { padding: 8px 4px 4px 6px; }
+.heard-pick .results { margin: 0 0 6px; max-height: none; }
+.heard-pick-more { display: flex; flex-wrap: wrap; gap: 4px 16px; margin: 0; }
+.heard-show-more { margin-top: 10px; }
