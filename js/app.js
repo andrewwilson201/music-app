@@ -1,7 +1,7 @@
-import * as store from './store.js?v=34';
-import * as spotify from './spotify.js?v=34';
-import * as spHistory from './history.js?v=34';
-import { queueArt, prioritise, searchAlbums, findAlbums, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=34';
+import * as store from './store.js?v=35';
+import * as spotify from './spotify.js?v=35';
+import * as spHistory from './history.js?v=35';
+import { queueArt, prioritise, searchAlbums, findAlbums, spotifyBlockedFor, findRelease, findSpotifyLink, spotifyUrl, spotifyArtistUrl, placeholder, norm, artVersion, findTrack, bestSongs, findTracklist, cleanSong } from './art.js?v=35';
 
 const $ = (sel, root = document) => root.querySelector(sel);
 const $$ = (sel, root = document) => [...root.querySelectorAll(sel)];
@@ -1193,7 +1193,11 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, fromRec = 
           </button>`).join('') : '<p class="muted pad-sm">No matches. Fill in the details below instead.</p>';
         results._list = list;
       } catch {
-        if (t === ticket) results.innerHTML = '<p class="muted pad-sm">Search is unavailable right now. Fill in the details below.</p>';
+        if (t !== ticket) return;
+        const wait = Math.ceil(spotifyBlockedFor() / 60000);
+        results.innerHTML = `<p class="muted pad-sm">${wait
+          ? `Spotify has paused searches for ${wait > 90 ? 'a while' : `about ${wait} minute${wait === 1 ? '' : 's'}`} after a lot of lookups, and iTunes didn't answer either.`
+          : 'Search is unavailable right now.'} Try again shortly, or fill in the details below.</p>`;
       }
     }, 400);
   };
@@ -2318,9 +2322,41 @@ function limited(fn) {
   });
 }
 
+// Matches are remembered on this device for a fortnight, so opening the
+// Listening page again doesn't search for every album again.
+const MATCH_KEY = 'music-log:heard-matches';
+const MATCH_DAYS = 14;
+let savedMatches = null;
+function matchStore() {
+  if (!savedMatches) {
+    try { savedMatches = JSON.parse(localStorage.getItem(MATCH_KEY) || '{}'); } catch { savedMatches = {}; }
+    const old = Date.now() - MATCH_DAYS * 864e5;
+    for (const [k, v] of Object.entries(savedMatches)) if (!(v.t > old)) delete savedMatches[k];
+  }
+  return savedMatches;
+}
+let saveTimer;
+function rememberMatch(key, list) {
+  const keep = (r) => ({ artist: r.artist, artists: r.artists, title: r.title, art: r.art, year: r.year, type: r.type, spotify: r.spotify });
+  matchStore()[key] = { t: Date.now(), list: list.map(keep) };
+  clearTimeout(saveTimer);
+  saveTimer = setTimeout(() => {
+    const all = Object.entries(matchStore()).sort((a, b) => b[1].t - a[1].t).slice(0, 600);
+    savedMatches = Object.fromEntries(all);
+    try { localStorage.setItem(MATCH_KEY, JSON.stringify(savedMatches)); } catch {}
+  }, 1000);
+}
+
+function lookupHeard(g) {
+  const saved = matchStore()[g.key];
+  if (saved) return Promise.resolve(saved.list);
+  return limited(() => findAlbums(searchTermFor(g), 8, { background: true }))
+    .then((list) => { rememberMatch(g.key, list); return list; });
+}
+
 function matchHeard(g) {
   if (!heardMatches.has(g.key)) {
-    heardMatches.set(g.key, limited(() => findAlbums(searchTermFor(g), 8))
+    heardMatches.set(g.key, lookupHeard(g)
       .then((list) => {
         const id = spotifyAlbumId(g.spotify);
         const same = (r) => (id && spotifyAlbumId(r.spotify) === id)
@@ -2330,8 +2366,12 @@ function matchHeard(g) {
         const options = [...(sure ? [sure] : []), ...(byArtist.length ? byArtist : list).filter((r) => r !== sure)].slice(0, 4);
         return { sure, options };
       })
-      .catch(() => ({ sure: null, options: [], failed: true }))
-      .then((m) => { heardResolved.set(g.key, m); return m; }));
+      .catch((e) => {
+        // Don't remember a failure: try again next time the row is shown.
+        setTimeout(() => { heardMatches.delete(g.key); heardResolved.delete(g.key); }, 0);
+        return { sure: null, options: [], failed: true, busy: e?.message === 'rate limited' };
+      })
+      .then((m) => { if (!m.failed) heardResolved.set(g.key, m); return m; }));
   }
   return heardMatches.get(g.key);
 }
@@ -2351,7 +2391,8 @@ function showHeardMatch(li, g, m) {
   } else if (m.options.length) {
     line.textContent = 'Tap + to choose';
   } else {
-    line.textContent = m.failed ? 'Search is down: + adds as named' : 'Not found: + adds as named';
+    line.textContent = m.busy ? 'Searching paused for a bit: + adds as named'
+      : m.failed ? 'Search is down: + adds as named' : 'Not found: + adds as named';
   }
 }
 

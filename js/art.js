@@ -1,14 +1,20 @@
 // Album artwork and album search. Uses Spotify when you're logged in to it,
 // and the iTunes Search API (no key needed, via JSONP) otherwise or as a fallback.
 
-import * as spotify from './spotify.js?v=34';
+import * as spotify from './spotify.js?v=35';
 
 let seq = 0;
+// iTunes allows roughly 20 searches a minute and answers a blocked one with an
+// error, so after a failure background lookups leave it alone for a while
+// (searches you type still try it).
+let itunesRestUntil = 0;
+const itunesResting = () => Date.now() < itunesRestUntil;
 function jsonp(url, timeout = 8000) {
   return new Promise((resolve, reject) => {
     const cb = `__itunes_${Date.now()}_${seq++}`;
     const script = document.createElement('script');
     const done = (fn, v) => {
+      if (fn === reject) itunesRestUntil = Date.now() + 2 * 60 * 1000;
       clearTimeout(timer);
       delete window[cb];
       script.remove();
@@ -180,9 +186,23 @@ function rank(list, q) {
   return out.sort((a, b) => b.s - a.s).map((x) => x.r);
 }
 
+const rateLimited = () => Object.assign(new Error('rate limited'), { status: 429 });
+
 // Albums for the Add album search, best first.
-export async function findAlbums(term, limit = 20) {
+// `background` is for lookups nobody typed (matching the Listening chart):
+// they use one source only, and give up at once rather than queue more calls
+// while Spotify or iTunes is asking us to slow down, so the searches you type
+// still get answers.
+export async function findAlbums(term, limit = 20, { background = false } = {}) {
   const q = queryWords(term);
+  if (background) {
+    if (spotify.connected()) {
+      if (spotify.blockedFor()) throw rateLimited();
+      return rank(await findIn(spotifySource, term, q), q).slice(0, limit);
+    }
+    if (itunesResting()) throw rateLimited();
+    return rank(await findIn(itunesSource, term, q), q).slice(0, limit);
+  }
   let list = [];
   let failed = null;
   if (spotify.connected()) {
@@ -194,6 +214,9 @@ export async function findAlbums(term, limit = 20) {
   }
   return rank(list, q).slice(0, limit);
 }
+
+// How long Spotify has asked us to wait, in ms (0 when it's fine).
+export const spotifyBlockedFor = () => spotify.blockedFor();
 
 // Similarity 0..1 that tolerates typos, "the", punctuation and extra words
 // ("fontaines dc" ~ "Fontaines D.C.", "vol ii" ~ "Vol. II (Deluxe)").

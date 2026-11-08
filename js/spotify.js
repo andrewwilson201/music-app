@@ -2,7 +2,7 @@
 // Search needs no scopes. Making playlists asks for the playlist scopes the
 // first time it's used, then picks up where it left off after the redirect.
 
-import { SPOTIFY_CLIENT_ID } from './config.js?v=34';
+import { SPOTIFY_CLIENT_ID } from './config.js?v=35';
 
 const TOKEN_KEY = 'music-log:spotify';
 const VERIFIER_KEY = 'music-log:spotify-verifier';
@@ -20,6 +20,19 @@ let tokens = null;
 try { tokens = JSON.parse(ls(TOKEN_KEY) || 'null'); } catch {}
 
 export let lastError = '';
+
+// When Spotify says "too many requests" (429), stay off it for as long as it
+// asks (Retry-After, or a minute when that header can't be read), and remember
+// that across reloads. Calling again while blocked only extends the block.
+const BLOCK_KEY = 'music-log:spotify-blocked-until';
+let blockedUntil = Number(ls(BLOCK_KEY)) || 0;
+export const blockedFor = () => Math.max(0, blockedUntil - Date.now());
+function block(res) {
+  const secs = Number(res.headers.get('Retry-After'));
+  blockedUntil = Date.now() + (secs > 0 ? secs : 60) * 1000;
+  ls(BLOCK_KEY, String(blockedUntil));
+}
+const rateLimited = () => Object.assign(new Error('rate limited'), { status: 429 });
 export const configured = () => !!SPOTIFY_CLIENT_ID;
 export const connected = () => configured() && !!tokens?.refresh_token;
 
@@ -106,6 +119,7 @@ async function accessToken() {
 
 // One Web API call. Throws with Spotify's message; err.status holds the HTTP code.
 async function api(path, { method = 'GET', body } = {}) {
+  if (blockedFor()) throw rateLimited();
   const res = await fetch(`https://api.spotify.com/v1${path}`, {
     method,
     headers: { Authorization: `Bearer ${await accessToken()}`, ...(body ? { 'Content-Type': 'application/json' } : {}) },
@@ -116,6 +130,7 @@ async function api(path, { method = 'GET', body } = {}) {
     lastError = `${res.status} ${json.error?.message || res.statusText}`.trim();
     console.warn(`Spotify ${method} ${path.split('?')[0]} failed:`, lastError);
     if (res.status === 401) tokens.expires_at = 0;
+    if (res.status === 429) block(res);
     const err = new Error(res.status === 401 ? 'Spotify session expired' : res.status === 429 ? 'rate limited' : `Spotify said ${lastError}`);
     err.status = res.status;
     throw err;
