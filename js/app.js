@@ -2095,6 +2095,15 @@ function historyBoxHtml() {
       ${hidden ? `<p class="small-print muted">${hidden} album${hidden === 1 ? '' : 's'} hidden from Not logged · <button type="button" class="link" id="unhideAll">Show them again</button></p>` : ''}`;
 }
 
+// Imported history stops where live tracking begins: when it was switched on,
+// or its earliest counted play if that's sooner (the first check used to count
+// plays from a few hours before), so nothing is counted twice.
+function liveStart() {
+  let start = tracking.since || Infinity;
+  for (const l of Object.values(store.getListening() || {})) if (!l.hist && l.first) start = Math.min(start, l.first);
+  return start;
+}
+
 function bindHistoryBox(m) {
   const box = $('#historyBox', m);
   if (!box) return;
@@ -2109,7 +2118,7 @@ function bindHistoryBox(m) {
       busy(`Adding up ${rows.length.toLocaleString()} plays…`);
       await new Promise((r) => setTimeout(r, 30));
       // Plays from after live tracking began are already counted.
-      const { albums, info } = spHistory.aggregate(rows, { before: tracking.since || Infinity });
+      const { albums, info } = spHistory.aggregate(rows, { before: liveStart() });
       if (!albums.length) throw new Error('No song plays found in those files.');
       busy('Saving…');
       await store.saveHistory(albums, info);

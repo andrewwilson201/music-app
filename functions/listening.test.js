@@ -43,3 +43,10 @@ test('tracks keep weekly time and plays', () => {
   assert.deepEqual(r.albums.A1.tracks.t1.weeks, { '2026-11-02': 120000 });
   assert.deepEqual(r.albums.A1.tracks.t1.wplays, { '2026-11-02': 2 });
 });
+
+test('a first run starting from when tracking began skips older plays', () => {
+  const since = T + 60000;
+  const r = tally([play(T, 't1', 180000), play(T + 200000, 't2', 150000)], since);
+  assert.equal(r.plays, 1);
+  assert.equal(r.albums.A1.tracks.t2.ms, 140000);
+});
