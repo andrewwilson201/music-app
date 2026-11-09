@@ -61,7 +61,9 @@ async function albumLength(token, id) {
 export async function syncUser(uid, stateRef, state) {
   const tok = await refresh(state);
   const items = (await api(tok.access_token, '/me/player/recently-played?limit=50')).items || [];
-  const cursor = state.cursor || 0;
+  // Before the first run, start from when tracking was switched on: plays from
+  // before then belong to the imported history, not to live tracking.
+  const cursor = state.cursor || state.since || 0;
   const result = tally(items, cursor);
   // A full page whose oldest play is newer than the cursor means some plays
   // fell off the end of the list before we looked.
