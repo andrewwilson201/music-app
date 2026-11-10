@@ -10,9 +10,12 @@
 //   users/{uid}/meta/friends { list: [{ uid, token, name }] }   libraries they follow
 //   shares/{token}           { uid, name, createdAt }   lets a code be looked up
 //   shares/{token}/viewers/{viewerUid} { name, addedAt }  who added that code
-//   users/{uid}/private/spotify   listening tracking: { enabled, refreshToken, clientId, since, cursor, lastRun, lastError, plays }
+//   users/{uid}/private/spotify   listening tracking: { enabled, refreshToken, clientId, since, cursor, lastRun, lastError, plays,
+//                                 newReleases, releasesAt, releasesAdded, releasesError }
 //   users/{uid}/listening/{spotifyAlbumId}  time spent on that album, written by functions/index.js
-//   users/{uid}/meta/listening   { hidden[], history: { plays, albums, from, to, parts, importedAt } }
+//   users/{uid}/meta/listening   { hidden[], uncounted[], history: { plays, albums, from, to, parts, importedAt } }
+//                                hidden: chart albums not to suggest; uncounted: left out of every total
+//   users/{uid}/private/releases { artists: {name: spotifyArtistId}, seen[] }  new releases already suggested
 //   users/{uid}/history/{0..n}   { data }  imported Spotify history, gzipped JSON in base64 (see js/history.js)
 //   users/{uid}/private/push {tokens: {token: {at, device}}}  phones that asked for notifications
 //   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, sentAt, notified? }
