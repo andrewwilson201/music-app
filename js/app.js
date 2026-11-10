@@ -773,11 +773,19 @@ function renderFavourites(year) {
     if (!rm) return;
     e.stopPropagation();
     const id = rm.dataset.unfav;
+    const at = y.favourites.findIndex((f) => f.albumId === id);
+    const was = y.favourites[at];
     keepSongs(y, id);
     y.favourites = y.favourites.filter((f) => f.albumId !== id);
     store.commit();
     renderFavourites(year);
-    toast('Removed from favourites');
+    const album = y.albums.find((a) => a.id === id);
+    toast(`Removed ${album?.title || album?.artist || 'it'} from favourites`, '', () => {
+      const yy = store.ensureYear(year);
+      if (was && yy.albums.some((a) => a.id === id)) putBack(yy.favourites, was, at, (f) => f.albumId);
+      store.commit();
+      render();
+    });
   });
 }
 
@@ -1144,12 +1152,20 @@ function openAlbum(id) {
   $('#recommend', m).addEventListener('click', () => recommend(album, year));
   $('#editAlbum', m).addEventListener('click', () => { closeModal(m, true); editAlbum(id); });
   $('#deleteAlbum', m).addEventListener('click', () => {
-    if (!confirm(`Delete “${album.title || album.artist}” from ${year}?`)) return;
+    const at = yearData.albums.findIndex((a) => a.id === id);
+    const favAt = yearData.favourites.findIndex((f) => f.albumId === id);
+    const favWas = yearData.favourites[favAt];
     yearData.albums = yearData.albums.filter((a) => a.id !== id);
     yearData.favourites = yearData.favourites.filter((f) => f.albumId !== id);
     store.commit();
     closeModal(m);
-    toast('Album deleted');
+    toast(`Deleted ${album.title || album.artist}`, '', () => {
+      const y = store.ensureYear(year);
+      putBack(y.albums, album, at, (a) => a.id);
+      if (favWas) putBack(y.favourites, favWas, favAt, (f) => f.albumId);
+      store.commit();
+      render();
+    });
   });
   m.onClose = () => render();
 }
@@ -1792,9 +1808,16 @@ function upNextHtml() {
 const queuedAlbum = (item) => (item.albumId && store.findAlbum(item.albumId)) || null;
 
 function tickOff(id) {
+  const at = data.toListen.findIndex((x) => x.id === id);
+  const item = data.toListen[at];
   data.toListen = data.toListen.filter((x) => x.id !== id);
   store.commit();
-  toast('Ticked off Up next');
+  if (!item) return;
+  toast('Ticked off Up next', '', () => {
+    putBack(data.toListen, item, at, (x) => x.id);
+    store.commit();
+    render();
+  });
 }
 
 function openQueueItem(id) {
@@ -2880,12 +2903,33 @@ function closeModal(wrap, silent = false) {
 }
 
 let toastTimer;
-function toast(msg, kind = '') {
+// A short message at the bottom. With `undo`, it gets an Undo button and stays
+// up for 6 seconds: used instead of "Are you sure?" boxes for things that are
+// easy to put back (deleting an album, unfavouriting, ticking off Up next).
+function toast(msg, kind = '', undo = null) {
   const t = $('#toast');
   t.textContent = msg;
-  t.className = `toast show ${kind}`;
+  t.className = `toast show ${kind}${undo ? ' has-undo' : ''}`;
+  if (undo) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'toast-undo';
+    b.textContent = 'Undo';
+    b.addEventListener('click', () => {
+      clearTimeout(toastTimer);
+      t.className = 'toast';
+      undo();
+    }, { once: true });
+    t.append(b);
+  }
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.className = 'toast'), kind === 'error' ? 6000 : 2400);
+  toastTimer = setTimeout(() => (t.className = 'toast'), undo ? 6000 : kind === 'error' ? 6000 : 2400);
+}
+
+// Puts an item back into a list at the position it had, unless it's back already.
+function putBack(list, item, index, key) {
+  if (list.some((x) => key(x) === key(item))) return;
+  list.splice(Math.min(index, list.length), 0, item);
 }
 
 // ------------------------------------------------------------------ pick for me
