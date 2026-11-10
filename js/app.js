@@ -2699,10 +2699,11 @@ document.addEventListener('click', async (e) => {
 
 // ------------------------------------------------------------------ logging heard albums in place
 
-// Each album in the Listening chart that isn't in the log finds its album by
-// itself (Spotify, or iTunes) as it scrolls into view. A sure match (same Spotify album, or same artist
-// and title) is logged with one tap on +, filed under its release year.
-// Otherwise + (or tapping the row) opens the closest few to pick from.
+// Albums in the Listening chart that aren't in the log are only looked up when
+// you tap + (quickFind in art.js, at most two requests), so sorting a long
+// chart doesn't use up the Spotify and iTunes limits. A sure match (same
+// Spotify album, or same artist and title) is logged straight away under its
+// release year; otherwise the closest few open in the row to pick from.
 const heardMatches = new Map(); // group key -> Promise of { sure, list, options, failed }
 const heardResolved = new Map(); // group key -> the settled value, for clicks
 
