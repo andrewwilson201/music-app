@@ -1,0 +1,95 @@
+{
+ "version": 1,
+ "years": {
+  "2026": {
+   "albums": [
+    {
+     "id": "a1",
+     "artist": "the lanterns",
+     "title": "night swims",
+     "songs": [],
+     "spotify": "https://open.spotify.com/album/x1",
+     "art": ""
+    },
+    {
+     "id": "a2",
+     "artist": "hollow pines",
+     "title": "river of glass",
+     "songs": [],
+     "spotify": "https://open.spotify.com/album/x2"
+    },
+    {
+     "id": "a3",
+     "artist": "june parade",
+     "title": "",
+     "songs": []
+    },
+    {
+     "id": "a4",
+     "artist": "marsh tide",
+     "title": "salt and static",
+     "songs": [],
+     "spotify": "https://open.spotify.com/album/x4"
+    }
+   ],
+   "favourites": [
+    {
+     "albumId": "a2",
+     "song": "glass"
+    },
+    {
+     "albumId": "a1",
+     "song": ""
+    }
+   ]
+  },
+  "2025": {
+   "albums": [
+    {
+     "id": "b1",
+     "artist": "quiet harbour",
+     "title": "lighthouse keeper",
+     "songs": [],
+     "spotify": "https://open.spotify.com/album/y1"
+    },
+    {
+     "id": "b2",
+     "artist": "the ferns",
+     "title": "green room",
+     "songs": [],
+     "spotify": "https://open.spotify.com/album/y2"
+    },
+    {
+     "id": "b3",
+     "artist": "copper sun",
+     "title": "morning tide",
+     "songs": [],
+     "spotify": "https://open.spotify.com/album/y3"
+    }
+   ],
+   "favourites": [
+    {
+     "albumId": "b3",
+     "song": "tide"
+    },
+    {
+     "albumId": "b1",
+     "song": "keeper"
+    },
+    {
+     "albumId": "b2",
+     "song": ""
+    }
+   ]
+  }
+ },
+ "toListen": [
+  {
+   "id": "q1",
+   "artist": "paper moons",
+   "title": "lantern songs",
+   "added": "2026-11-01"
+  }
+ ],
+ "always": []
+}

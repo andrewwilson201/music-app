@@ -1,0 +1,35 @@
+# Checks every pull request before it can reach the live app:
+# the function and merge unit tests, the Firestore rules (who can read what),
+# and a smoke test that opens the app in a browser against the Firebase
+# emulators, including two devices editing at once. See tests/.
+name: Checks
+
+on:
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
+      - name: Function tests
+        working-directory: functions
+        run: npm ci && npm test
+      - name: Install test tools
+        working-directory: tests
+        run: npm ci && npx playwright install --with-deps chromium
+      - name: Merge tests
+        working-directory: tests
+        run: npm test
+      - name: Rules and smoke tests (Firebase emulators)
+        working-directory: tests
+        run: npx firebase emulators:exec --only auth,firestore --project music-app-d0f3f 'npm run test:emulators'

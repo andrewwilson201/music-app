@@ -294,8 +294,13 @@ async function save({ overwrite = false } = {}) {
     const removed = Object.keys(written).filter((p) => !(p in docs));
     const mergedPaths = [];
     if (!overwrite && (changed.length || removed.length)) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) throw offline();
       const paths = [...changed, ...removed];
-      const snaps = await Promise.all(paths.map((p) => getDoc(doc(db, p))));
+      // Reading the server copies can hang while the connection is flaky.
+      const snaps = await Promise.race([
+        Promise.all(paths.map((p) => getDoc(doc(db, p)))),
+        new Promise((_, reject) => setTimeout(() => reject(offline()), 15000)),
+      ]);
       if (snaps.some((s) => s.metadata.fromCache)) throw offline();
       snaps.forEach((s, i) => {
         const p = paths[i];
