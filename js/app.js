@@ -251,6 +251,7 @@ function onStoreChange() {
     saved: 'Saved to your account',
     saving: 'Saving…',
     error: `Sync problem: ${lastError}`,
+    offline: 'Offline: edits are kept on this device',
     idle: 'Settings and account',
   }[status] || 'Settings';
   if (status === 'error') toast(`Couldn't save: ${lastError}`, 'error');
@@ -1916,8 +1917,9 @@ function openSettings() {
     saved: 'Every change is saved to your account, so it shows up wherever you sign in.',
     saving: 'Saving…',
     error: `The last save failed: ${lastError}. Your edits are kept on this device and will be saved again.`,
+    offline: lastError,
   }[status] || 'Every change is saved to your account, so it shows up wherever you sign in.';
-  const statusShort = { saving: 'Saving…', error: `Not saved yet: ${lastError}` }[status] || 'All changes saved';
+  const statusShort = { saving: 'Saving…', error: `Not saved yet: ${lastError}`, offline: 'Offline, saved on this device' }[status] || 'All changes saved';
   const m = openModal(`
     <div class="modal-head"><h2>Settings</h2>${closeBtn()}</div>
     <div class="account-box">

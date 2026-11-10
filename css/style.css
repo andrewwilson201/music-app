@@ -92,7 +92,7 @@ svg.fill { fill: currentColor; stroke: none; }
 .status-line .sync-dot { position: static; display: inline-block; flex: none; box-shadow: none; }
 .sync-dot.saved { background: var(--ok); }
 .sync-dot.saving { background: var(--warn); animation: pulse 1s ease-in-out infinite; }
-.sync-dot.local { background: var(--warn); }
+.sync-dot.local, .sync-dot.offline { background: var(--warn); }
 .sync-dot.error { background: var(--danger); }
 
 /* ---------------- layout ---------------- */
