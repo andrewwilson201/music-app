@@ -1282,6 +1282,114 @@ function yearField(value, { optional = false } = {}) {
   return `<label class="field narrow"><span>Release year</span><input name="year" type="number" inputmode="numeric" min="1900" max="${max}" ${optional ? 'placeholder="Look it up"' : 'required'} value="${esc(value)}"></label>`;
 }
 
+// ------------------------------------------------------------------ paste a list
+
+// One album per line, like "12. Artist - Album (1998)". The number and year are
+// optional; without a year it's looked up, else the album goes in this year.
+function parseListLine(line) {
+  let t = line.trim().replace(/^\s*(?:no\.?\s*)?\d+\s*[.):-]?\s+/i, '');
+  if (!t) return null;
+  let year = '';
+  const ym = t.match(/\s*[([]\s*((?:19|20)\d\d)\s*[)\]]\s*$/) || t.match(/\s*[,–—-]\s*((?:19|20)\d\d)\s*$/);
+  if (ym) { year = ym[1]; t = t.slice(0, ym.index).trim(); }
+  const m = t.match(/^(.+?)(?:\s+[–—-]\s+|\s*[–—]\s*)(.+)$/) || t.match(/^(.+?):\s+(.+)$/);
+  if (!m) return null;
+  const artist = m[1].trim();
+  const title = m[2].trim().replace(/^["“'‘]|["”'’]$/g, '');
+  return artist && title ? { artist, title, year } : null;
+}
+
+// Already in the library? Same as the Add form's check, plus small spelling
+// differences in the artist or the title (but never a different volume number).
+function libraryMatch(r) {
+  const exact = loggedYear(r);
+  if (exact) return exact;
+  const a = firstArtist(r.artist), t = baseTitle(r.title), nums = numbersIn(r.title);
+  if (!a || !t) return '';
+  for (const y of store.years()) {
+    for (const x of data.years[y].albums) {
+      if (!x.title || numbersIn(x.title) !== nums) continue;
+      const xa = firstArtist(x.artist), xt = baseTitle(x.title);
+      if ((xa === a && editDistance(xt, t, slack(t)) <= slack(t)) || (xt === t && editDistance(xa, a, slack(a)) <= slack(a))) return y;
+    }
+  }
+  return '';
+}
+
+function importList() {
+  const m = openModal(`
+    <div class="modal-head"><h2>Paste a list</h2>${closeBtn()}</div>
+    <p class="muted">One album per line, as <b>Artist - Album (Year)</b>. Numbers in front are fine. Albums without a year get their release year looked up.</p>
+    <textarea id="listText" rows="10" class="list-text" placeholder="100. Bedhead - Transaction de Novo (1998)&#10;79. MJ Lenderman - Boat Songs (2022)"></textarea>
+    <div id="listRows" class="list-rows"></div>
+    <div class="form-actions"><button type="button" class="btn primary" id="listGo">Check list</button></div>`);
+  const text = $('#listText', m), rowsEl = $('#listRows', m), go = $('#listGo', m);
+  let rows = null;
+  const draw = () => {
+    const fresh = rows.filter((r) => !r.have);
+    rowsEl.innerHTML = `<p class="muted">${fresh.length} new, ${rows.length - fresh.length} already in your library${rows.bad ? `, ${rows.bad} line${rows.bad === 1 ? '' : 's'} not understood` : ''}.</p>
+      <ul class="list-check">${rows.map((r, i) => `<li${r.have ? ' class="have"' : ''}><label><input type="checkbox" data-i="${i}" ${r.on ? 'checked' : ''}>
+        <span><b>${esc(r.title)}</b> · ${esc(r.artist)}<small>${r.have ? `Already in ${r.have}` : r.year ? r.year : 'Year looked up'}</small></span></label></li>`).join('')}</ul>`;
+    const n = rows.filter((r) => r.on).length;
+    go.textContent = n ? `Add ${n} album${n === 1 ? '' : 's'}` : 'Nothing to add';
+    go.disabled = !n;
+  };
+  rowsEl.addEventListener('change', (e) => {
+    const i = e.target.dataset.i;
+    if (i !== undefined) { rows[i].on = e.target.checked; draw(); }
+  });
+  text.addEventListener('input', () => { if (rows) { rows = null; rowsEl.innerHTML = ''; go.textContent = 'Check list'; go.disabled = false; } });
+  go.addEventListener('click', async () => {
+    if (!rows) {
+      const lines = text.value.split('\n').filter((l) => l.trim());
+      rows = [];
+      rows.bad = 0;
+      const seen = new Set();
+      for (const l of lines) {
+        const r = parseListLine(l);
+        if (!r) { rows.bad++; continue; }
+        const k = `${norm(r.artist)}|${norm(r.title)}`;
+        if (seen.has(k)) continue;
+        seen.add(k);
+        r.have = libraryMatch(r);
+        r.on = !r.have;
+        rows.push(r);
+      }
+      if (!rows.length) { rows = null; toast('No "Artist - Album" lines found'); return; }
+      text.hidden = true;
+      draw();
+      return;
+    }
+    const picked = rows.filter((r) => r.on);
+    go.disabled = true;
+    const years = new Set();
+    let guessed = 0, added = 0;
+    for (const [i, r] of picked.entries()) {
+      go.innerHTML = `<span class="spin"></span> Adding ${i + 1} of ${picked.length}…`;
+      let year = r.year, hit = null;
+      if (!year) {
+        try { hit = await findRelease({ artist: r.artist, title: r.title }); } catch { hit = null; }
+        year = hit?.year || '';
+        if (!year) { year = String(new Date().getFullYear()); guessed++; }
+      }
+      const y = store.ensureYear(String(year));
+      const album = { id: store.uid(), artist: r.artist, title: r.title, songs: [] };
+      if (hit?.art) album.art = hit.art;
+      if (hit?.spotify) album.spotify = hit.spotify;
+      y.albums.push(album);
+      added++;
+      clearFromQueue(album);
+      years.add(String(year));
+      if (!album.art) requestArt(album);
+    }
+    store.commit();
+    closeModal(m);
+    render();
+    toast(`Added ${added} album${added === 1 ? '' : 's'} across ${years.size} year${years.size === 1 ? '' : 's'}${guessed ? ` (${guessed} filed in ${new Date().getFullYear()}: year not found)` : ''}`);
+  });
+  text.focus();
+}
+
 // ------------------------------------------------------------------ add album
 
 const TYPE_LABEL = { single: 'Single', ep: 'EP', compilation: 'Compilation' };
@@ -1846,11 +1954,16 @@ function openSettings() {
     <div class="share-box" id="pushBox" hidden></div>
     <p class="warn" id="cfgErr" hidden></p>
     <div class="backup-row">
+      <span class="muted">Add many albums</span>
+      <button type="button" class="link-btn" id="importList">Paste a list</button>
+    </div>
+    <div class="backup-row">
       <span class="muted">Backup</span>
       <button type="button" class="link-btn" id="export">Download</button>
       <label class="link-btn" id="restore">Restore<input type="file" accept="application/json,.json" hidden></label>
     </div>`);
   $('#export', m).addEventListener('click', store.exportJson);
+  $('#importList', m).addEventListener('click', () => { closeModal(m); setTimeout(importList, 0); });
   setUpShareBox(m);
   setUpListenBox(m);
   setUpPushBox($('#pushBox', m));
