@@ -1093,14 +1093,18 @@ function pickFavourite(year) {
     <div class="modal-head"><h2>Add to your ${year} favourites</h2>${closeBtn()}</div>
     <label class="search-field big"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="pickQ" type="search" placeholder="Search ${y.albums.length} albums…" autocomplete="off"></label>
+    ${hasListening() ? '<p class="muted pick-hint">Most played first</p>' : ''}
     <div class="pick-list" id="pickList"></div>`, 'wide');
   const draw = () => {
     const q = norm($('#pickQ', m).value);
+    // Most played first when listening is tracked: a ready shortlist for ranking.
+    const ms = (a) => listeningFor(a)?.ms || 0;
     const list = y.albums.slice().reverse().filter((a) => !q || norm(`${a.artist} ${a.title}`).includes(q));
+    if (hasListening()) list.sort((a, b) => ms(b) - ms(a));
     $('#pickList', m).innerHTML = list.map((a) => `
       <button class="pick ${favSet.has(a.id) ? 'chosen' : ''}" data-pick="${a.id}">
         ${coverHtml(a, 'sm')}
-        <span><b>${esc(a.title || a.artist)}</b><small>${a.title ? esc(a.artist) : 'no album noted'}</small></span>
+        <span><b>${esc(a.title || a.artist)}</b><small>${a.title ? esc(a.artist) : 'no album noted'}${ms(a) >= 60000 ? ` · ${fmtDur(ms(a)).replace(/ 00m$/, '')}` : ''}</small></span>
         <span class="pick-state">${favSet.has(a.id) ? ICON.check : ICON.plus}</span>
       </button>`).join('');
     watchCovers(m);
