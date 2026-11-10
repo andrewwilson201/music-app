@@ -47,7 +47,7 @@ service cloud.firestore {
       allow create: if signedIn()
         && request.auth.uid != uid
         && request.resource.data.from == request.auth.uid
-        && request.resource.data.keys().hasOnly(['from', 'fromName', 'artist', 'title', 'year', 'art', 'spotify', 'note', 'sentAt'])
+        && request.resource.data.keys().hasOnly(['from', 'fromName', 'artist', 'title', 'year', 'art', 'spotify', 'note', 'song', 'songSpotify', 'sentAt'])
         && request.resource.data.sentAt == request.time
         && shortString(request.resource.data.fromName, 60)
         && shortString(request.resource.data.artist, 200)
@@ -56,6 +56,8 @@ service cloud.firestore {
         && (!('art' in request.resource.data) || shortString(request.resource.data.art, 500))
         && (!('spotify' in request.resource.data) || shortString(request.resource.data.spotify, 300))
         && (!('note' in request.resource.data) || shortString(request.resource.data.note, 300))
+        && (!('song' in request.resource.data) || shortString(request.resource.data.song, 200))
+        && (!('songSpotify' in request.resource.data) || shortString(request.resource.data.songSpotify, 300))
         && canView(uid)
         && viewsMe(uid);
     }

@@ -18,7 +18,7 @@
 //   users/{uid}/private/releases { artists: {name: spotifyArtistId}, seen[] }  new releases already suggested
 //   users/{uid}/history/{0..n}   { data }  imported Spotify history, gzipped JSON in base64 (see js/history.js)
 //   users/{uid}/private/push {tokens: {token: {at, device}}}  phones that asked for notifications
-//   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, sentAt, notified? }
+//   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, song?, songSpotify?, sentAt, notified? }
 //                            albums friends recommended, waiting to be moved into Up next
 //                            by the recipient's app. Anyone can send one only while the
 //                            two of you follow each other's current share codes.
@@ -535,14 +535,18 @@ export async function sendRec(toUid, album, note = '') {
   if (album.art) rec.art = String(album.art).slice(0, 500);
   if (album.spotify) rec.spotify = String(album.spotify).slice(0, 300);
   if (note.trim()) rec.note = note.trim().slice(0, 300);
+  if (album.song) rec.song = String(album.song).slice(0, 200); // a song to start with
+  if (album.songSpotify) rec.songSpotify = String(album.songSpotify).slice(0, 300);
   const ref = doc(recsCol(toUid));
   try { await setDoc(ref, rec); }
   catch (e) {
     if (e.code === 'permission-denied') throw new Error("Couldn't send it. You can only recommend to friends while you both have each other's current code.");
     throw e;
   }
-  // Ping their phone if they turned notifications on (functions/index.js). Best effort.
-  httpsCallable(functions, 'notifyRec')({ to: toUid, id: ref.id }).catch(() => {});
+  // Ping their phone if they turned notifications on (functions/index.js).
+  // Returns how many of their devices got it, or null if that couldn't be checked.
+  try { return (await httpsCallable(functions, 'notifyRec')({ to: toUid, id: ref.id })).data; }
+  catch { return null; }
 }
 
 // Albums friends sent me, newest first.
@@ -573,12 +577,33 @@ export async function pushState() {
   return Notification.permission === 'granted' && ls(tokenKey()) ? 'on' : 'off';
 }
 
-export async function enablePush() {
-  if ((await Notification.requestPermission()) !== 'granted') throw new Error('Notifications are blocked. Allow them for this app in your phone’s settings, then try again.');
+async function saveToken(old = '') {
   const token = await getToken(getMessaging(fbApp), { vapidKey: FIREBASE_VAPID_KEY, serviceWorkerRegistration: await navigator.serviceWorker.ready });
   const device = /iPhone|iPad/.test(navigator.userAgent) ? 'iPhone' : /Android/.test(navigator.userAgent) ? 'Android' : 'Computer';
-  await setDoc(pushDoc(), { tokens: { [token]: { at: Date.now(), device } } }, { merge: true });
+  const snap = await getDoc(pushDoc());
+  const tokens = { ...(snap.exists() && snap.data().tokens) };
+  if (token === old && tokens[token]) return; // nothing changed
+  if (old && old !== token) delete tokens[old];
+  tokens[token] = { at: Date.now(), device };
+  await setDoc(pushDoc(), { ...(snap.exists() && snap.data()), tokens });
   ls(tokenKey(), token);
+}
+
+export async function enablePush() {
+  if ((await Notification.requestPermission()) !== 'granted') throw new Error('Notifications are blocked. Allow them for this app in your phone’s settings, then try again.');
+  await saveToken(ls(tokenKey()) || '');
+}
+
+// On each start: the push service can hand out a new token, or drop one that
+// stopped working. Re-register so the switch never says on while the server
+// has nothing to send to.
+export async function refreshPush() {
+  if ((await pushState()) !== 'on') return;
+  await saveToken(ls(tokenKey()));
+}
+
+export async function testPush() {
+  return (await httpsCallable(functions, 'testPush')()).data;
 }
 
 export async function disablePush() {
@@ -588,7 +613,7 @@ export async function disablePush() {
   const snap = await getDoc(pushDoc());
   const tokens = { ...(snap.exists() && snap.data().tokens) };
   delete tokens[token];
-  await setDoc(pushDoc(), { tokens });
+  await setDoc(pushDoc(), { ...(snap.exists() && snap.data()), tokens });
 }
 
 export function viewOwn() {

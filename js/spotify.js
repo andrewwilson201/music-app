@@ -195,7 +195,7 @@ export async function albumTracks(id) {
     let page;
     try { page = await api(`/albums/${id}/tracks?limit=${size}&offset=${offset}`); }
     catch (e) { if (e.status === 400 && size > 10) { size = 10; continue; } throw e; }
-    out.push(...(page.items || []).filter(Boolean).map((t) => ({ name: t.name, disc: t.disc_number || 1, no: t.track_number, ms: t.duration_ms })));
+    out.push(...(page.items || []).filter(Boolean).map((t) => ({ name: t.name, disc: t.disc_number || 1, no: t.track_number, ms: t.duration_ms, id: t.id })));
     if (!page.next) break;
     offset += size;
   }

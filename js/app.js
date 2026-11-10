@@ -122,6 +122,7 @@ function started() {
   render();
   loadListening();
   loadRecs();
+  store.refreshPush().catch(() => {});
   if (pendingTracking) finishTrackingLogin();
   if (resumePlaylist && !ro()) {
     const year = resumePlaylist;
@@ -1644,11 +1645,13 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, prefill = 
       btn.innerHTML = label;
     }
     const y = store.ensureYear(F.year.value);
+    // A friend's highlighted song comes along as a best song, easy to remove later.
     const album = { id: store.uid(), artist: F.artist.value.trim(), title: F.title.value.trim(), songs: [] };
+    if (prefill?.song && norm(album.title) === norm(prefill.title)) album.songs = [prefill.song];
     if (chosen?.art) album.art = chosen.art;
     if (chosen?.spotify) album.spotify = chosen.spotify;
     y.albums.push(album);
-    if (F.fav.checked) y.favourites.push({ albumId: album.id, song: '' });
+    if (F.fav.checked) y.favourites.push({ albumId: album.id, song: album.songs.join('; ') });
     const cleared = clearFromQueue(album, fromQueue);
     store.commit();
     if (!album.art) requestArt(album);
@@ -1712,9 +1715,10 @@ async function loadRecs() {
       const same = data.toListen.find((x) => queueMatches(x, r) && !x.title === !r.title);
       if (same) {
         if (!same.from) { same.from = from; if (r.note) same.note = r.note; changed = true; }
+        if (r.song && !same.song) { same.song = r.song; if (r.songSpotify) same.songSpotify = r.songSpotify; changed = true; }
       } else {
         const item = { id: qid, artist: r.artist, title: r.title, added: new Date().toISOString().slice(0, 10), from };
-        for (const k of ['art', 'spotify', 'year', 'note']) if (r[k]) item[k] = r[k];
+        for (const k of ['art', 'spotify', 'year', 'note', 'song', 'songSpotify']) if (r[k]) item[k] = r[k];
         data.toListen.unshift(item);
         fresh.push(item);
         changed = true;
@@ -1739,7 +1743,7 @@ async function loadRecs() {
   if (fresh.length) {
     const r = fresh[0];
     toast(fresh.length === 1
-      ? `${r.from} recommended ${r.title || r.artist}. It’s in your Up next.`
+      ? `${r.from} recommended ${r.song ? `${r.song}, from ` : ''}${r.title || r.artist}. It’s in your Up next.`
       : `${fresh.length} new recommendations in your Up next`);
   }
 }
@@ -1766,11 +1770,65 @@ async function recommend(album, year, skipUid = '') {
           <label class="check"><input type="checkbox" name="to" value="${esc(f.uid)}" ${list.length === 1 || i === 0 ? 'checked' : ''}> ${esc(f.name || 'A friend')}</label>`).join('')}
         </div>
       </div>
+      ${album.title ? `<div class="field rec-pick"><span>Highlight a song <small>optional</small></span>
+        <ul class="song-chips" id="recSongs"></ul>
+        <button type="button" class="tl-toggle" id="recTracks" aria-expanded="false">${ICON.list}<span>Tracklist</span></button>
+        <div class="tracklist" id="recTrackList" hidden></div>
+      </div>` : ''}
       <label class="field"><span>Note <small>optional</small></span><input name="note" maxlength="300" placeholder="Why they'll love it" autocomplete="off"></label>
       <p class="warn" id="recErr" hidden></p>
       <div class="form-actions"><button class="btn primary" id="recSend">${ICON.gift} Send</button></div>
     </form>`;
   const form = $('#recForm', body);
+  // One song to start with: the album's best songs as chips, any other track from the tracklist.
+  let picked = null; // { name, spotify }
+  let tracks = [];
+  const same = (a, b) => !!a && !!b && songKey(a) === songKey(b);
+  const options = () => {
+    const seen = new Set();
+    return [...(album.songs || []).map((n) => ({ name: n })), ...(picked ? [picked] : [])]
+      .filter((o) => !seen.has(songKey(o.name)) && seen.add(songKey(o.name)));
+  };
+  const drawSongs = () => {
+    const ul = $('#recSongs', form);
+    if (!ul) return;
+    ul.innerHTML = options().map((o, i) => {
+      const on = same(picked?.name, o.name);
+      return `<li><button type="button" class="song-chip pick${on ? ' on' : ''}" data-pick="${i}" aria-pressed="${on}">♪ ${esc(cleanSong(o.name))}</button></li>`;
+    }).join('');
+    $$('.tl-track', $('#recTrackList', form)).forEach((b) => b.classList.toggle('on', same(picked?.name, tracks[b.dataset.track]?.name)));
+  };
+  const choose = (o) => {
+    picked = same(picked?.name, o.name) ? null
+      : { name: cleanSong(o.name), spotify: o.id ? `https://open.spotify.com/track/${o.id}` : (o.spotify || '') };
+    drawSongs();
+  };
+  drawSongs();
+  $('#recSongs', form)?.addEventListener('click', (e) => {
+    const b = e.target.closest('[data-pick]');
+    if (b) choose(options()[b.dataset.pick]);
+  });
+  $('#recTracks', form)?.addEventListener('click', async (e) => {
+    const btn = e.currentTarget;
+    const tl = $('#recTrackList', form);
+    const open = tl.hidden;
+    tl.hidden = !open;
+    btn.setAttribute('aria-expanded', String(open));
+    if (!open || tracks.length) return;
+    tl.innerHTML = '<p class="muted pad-sm"><span class="spin"></span> Loading the tracklist…</p>';
+    try { tracks = await findTracklist(album); } catch { tracks = []; }
+    if (!tracks.length) { tl.innerHTML = '<p class="muted pad-sm">Couldn’t find this album’s tracklist.</p>'; return; }
+    tl.innerHTML = `<ol class="tl-list">${tracks.map((t, i) => `<li><button type="button" class="tl-track" data-track="${i}">
+      <span class="tl-no">${t.no || i + 1}</span><span class="tl-name">${esc(cleanSong(t.name))}</span><span class="tl-time">${fmtTime(t.ms)}</span></button></li>`).join('')}</ol>`;
+    drawSongs();
+  });
+  $('#recTrackList', form)?.addEventListener('click', (e) => {
+    const b = e.target.closest('.tl-track');
+    if (!b) return;
+    choose(tracks[b.dataset.track]);
+    $('#recTrackList', form).hidden = true;
+    $('#recTracks', form).setAttribute('aria-expanded', 'false');
+  });
   form.addEventListener('submit', async (e) => {
     e.preventDefault();
     const to = $$('input[name=to]:checked', form).map((x) => x.value);
@@ -1779,10 +1837,11 @@ async function recommend(album, year, skipUid = '') {
     const btn = $('#recSend', form);
     btn.disabled = true;
     btn.innerHTML = '<span class="spin"></span> Sending…';
-    const send = { artist: album.artist, title: album.title, year, art: artFor(album) || '', spotify: album.spotify || '' };
+    const send = { artist: album.artist, title: album.title, year, art: artFor(album) || '', spotify: album.spotify || '', song: picked?.name || '', songSpotify: picked?.spotify || '' };
     const failed = [];
+    const pinged = [];
     for (const uid of to) {
-      try { await store.sendRec(uid, send, form.elements.note.value); }
+      try { if ((await store.sendRec(uid, send, form.elements.note.value))?.sent) pinged.push(uid); }
       catch (ex) { failed.push([list.find((f) => f.uid === uid)?.name || 'a friend', ex.message]); }
     }
     if (failed.length) {
@@ -1794,7 +1853,10 @@ async function recommend(album, year, skipUid = '') {
     }
     closeModal(m);
     const names = to.map((uid) => list.find((f) => f.uid === uid)?.name || 'a friend');
-    toast(`Sent to ${names.join(' and ')}`);
+    // Say whether their phone was notified, so a missing notification isn't a mystery.
+    const tail = pinged.length === to.length ? (to.length > 1 ? '. Their phones were notified.' : '. Their phone was notified.')
+      : pinged.length ? '' : ". They'll see it next time they open the app.";
+    toast(`Sent to ${names.join(' and ')}${tail}`);
   });
 }
 
@@ -1838,6 +1900,8 @@ function clearFromQueue(album, fromId) {
 }
 
 const queueName = (x) => x.title || x.artist;
+// A recommended song: its own Spotify link when the sender's tracklist had one, else a search.
+const songUrl = (x) => x.songSpotify || `https://open.spotify.com/search/${encodeURIComponent(`${cleanSong(x.song)} ${x.artist}`)}`;
 const queueSub = (x) => (x.title ? x.artist : 'artist');
 
 function upNextHtml() {
@@ -1852,6 +1916,7 @@ function upNextHtml() {
         ${coverHtml(x)}
         <span class="q-title">${esc(queueName(x))}</span>
         <span class="q-sub">${esc(queueSub(x))}</span>
+        ${x.song ? `<span class="q-song">♪ ${esc(x.song)}</span>` : ''}
         ${x.from ? `<span class="q-from">from ${esc(x.from)}</span>` : x.tag ? `<span class="q-from">${esc(x.tag)}</span>` : ''}
       </button>`).join('')}
       ${items.length > 15 ? `<a class="q-more" href="#/up-next">+${items.length - 15}<small>more</small></a>` : ''}
@@ -1894,8 +1959,10 @@ function openQueueItem(id) {
           </div>
         </div>
         ${item.note ? `<blockquote class="rec-note">${esc(item.note)}</blockquote>` : ''}
+        ${item.song ? `<div class="rec-song"><span><small>Start with</small><b>♪ ${esc(item.song)}</b></span>
+          <a class="btn small spotify" href="${esc(songUrl(item))}" target="_blank" rel="noopener">${ICON.spotify} Play song</a></div>` : ''}
         <div class="detail-actions">
-          <a class="btn spotify" href="${esc(item.title ? spotifyUrl(item) : (item.spotify || spotifyArtistUrl(item.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
+          <a class="btn spotify" href="${esc(item.title ? spotifyUrl(item) : (item.spotify || spotifyArtistUrl(item.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play ${item.song ? 'album' : 'on Spotify'}</a>
           <button class="btn primary" id="heardIt">${ICON.check} I've listened</button>
         </div>
         <p class="muted small-print">“I've listened” moves it into your log and takes it off Up next.</p>
@@ -1942,7 +2009,7 @@ function renderUpNext() {
       <div class="row-item">
         <button class="row-open" data-queue="${x.id}">
           ${coverHtml(x, 'sm')}
-          <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}${x.from ? ` · from ${esc(x.from)}` : x.tag ? ` · ${esc(x.tag)}` : ''}</span></span>
+          <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}${x.from ? ` · from ${esc(x.from)}` : x.tag ? ` · ${esc(x.tag)}` : ''}</span>${x.song ? `<span class="row-song">♪ ${esc(x.song)}</span>` : ''}</span>
         </button>
         <button class="btn small" data-heard="${x.id}" title="Log it as listened">${ICON.check}<span class="hide-sm"> Listened</span></button>
         <button class="icon-btn subtle" data-drop="${x.id}" title="Remove">${ICON.close}</button>
@@ -1984,13 +2051,26 @@ async function setUpPushBox(box) {
       ${ICON.bell}
       <div><b>Notifications</b><small>${note}</small></div>
       <label class="switch" title="Notifications"><input type="checkbox" id="pushToggle" ${state === 'on' ? 'checked' : ''} ${state === 'home-screen' ? 'disabled' : ''} aria-label="Notifications"><span></span></label>
-    </div>`;
+    </div>
+    <button type="button" class="link-btn" id="pushTest" ${state === 'on' ? '' : 'hidden'}>Send me a test notification</button>`;
   const toggle = $('#pushToggle', box);
+  const test = $('#pushTest', box);
+  test.addEventListener('click', async () => {
+    test.disabled = true;
+    try {
+      const r = await store.testPush();
+      toast(r.sent ? 'Test sent. It should appear in a few seconds.'
+        : r.devices ? `The test couldn’t be delivered (${r.errors.join(', ')}). Turn notifications off and on again.`
+        : 'This device isn’t registered any more. Turn notifications off and on again.', r.sent ? '' : 'error');
+    } catch (ex) { toast(`Couldn’t send a test: ${ex.message}`, 'error'); }
+    test.disabled = false;
+  });
   toggle.addEventListener('change', async () => {
     toggle.disabled = true;
     try {
       if (toggle.checked) { await store.enablePush(); toast('Notifications are on for this device'); }
       else { await store.disablePush(); toast('Notifications are off'); }
+      test.hidden = !toggle.checked;
     } catch (ex) { toggle.checked = !toggle.checked; toast(ex.message, 'error'); }
     toggle.disabled = false;
   });

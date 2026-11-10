@@ -206,6 +206,31 @@ export async function checkReleases(uid, stateRef, token) {
 const APP_URL = 'https://andrewwilson201.github.io/music-app/';
 const DEAD_TOKEN = new Set(['messaging/registration-token-not-registered', 'messaging/invalid-registration-token', 'messaging/invalid-argument']);
 
+// Pushes to every device the person turned notifications on for. Expired
+// devices are removed, and the outcome is kept in the push doc as `last` so a
+// missing notification can be explained.
+export async function pushTo(db, messaging, uid, data) {
+  const pushRef = db.doc(`users/${uid}/private/push`);
+  const tokens = Object.keys((await pushRef.get()).get('tokens') || {});
+  if (!tokens.length) return { sent: 0, devices: 0, errors: [] };
+  const res = await messaging.sendEachForMulticast({
+    tokens,
+    webpush: { headers: { Urgency: 'high', TTL: String(7 * 24 * 3600) }, data },
+  });
+  const errors = [];
+  const dead = [];
+  res.responses.forEach((r, i) => {
+    if (r.success) return;
+    const code = r.error?.code || 'unknown';
+    errors.push(code);
+    if (DEAD_TOKEN.has(code)) dead.push(tokens[i]);
+    logger.warn(`push to ${uid} failed: ${code} ${r.error?.message || ''}`);
+  });
+  const last = { at: Date.now(), title: data.title, sent: res.successCount, devices: tokens.length, errors };
+  await pushRef.update('last', last, ...dead.flatMap((t) => [new FieldPath('tokens', t), FieldValue.delete()]));
+  return { sent: res.successCount, devices: tokens.length, errors };
+}
+
 export async function notifyRecommendation(db, messaging, sender, to, id) {
   const recRef = db.doc(`users/${to}/recs/${id}`);
   const rec = await db.runTransaction(async (tx) => {
@@ -214,30 +239,19 @@ export async function notifyRecommendation(db, messaging, sender, to, id) {
     tx.update(recRef, { notified: true });
     return snap.data();
   });
-  if (!rec) return { sent: 0 };
-  const pushRef = db.doc(`users/${to}/private/push`);
-  const tokens = Object.keys((await pushRef.get()).get('tokens') || {});
-  if (!tokens.length) return { sent: 0 };
-  const album = rec.title ? `${rec.title} by ${rec.artist}` : rec.artist;
-  const res = await messaging.sendEachForMulticast({
-    tokens,
-    webpush: {
-      headers: { Urgency: 'high', TTL: String(7 * 24 * 3600) },
-      data: {
-        title: `${rec.fromName || 'A friend'} recommends`,
-        body: rec.note ? `${album}: “${rec.note}”` : album,
-        url: `${APP_URL}#/rec/${id}`,
-        tag: `rec-${id}`,
-        icon: rec.art || `${APP_URL}icons/icon-192.png`,
-      },
-    },
-  });
-  const dead = tokens.filter((t, i) => !res.responses[i].success && DEAD_TOKEN.has(res.responses[i].error?.code));
-  if (dead.length) {
-    await pushRef.update(...dead.flatMap((t) => [new FieldPath('tokens', t), FieldValue.delete()]));
+  if (!rec) {
+    logger.warn(`notifyRec ${to}/${id}: not found, not from ${sender}, or already notified`);
+    return { sent: 0, devices: 0, errors: ['no-rec'] };
   }
-  res.responses.forEach((r, i) => { if (!r.success) logger.warn(`push to ${to} failed: ${r.error?.code} ${r.error?.message}`); });
-  return { sent: res.successCount };
+  const album = rec.title ? `${rec.title} by ${rec.artist}` : rec.artist;
+  const what = rec.song && rec.title ? `${rec.song}, from ${album}` : album;
+  return pushTo(db, messaging, to, {
+    title: `${rec.fromName || 'A friend'} recommends`,
+    body: rec.note ? `${what}: “${rec.note}”` : what,
+    url: `${APP_URL}#/rec/${id}`,
+    tag: `rec-${id}`,
+    icon: rec.art || `${APP_URL}icons/icon-192.png`,
+  });
 }
 
 export const notifyRec = onCall({ memory: '256MiB' }, async (req) => {
@@ -245,4 +259,16 @@ export const notifyRec = onCall({ memory: '256MiB' }, async (req) => {
   const { to, id } = req.data || {};
   if (typeof to !== 'string' || typeof id !== 'string' || !/^[\w-]{1,128}$/.test(to + id)) throw new HttpsError('invalid-argument', 'Bad request');
   return notifyRecommendation(db, getMessaging(), req.auth.uid, to, id);
+});
+
+// Settings › Notifications › Send a test: pushes to your own devices.
+export const testPush = onCall({ memory: '256MiB' }, async (req) => {
+  if (!req.auth) throw new HttpsError('unauthenticated', 'Sign in first');
+  return pushTo(db, getMessaging(), req.auth.uid, {
+    title: 'Notifications are working',
+    body: 'You’ll get one like this when a friend recommends an album.',
+    url: APP_URL,
+    tag: 'test',
+    icon: `${APP_URL}icons/icon-192.png`,
+  });
 });
