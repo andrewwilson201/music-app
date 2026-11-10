@@ -1,6 +1,10 @@
 # Deploys firestore.rules and the Cloud Functions whenever they change on main,
 # so nothing has to be pasted into the Firebase console or deployed by hand.
 #
+# It also makes sure Firestore keeps a weekly backup (kept 14 weeks), so a bad
+# save or a bug can be rolled back. That step only warns if it can't, and
+# never stops the deploy.
+#
 # One-time setup (see README › Deploying the functions and rules):
 # a Google Cloud service-account key saved as the repository secret
 # FIREBASE_SERVICE_ACCOUNT. Until it exists, this only runs the tests.
@@ -9,7 +13,7 @@ name: Deploy Firebase rules and functions
 on:
   push:
     branches: [main]
-    paths: ['firestore.rules', 'firebase.json', 'functions/**']
+    paths: ['firestore.rules', 'firebase.json', 'functions/**', '.github/workflows/deploy-firebase.yml']
   workflow_dispatch:
 
 concurrency: firebase-deploy
@@ -39,3 +43,18 @@ jobs:
           export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
           printf '%s' "$SA" > "$GOOGLE_APPLICATION_CREDENTIALS"
           npx -y firebase-tools@14 deploy --only firestore:rules,functions --project music-app-d0f3f --non-interactive --force
+      - name: Weekly Firestore backups
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          if [ -z "$SA" ]; then exit 0; fi
+          warn() { echo "::warning::Couldn't set up weekly Firestore backups ($1). Give the github-deploy service account the Cloud Datastore Owner role, then run this workflow again."; exit 0; }
+          command -v gcloud >/dev/null || warn "gcloud missing"
+          gcloud auth activate-service-account --key-file="$RUNNER_TEMP/sa.json" --quiet || warn "sign-in failed"
+          if gcloud firestore backups schedules list --database='(default)' --project music-app-d0f3f --format='value(name)' | grep -q .; then
+            echo "A backup schedule already exists."
+          elif gcloud firestore backups schedules create --database='(default)' --recurrence=weekly --day-of-week=SUN --retention=14w --project music-app-d0f3f; then
+            echo "Weekly backups switched on."
+          else
+            warn "create failed"
+          fi
