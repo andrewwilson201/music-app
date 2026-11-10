@@ -18,6 +18,7 @@ import { logger } from 'firebase-functions';
 import { initializeApp } from 'firebase-admin/app';
 import { getFirestore, FieldValue, FieldPath } from 'firebase-admin/firestore';
 import { tally } from './listening.js';
+import { pickArtists, newAlbums, matchArtist } from './releases.js';
 
 initializeApp();
 const db = getFirestore();
@@ -58,10 +59,11 @@ async function albumLength(token, id) {
   }
 }
 
-export async function syncUser(uid, stateRef, state) {
-  const tok = await refresh(state);
+export async function syncUser(uid, stateRef, state, tok) {
   const items = (await api(tok.access_token, '/me/player/recently-played?limit=50')).items || [];
-  const cursor = state.cursor || 0;
+  // Before the first run, start from when tracking was switched on: plays from
+  // before then belong to the imported history, not to live tracking.
+  const cursor = state.cursor || state.since || 0;
   const result = tally(items, cursor);
   // A full page whose oldest play is newer than the cursor means some plays
   // fell off the end of the list before we looked.
@@ -119,8 +121,18 @@ export const syncListening = onSchedule({ schedule: 'every 30 minutes', timeoutS
     const state = snap.exists ? snap.data() : null;
     if (!state?.enabled || !state.refreshToken || !state.clientId) continue;
     try {
-      const n = await syncUser(user.id, stateRef, state);
+      const tok = await refresh(state);
+      const n = await syncUser(user.id, stateRef, state, tok);
       if (n) logger.info(`${user.id}: ${n} new plays`);
+      if (state.newReleases && Date.now() - (state.releasesAt || 0) > RELEASES_EVERY) {
+        try {
+          const added = await checkReleases(user.id, stateRef, tok.access_token);
+          if (added) logger.info(`${user.id}: ${added} new releases`);
+        } catch (e) {
+          logger.warn(`${user.id} releases: ${e.message}`);
+          await stateRef.set({ releasesAt: Date.now(), releasesError: e.message }, { merge: true });
+        }
+      }
     } catch (e) {
       logger.warn(`${user.id}: ${e.message}`);
       const lost = e.status === 401 || e.status === 403;
@@ -132,6 +144,57 @@ export const syncListening = onSchedule({ schedule: 'every 30 minutes', timeoutS
     }
   }
 });
+
+// ---------- new releases
+//
+// Once a week, for people who switched on "New releases" in Settings (stored as
+// newReleases in users/{uid}/private/spotify), check the artists they've logged
+// most and add albums released in the last three weeks to their Up next. Runs
+// inside syncListening so it shares that run's Spotify sign-in (refreshing the
+// token twice could invalidate it). Spotify artist ids and the albums already
+// suggested are remembered in users/{uid}/private/releases.
+
+const RELEASES_EVERY = 7 * 864e5 - 20 * 60e3; // weekly, give or take a run
+const pause = (ms) => new Promise((r) => setTimeout(r, ms));
+
+export async function checkReleases(uid, stateRef, token) {
+  const userRef = db.doc(`users/${uid}`);
+  const memoRef = db.doc(`users/${uid}/private/releases`);
+  const years = {};
+  (await userRef.collection('years').get()).forEach((s) => { years[s.id] = s.data(); });
+  const memo = (await memoRef.get()).data() || {};
+  const ids = { ...(memo.artists || {}) };
+  const found = [];
+  for (const name of pickArtists(years)) {
+    let id = ids[name];
+    if (id === undefined) {
+      const res = await api(token, `/search?type=artist&limit=5&q=${encodeURIComponent(name)}`);
+      id = matchArtist(res.artists?.items, name)?.id || '';
+      ids[name] = id;
+      await pause(250);
+    }
+    if (!id) continue;
+    const res = await api(token, `/artists/${id}/albums?include_groups=album&limit=10`);
+    found.push(...(res.items || []));
+    await pause(250);
+  }
+  // Read Up next and add to it in one transaction, so an edit made in the app
+  // at the same moment isn't lost (the app merges with this on its next save).
+  const added = await db.runTransaction(async (tx) => {
+    const head = (await tx.get(userRef)).data() || {};
+    const toListen = head.toListen || [];
+    const fresh = newAlbums(found, { years, toListen, seen: memo.seen || [] });
+    if (fresh.length) {
+      const today = new Date().toISOString().slice(0, 10);
+      const items = fresh.map(({ spotifyId, ...x }) => ({ ...x, added: today }));
+      tx.set(userRef, { toListen: [...items, ...toListen] }, { merge: true });
+    }
+    tx.set(memoRef, { artists: ids, seen: [...(memo.seen || []), ...fresh.map((x) => x.spotifyId)].slice(-500) }, { merge: true });
+    return fresh.length;
+  });
+  await stateRef.set({ releasesAt: Date.now(), releasesError: '', releasesAdded: added }, { merge: true });
+  return added;
+}
 
 // ---------- notifications for recommendations
 //
