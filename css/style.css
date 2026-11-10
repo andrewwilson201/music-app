@@ -224,6 +224,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; color: var(--text); }
 .chip::before { content: '♪ '; color: var(--accent); }
+.detail-head > div { display: flex; flex-direction: column; gap: 14px; }
+.cover.thumb { display: none; }
 .detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .detail-foot { margin-top: auto; padding-top: 16px; display: flex; gap: 20px; border-top: 1px solid var(--line); }
 
@@ -383,8 +385,16 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   .modal-wrap { padding: 0; place-items: end center; }
   .modal { width: 100% !important; max-height: 92vh; border-radius: 20px 20px 0 0; padding-bottom: max(24px, env(safe-area-inset-bottom)); transform: translateY(40px); }
   .detail { grid-template-columns: 1fr; }
-  .detail > .cover { border-radius: 20px 20px 0 0; max-height: 46vh; aspect-ratio: auto; height: min(100vw, 34vh); }
+  /* Phones: a small cover beside the title, so the buttons, best songs and
+     Edit/Delete fit without scrolling past a big picture first. */
+  .detail > .cover.xl { display: none; }
   .detail-info { padding: 22px 20px 8px; }
+  .detail-head { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; padding-right: 40px; }
+  .detail-head > div { gap: 8px; }
+  .cover.thumb { display: block; width: 104px; border-radius: 10px; }
+  .cover.thumb .cover-initial { font-size: 40px; }
+  .detail-head .detail-title { font-size: 24px; }
+  .detail-head .detail-artist { margin: -2px 0 0; font-size: 16px; }
   .simple-list .btn.small { padding: 0 10px; }
   .cover.md { width: 96px; }
   .hide-sm { display: none; }
@@ -660,6 +670,8 @@ body.signed-out .view-bar { display: none; }
 .pick-why span { padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; }
 .pick-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
 .pick-actions .btn svg { width: 16px; height: 16px; }
+.pick-again { display: flex; width: 100%; justify-content: center; margin-top: 10px; }
+.pick-again svg { width: 16px; height: 16px; }
 .pick-empty { display: flex; align-items: center; gap: 10px; padding: 22px 16px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); }
 .pick-status { margin: 12px 0 0; font-size: 12.5px; display: flex; align-items: center; gap: 8px; }
 .pick-status:empty { display: none; }

@@ -1140,9 +1140,14 @@ function openAlbum(id) {
     <div class="detail">
       ${coverHtml(album, 'xl')}
       <div class="detail-info">
-        <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">#${rank} favourite</span>` : ''}</p>
-        <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
-        <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted. Tap Edit to add one.'}</p>
+        <div class="detail-head">
+          ${coverHtml(album, 'thumb')}
+          <div>
+            <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">#${rank} favourite</span>` : ''}</p>
+            <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
+            <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted. Tap Edit to add one.'}</p>
+          </div>
+        </div>
         ${listenPanelHtml(album, fav)}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
@@ -1226,9 +1231,14 @@ function openFriendAlbum(id) {
     <div class="detail">
       ${coverHtml(album, 'xl')}
       <div class="detail-info">
-        <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">${esc(possessive(friendName()))} #${rank}</span>` : ''}</p>
-        <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
-        <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted'}</p>
+        <div class="detail-head">
+          ${coverHtml(album, 'thumb')}
+          <div>
+            <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">${esc(possessive(friendName()))} #${rank}</span>` : ''}</p>
+            <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
+            <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted'}</p>
+          </div>
+        </div>
         ${(album.songs || []).length ? `<div class="chips">${album.songs.map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
         ${bestSongs(fav?.song).length ? `<div class="best-song"><span>Best song${bestSongs(fav.song).length > 1 ? 's' : ''}</span><ul class="song-chips">${songChipsHtml(fav, false)}</ul></div>` : ''}
         <div class="detail-actions">
@@ -1874,9 +1884,14 @@ function openQueueItem(id) {
     <div class="detail">
       ${coverHtml(item, 'xl')}
       <div class="detail-info">
-        <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : item.tag ? `<span class="accent">${esc(item.tag)}</span>` : 'up next'}${item.released ? ` · out ${esc(item.released)}` : item.added ? ` · added ${esc(item.added)}` : ''}</p>
-        <h2 class="detail-title">${esc(queueName(item))}</h2>
-        <p class="detail-artist">${item.title ? esc(item.artist) : 'Artist to check out'}</p>
+        <div class="detail-head">
+          ${coverHtml(item, 'thumb')}
+          <div>
+            <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : item.tag ? `<span class="accent">${esc(item.tag)}</span>` : 'up next'}${item.released ? ` · out ${esc(item.released)}` : item.added ? ` · added ${esc(item.added)}` : ''}</p>
+            <h2 class="detail-title">${esc(queueName(item))}</h2>
+            <p class="detail-artist">${item.title ? esc(item.artist) : 'Artist to check out'}</p>
+          </div>
+        </div>
         ${item.note ? `<blockquote class="rec-note">${esc(item.note)}</blockquote>` : ''}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(item.title ? spotifyUrl(item) : (item.spotify || spotifyArtistUrl(item.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
@@ -3151,10 +3166,10 @@ function openPicker() {
         <div class="pick-actions">
           <a class="btn spotify small" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play</a>
           <button type="button" class="btn small" data-pick-open>Open</button>
-          <button type="button" class="btn small" data-pick-again title="Pick another">${ICON.refresh} Another</button>
         </div>
       </div>
-    </div>`;
+    </div>
+    <button type="button" class="btn pick-again" data-pick-again title="Pick another">${ICON.refresh} Pick another</button>`;
     watchCovers(box);
     requestArt(album);
   }
