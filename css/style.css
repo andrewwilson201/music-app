@@ -92,7 +92,7 @@ svg.fill { fill: currentColor; stroke: none; }
 .status-line .sync-dot { position: static; display: inline-block; flex: none; box-shadow: none; }
 .sync-dot.saved { background: var(--ok); }
 .sync-dot.saving { background: var(--warn); animation: pulse 1s ease-in-out infinite; }
-.sync-dot.local { background: var(--warn); }
+.sync-dot.local, .sync-dot.offline { background: var(--warn); }
 .sync-dot.error { background: var(--danger); }
 
 /* ---------------- layout ---------------- */
@@ -224,6 +224,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .chips { display: flex; flex-wrap: wrap; gap: 6px; }
 .chip { padding: 4px 10px; border-radius: 999px; background: var(--surface-2); font-size: 13px; color: var(--text); }
 .chip::before { content: '♪ '; color: var(--accent); }
+.detail-head > div { display: flex; flex-direction: column; gap: 14px; }
+.cover.thumb { display: none; }
 .detail-actions { display: flex; flex-wrap: wrap; gap: 10px; margin-top: 6px; }
 .detail-foot { margin-top: auto; padding-top: 16px; display: flex; gap: 20px; border-top: 1px solid var(--line); }
 
@@ -349,6 +351,9 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
 .toast { position: fixed; left: 50%; bottom: 28px; z-index: 60; transform: translate(-50%, 20px); opacity: 0; pointer-events: none; max-width: calc(100% - 32px); padding: 12px 18px; border-radius: 12px; background: var(--text); color: var(--bg); font-weight: 600; box-shadow: var(--shadow); transition: .25s cubic-bezier(.2,.8,.2,1); }
 .toast.show { opacity: 1; transform: translate(-50%, 0); }
 .toast.error { background: var(--danger); color: #fff; }
+.toast.has-undo { width: max-content; display: flex; align-items: center; gap: 16px; pointer-events: auto; padding-right: 8px; }
+.toast-undo { padding: 6px 12px; border-radius: 8px; color: var(--accent); font-weight: 700; background: transparent; }
+.toast-undo:hover, .toast-undo:focus-visible { background: rgba(0,0,0,.08); }
 
 @keyframes spin { to { transform: rotate(360deg); } }
 @keyframes pulse { 50% { opacity: .35; } }
@@ -380,8 +385,16 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   .modal-wrap { padding: 0; place-items: end center; }
   .modal { width: 100% !important; max-height: 92vh; border-radius: 20px 20px 0 0; padding-bottom: max(24px, env(safe-area-inset-bottom)); transform: translateY(40px); }
   .detail { grid-template-columns: 1fr; }
-  .detail > .cover { border-radius: 20px 20px 0 0; max-height: 46vh; aspect-ratio: auto; height: min(100vw, 34vh); }
+  /* Phones: a small cover beside the title, so the buttons, best songs and
+     Edit/Delete fit without scrolling past a big picture first. */
+  .detail > .cover.xl { display: none; }
   .detail-info { padding: 22px 20px 8px; }
+  .detail-head { display: grid; grid-template-columns: 104px minmax(0, 1fr); gap: 16px; align-items: center; padding-right: 40px; }
+  .detail-head > div { gap: 8px; }
+  .cover.thumb { display: block; width: 104px; border-radius: 10px; }
+  .cover.thumb .cover-initial { font-size: 40px; }
+  .detail-head .detail-title { font-size: 24px; }
+  .detail-head .detail-artist { margin: -2px 0 0; font-size: 16px; }
   .simple-list .btn.small { padding: 0 10px; }
   .cover.md { width: 96px; }
   .hide-sm { display: none; }
@@ -657,6 +670,8 @@ body.signed-out .view-bar { display: none; }
 .pick-why span { padding: 2px 8px; border-radius: 999px; background: var(--surface-2); color: var(--muted); font-size: 12px; }
 .pick-actions { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 14px; }
 .pick-actions .btn svg { width: 16px; height: 16px; }
+.pick-again { display: flex; width: 100%; justify-content: center; margin-top: 10px; }
+.pick-again svg { width: 16px; height: 16px; }
 .pick-empty { display: flex; align-items: center; gap: 10px; padding: 22px 16px; border: 1px dashed var(--line); border-radius: 16px; color: var(--muted); }
 .pick-status { margin: 12px 0 0; font-size: 12.5px; display: flex; align-items: center; gap: 8px; }
 .pick-status:empty { display: none; }
@@ -685,3 +700,25 @@ body.signed-out .view-bar { display: none; }
 .list-check input { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 3px; flex: none; }
 .list-check small { display: block; color: var(--muted); font-size: 12px; }
 .list-check li.have { opacity: .6; }
+
+/* Listening: albums left out with "Don't count" */
+.listen-foot { margin: 12px 0 0; }
+.uncounted { margin: 28px 0 8px; color: var(--muted); }
+.uncounted summary { cursor: pointer; font-weight: 600; padding: 8px 0; }
+.uncounted ul { list-style: none; margin: 8px 0 0; padding: 0; display: grid; gap: 8px; }
+.uncounted li { display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 10px 14px; border-radius: 12px; background: var(--bg-2); }
+.uncounted .m { display: grid; min-width: 0; }
+.uncounted .m b { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* All years: "needs fixing" filter */
+.fix-bar:empty { display: none; }
+.fix-bar { margin: -4px 0 16px; }
+.fix-toggle { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line, rgba(255,255,255,.12)); color: var(--muted); font-size: 14px; font-weight: 600; background: transparent; }
+.fix-toggle.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.fix-list { display: grid; gap: 8px; }
+.fix-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; border-radius: 14px; background: var(--bg-2); }
+.fix-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-align: left; background: transparent; color: inherit; }
+.fix-open .m { display: grid; min-width: 0; }
+.fix-open b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fix-open small { color: var(--muted); }
+.fix-open .fix-why { color: var(--accent); font-size: 12.5px; }

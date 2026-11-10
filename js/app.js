@@ -251,6 +251,7 @@ function onStoreChange() {
     saved: 'Saved to your account',
     saving: 'Saving…',
     error: `Sync problem: ${lastError}`,
+    offline: 'Offline: edits are kept on this device',
     idle: 'Settings and account',
   }[status] || 'Settings';
   if (status === 'error') toast(`Couldn't save: ${lastError}`, 'error');
@@ -639,6 +640,29 @@ function sortedAll() {
   return list.sort(sorts[ui.allSort] || byYear);
 }
 
+// What's missing from an album: a name (the old spreadsheet often had only the
+// artist) or a cover that couldn't be found. A missing Spotify link alone isn't
+// listed, since Play on Spotify searches for it anyway; Fix adds one too.
+function fixReasons(album) {
+  const out = [];
+  if (!album.title) out.push('No album name');
+  if (artFor(album) === '') out.push('No cover');
+  if (out.length && !album.spotify) out.push('No Spotify link');
+  return out;
+}
+const fixRowHtml = ({ album, year }) => `<div class="fix-row">
+    <button type="button" class="fix-open" data-open="${album.id}">${coverHtml(album, 'sm')}
+      <span class="m"><b>${esc(album.title || album.artist)}</b><small>${album.title ? `${esc(album.artist)} · ` : ''}${year}</small>
+      <small class="fix-why">${fixReasons(album).join(' · ')}</small></span></button>
+    <button type="button" class="btn small" data-fix="${album.id}">Fix</button>
+  </div>`;
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-fix]');
+  if (!b || ro()) return;
+  const found = store.findAlbum(b.dataset.fix);
+  if (found) editAlbum(b.dataset.fix, { findArt: true });
+});
+
 function renderAll(decade = null) {
   allDecade = decade;
   const all = allAlbums();
@@ -669,10 +693,18 @@ function renderAll(decade = null) {
         </label>
         ${viewToggleHtml()}
       </div>
+      <div class="fix-bar" id="fixBar"></div>
       <div id="grid"></div>
     </div>`;
   const body = $('#yearBody');
   if (!ro() && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
+  const fixCount = ro() ? 0 : all.filter((x) => fixReasons(x.album).length).length;
+  if (!fixCount) ui.needsFix = false;
+  if (fixCount) {
+    $('#fixBar').innerHTML = `<button type="button" class="fix-toggle${ui.needsFix ? ' on' : ''}" id="fixToggle" aria-pressed="${!!ui.needsFix}">
+      ${ui.needsFix ? `Showing ${fixCount} that need fixing · Show all` : `${fixCount} album${fixCount === 1 ? ' needs' : 's need'} fixing`}</button>`;
+    $('#fixToggle').addEventListener('click', () => { ui.needsFix = !ui.needsFix; render(); });
+  }
   $('#sort').value = ui.allSort;
   const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
   sortTitle();
@@ -693,6 +725,14 @@ function renderAll(decade = null) {
     more?.disconnect();
     list = sortedAll();
     shown = 0;
+    if (ui.needsFix) {
+      list = list.filter((x) => fixReasons(x.album).length);
+      $('#grid').innerHTML = list.length
+        ? `<div class="fix-list">${list.map(fixRowHtml).join('')}</div>`
+        : `<p class="muted pad">Nothing that needs fixing matches “${esc(ui.filter)}”.</p>`;
+      watchCovers($('#grid'));
+      return;
+    }
     $('#grid').innerHTML = list.length
       ? `<div class="${ui.view === 'list' ? 'rows' : 'grid'}"></div><button type="button" class="btn all-more" id="allMore">Show more</button>`
       : all.length
@@ -772,11 +812,19 @@ function renderFavourites(year) {
     if (!rm) return;
     e.stopPropagation();
     const id = rm.dataset.unfav;
+    const at = y.favourites.findIndex((f) => f.albumId === id);
+    const was = y.favourites[at];
     keepSongs(y, id);
     y.favourites = y.favourites.filter((f) => f.albumId !== id);
     store.commit();
     renderFavourites(year);
-    toast('Removed from favourites');
+    const album = y.albums.find((a) => a.id === id);
+    toast(`Removed ${album?.title || album?.artist || 'it'} from favourites`, '', () => {
+      const yy = store.ensureYear(year);
+      if (was && yy.albums.some((a) => a.id === id)) putBack(yy.favourites, was, at, (f) => f.albumId);
+      store.commit();
+      render();
+    });
   });
 }
 
@@ -1046,14 +1094,18 @@ function pickFavourite(year) {
     <div class="modal-head"><h2>Add to your ${year} favourites</h2>${closeBtn()}</div>
     <label class="search-field big"><svg viewBox="0 0 24 24"><circle cx="11" cy="11" r="7"/><path d="m20 20-3.5-3.5"/></svg>
       <input id="pickQ" type="search" placeholder="Search ${y.albums.length} albums…" autocomplete="off"></label>
+    ${hasListening() ? '<p class="muted pick-hint">Most played first</p>' : ''}
     <div class="pick-list" id="pickList"></div>`, 'wide');
   const draw = () => {
     const q = norm($('#pickQ', m).value);
+    // Most played first when listening is tracked: a ready shortlist for ranking.
+    const ms = (a) => listeningFor(a)?.ms || 0;
     const list = y.albums.slice().reverse().filter((a) => !q || norm(`${a.artist} ${a.title}`).includes(q));
+    if (hasListening()) list.sort((a, b) => ms(b) - ms(a));
     $('#pickList', m).innerHTML = list.map((a) => `
       <button class="pick ${favSet.has(a.id) ? 'chosen' : ''}" data-pick="${a.id}">
         ${coverHtml(a, 'sm')}
-        <span><b>${esc(a.title || a.artist)}</b><small>${a.title ? esc(a.artist) : 'no album noted'}</small></span>
+        <span><b>${esc(a.title || a.artist)}</b><small>${a.title ? esc(a.artist) : 'no album noted'}${ms(a) >= 60000 ? ` · ${fmtDur(ms(a)).replace(/ 00m$/, '')}` : ''}</small></span>
         <span class="pick-state">${favSet.has(a.id) ? ICON.check : ICON.plus}</span>
       </button>`).join('');
     watchCovers(m);
@@ -1089,9 +1141,14 @@ function openAlbum(id) {
     <div class="detail">
       ${coverHtml(album, 'xl')}
       <div class="detail-info">
-        <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">#${rank} favourite</span>` : ''}</p>
-        <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
-        <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted. Tap Edit to add one.'}</p>
+        <div class="detail-head">
+          ${coverHtml(album, 'thumb')}
+          <div>
+            <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">#${rank} favourite</span>` : ''}</p>
+            <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
+            <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted. Tap Edit to add one.'}</p>
+          </div>
+        </div>
         ${listenPanelHtml(album, fav)}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
@@ -1143,12 +1200,20 @@ function openAlbum(id) {
   $('#recommend', m).addEventListener('click', () => recommend(album, year));
   $('#editAlbum', m).addEventListener('click', () => { closeModal(m, true); editAlbum(id); });
   $('#deleteAlbum', m).addEventListener('click', () => {
-    if (!confirm(`Delete “${album.title || album.artist}” from ${year}?`)) return;
+    const at = yearData.albums.findIndex((a) => a.id === id);
+    const favAt = yearData.favourites.findIndex((f) => f.albumId === id);
+    const favWas = yearData.favourites[favAt];
     yearData.albums = yearData.albums.filter((a) => a.id !== id);
     yearData.favourites = yearData.favourites.filter((f) => f.albumId !== id);
     store.commit();
     closeModal(m);
-    toast('Album deleted');
+    toast(`Deleted ${album.title || album.artist}`, '', () => {
+      const y = store.ensureYear(year);
+      putBack(y.albums, album, at, (a) => a.id);
+      if (favWas) putBack(y.favourites, favWas, favAt, (f) => f.albumId);
+      store.commit();
+      render();
+    });
   });
   m.onClose = () => render();
 }
@@ -1167,9 +1232,14 @@ function openFriendAlbum(id) {
     <div class="detail">
       ${coverHtml(album, 'xl')}
       <div class="detail-info">
-        <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">${esc(possessive(friendName()))} #${rank}</span>` : ''}</p>
-        <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
-        <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted'}</p>
+        <div class="detail-head">
+          ${coverHtml(album, 'thumb')}
+          <div>
+            <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">${esc(possessive(friendName()))} #${rank}</span>` : ''}</p>
+            <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
+            <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted'}</p>
+          </div>
+        </div>
         ${(album.songs || []).length ? `<div class="chips">${album.songs.map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
         ${bestSongs(fav?.song).length ? `<div class="best-song"><span>Best song${bestSongs(fav.song).length > 1 ? 's' : ''}</span><ul class="song-chips">${songChipsHtml(fav, false)}</ul></div>` : ''}
         <div class="detail-actions">
@@ -1208,7 +1278,7 @@ function openFriendAlbum(id) {
   });
 }
 
-function editAlbum(id) {
+function editAlbum(id, { findArt = false } = {}) {
   const { year, album, yearData } = store.findAlbum(id);
   const m = openModal(`
     <div class="modal-head"><h2>Edit album</h2>${closeBtn()}</div>
@@ -1241,17 +1311,20 @@ function editAlbum(id) {
       }
       picker.innerHTML = list.length
         ? `<p class="muted pick-hint">Tap the right cover</p><div class="art-grid">${list.slice(0, 24).map((r) => `
-            <button type="button" class="art-opt" data-art="${esc(r.art)}" data-spotify="${esc(r.spotify || '')}" title="${esc(`${r.title} · ${r.artist}`)}">
+            <button type="button" class="art-opt" data-art="${esc(r.art)}" data-spotify="${esc(r.spotify || '')}" data-title="${esc(r.title || '')}" title="${esc(`${r.title} · ${r.artist}`)}">
               <img src="${esc(r.art.replace('600x600', '200x200'))}" alt="" loading="lazy">
               <span>${esc(r.title)}</span><small>${esc(r.artist)}</small></button>`).join('')}</div>`
         : '<p class="muted pad-sm">Apple Music has nothing under that name. You can paste an image link in Artwork URL below.</p>';
     } catch { picker.innerHTML = '<p class="muted pad-sm">Artwork search is unavailable right now.</p>'; }
   });
+  if (findArt) $('#refetch', m).click();
   $('#artPicker', m).addEventListener('click', (e) => {
     const b = e.target.closest('.art-opt');
     if (!b) return;
     $('[name=art]', m).value = b.dataset.art;
     if (b.dataset.spotify) $('[name=spotify]', m).value = b.dataset.spotify;
+    // No album name yet (artist-only entries): take the one picked.
+    if (!$('[name=title]', m).value.trim() && b.dataset.title) $('[name=title]', m).value = b.dataset.title.toLowerCase();
     m.querySelectorAll('.art-opt').forEach((x) => x.classList.toggle('chosen', x === b));
     $('#editCover', m).innerHTML = coverHtml({ ...album, art: b.dataset.art }, 'md');
   });
@@ -1779,7 +1852,7 @@ function upNextHtml() {
         ${coverHtml(x)}
         <span class="q-title">${esc(queueName(x))}</span>
         <span class="q-sub">${esc(queueSub(x))}</span>
-        ${x.from ? `<span class="q-from">from ${esc(x.from)}</span>` : ''}
+        ${x.from ? `<span class="q-from">from ${esc(x.from)}</span>` : x.tag ? `<span class="q-from">${esc(x.tag)}</span>` : ''}
       </button>`).join('')}
       ${items.length > 15 ? `<a class="q-more" href="#/up-next">+${items.length - 15}<small>more</small></a>` : ''}
     </div>` : ''}
@@ -1791,9 +1864,16 @@ function upNextHtml() {
 const queuedAlbum = (item) => (item.albumId && store.findAlbum(item.albumId)) || null;
 
 function tickOff(id) {
+  const at = data.toListen.findIndex((x) => x.id === id);
+  const item = data.toListen[at];
   data.toListen = data.toListen.filter((x) => x.id !== id);
   store.commit();
-  toast('Ticked off Up next');
+  if (!item) return;
+  toast('Ticked off Up next', '', () => {
+    putBack(data.toListen, item, at, (x) => x.id);
+    store.commit();
+    render();
+  });
 }
 
 function openQueueItem(id) {
@@ -1805,9 +1885,14 @@ function openQueueItem(id) {
     <div class="detail">
       ${coverHtml(item, 'xl')}
       <div class="detail-info">
-        <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : 'up next'}${item.added ? ` · added ${esc(item.added)}` : ''}</p>
-        <h2 class="detail-title">${esc(queueName(item))}</h2>
-        <p class="detail-artist">${item.title ? esc(item.artist) : 'Artist to check out'}</p>
+        <div class="detail-head">
+          ${coverHtml(item, 'thumb')}
+          <div>
+            <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : item.tag ? `<span class="accent">${esc(item.tag)}</span>` : 'up next'}${item.released ? ` · out ${esc(item.released)}` : item.added ? ` · added ${esc(item.added)}` : ''}</p>
+            <h2 class="detail-title">${esc(queueName(item))}</h2>
+            <p class="detail-artist">${item.title ? esc(item.artist) : 'Artist to check out'}</p>
+          </div>
+        </div>
         ${item.note ? `<blockquote class="rec-note">${esc(item.note)}</blockquote>` : ''}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(item.title ? spotifyUrl(item) : (item.spotify || spotifyArtistUrl(item.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
@@ -1835,15 +1920,16 @@ function openQueueItem(id) {
   }
   $('#heardIt', m).addEventListener('click', () => {
     closeModal(m, true);
-    // A friend's recommendation already says what it is; anything else is searched for.
-    if (item.from && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
+    // A friend's recommendation or a new release already says what it is; anything else is searched for.
+    if ((item.from || item.tag) && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
     else addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
   });
   $('#dropIt', m).addEventListener('click', () => {
+    const at = data.toListen.findIndex((x) => x.id === id);
     data.toListen = data.toListen.filter((x) => x.id !== id);
     store.commit();
     closeModal(m);
-    toast('Removed from Up next');
+    toast('Removed from Up next', '', () => { putBack(data.toListen, item, at, (x) => x.id); store.commit(); render(); });
   });
   m.onClose = () => render();
 }
@@ -1856,7 +1942,7 @@ function renderUpNext() {
       <div class="row-item">
         <button class="row-open" data-queue="${x.id}">
           ${coverHtml(x, 'sm')}
-          <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}${x.from ? ` · from ${esc(x.from)}` : ''}</span></span>
+          <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}${x.from ? ` · from ${esc(x.from)}` : x.tag ? ` · ${esc(x.tag)}` : ''}</span></span>
         </button>
         <button class="btn small" data-heard="${x.id}" title="Log it as listened">${ICON.check}<span class="hide-sm"> Listened</span></button>
         <button class="icon-btn subtle" data-drop="${x.id}" title="Remove">${ICON.close}</button>
@@ -1867,15 +1953,17 @@ function renderUpNext() {
     const drop = e.target.closest('[data-drop]');
     const heard = e.target.closest('[data-heard]');
     if (drop) {
+      const at = data.toListen.findIndex((x) => x.id === drop.dataset.drop);
+      const item = data.toListen[at];
       data.toListen = data.toListen.filter((x) => x.id !== drop.dataset.drop);
       store.commit();
       renderUpNext();
-      toast('Removed from Up next');
+      toast('Removed from Up next', '', () => { putBack(data.toListen, item, at, (x) => x.id); store.commit(); render(); });
     }
     if (heard) {
       const item = data.toListen.find((x) => x.id === heard.dataset.heard);
       if (queuedAlbum(item)) { tickOff(item.id); renderUpNext(); return; }
-      if (item.from && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
+      if ((item.from || item.tag) && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
       else addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
     }
   });
@@ -1916,8 +2004,9 @@ function openSettings() {
     saved: 'Every change is saved to your account, so it shows up wherever you sign in.',
     saving: 'Saving…',
     error: `The last save failed: ${lastError}. Your edits are kept on this device and will be saved again.`,
+    offline: lastError,
   }[status] || 'Every change is saved to your account, so it shows up wherever you sign in.';
-  const statusShort = { saving: 'Saving…', error: `Not saved yet: ${lastError}` }[status] || 'All changes saved';
+  const statusShort = { saving: 'Saving…', error: `Not saved yet: ${lastError}`, offline: 'Offline, saved on this device' }[status] || 'All changes saved';
   const m = openModal(`
     <div class="modal-head"><h2>Settings</h2>${closeBtn()}</div>
     <div class="account-box">
@@ -1941,6 +2030,11 @@ function openSettings() {
       </div>
       <p class="listen-status" id="listenStatus" ${tracking.enabled || tracking.lastError ? '' : 'hidden'}>${trackingStatusHtml()}</p>
       ${hasListening() ? `<label class="check listen-pills"><input type="checkbox" id="pillsToggle" ${pillsOn() ? 'checked' : ''}> Show time on album covers</label>` : ''}
+      <div class="share-head track-head" id="releasesRow" ${tracking.enabled ? '' : 'hidden'}>
+        ${ICON.plus}
+        <div><b>New releases into Up next</b><small>Once a week, new albums by the artists you log most go into Up next, marked “new release”.${tracking.releasesAt ? ` Last checked ${ago(tracking.releasesAt)}${tracking.releasesAdded ? `, ${tracking.releasesAdded} added` : ''}.` : ''}${tracking.releasesError ? ` Last error: ${esc(tracking.releasesError)}` : ''}</small></div>
+        <label class="switch" title="New releases into Up next"><input type="checkbox" id="releasesToggle" ${tracking.newReleases ? 'checked' : ''} aria-label="New releases into Up next"><span></span></label>
+      </div>
       <div class="import" id="historyBox">${historyBoxHtml()}</div>
     </div>` : ''}
     <div class="share-box" id="shareBox">
@@ -2163,18 +2257,56 @@ async function acceptCode(code) {
 // plays and keeps a total per Spotify album in users/{uid}/listening. Here we
 // only read those totals and match them to albums in the log.
 
-let listenIndex = null; // { groups: { key: group }, byId: { spotifyId: key } }, built from the loaded totals
+let listenIndex = null; // { groups: { key: group }, byId: { spotifyId: key }, uncounted: [group] }, built from the loaded totals
 let listenStamp = '';
+let listenRaw = null; // the loaded totals, kept to rebuild the index when "Don't count" changes
+
+// Albums marked "Don't count" (sleep sounds, white noise, kids' audio) are left
+// out of every total, chart, time pill and sort. Saved in meta/listening.uncounted.
+const uncountedKeys = () => new Set(store.listeningMeta().uncounted || []);
+function buildListenIndex() {
+  listenIndex = indexListening(listenRaw);
+  const skip = uncountedKeys();
+  listenIndex.uncounted = [];
+  for (const key of skip) {
+    const g = listenIndex.groups[key];
+    if (g) { listenIndex.uncounted.push(g); delete listenIndex.groups[key]; }
+  }
+}
+async function setCounted(key, counted) {
+  const keys = uncountedKeys();
+  if (counted) keys.delete(key); else keys.add(key);
+  try {
+    await store.setListenMeta({ uncounted: [...keys] });
+  } catch (err) { toast(`Couldn’t save that: ${err.message}`, 'error'); return; }
+  buildListenIndex();
+  render();
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-uncount], [data-recount]');
+  if (!b || ro()) return;
+  e.stopPropagation();
+  const counting = 'recount' in b.dataset;
+  const key = counting ? b.dataset.recount : b.dataset.uncount;
+  const g = listenIndex?.groups[key] || listenIndex?.uncounted.find((x) => x.key === key);
+  const box = b.closest('.modal-wrap');
+  if (box && !counting) closeModal(box);
+  setCounted(key, counting).then(() => {
+    if (!counting) toast(`Not counting ${g?.title || 'it'}`, '', () => setCounted(key, true));
+  });
+});
 
 async function loadListening() {
   if (ro()) return;
   try {
     const [all, state] = await Promise.all([store.loadListening(), store.trackingState()]);
     tracking = state;
-    const stamp = Object.values(all).map((l) => `${l.albumId}:${l.ms}`).join() + (tracking.enabled ? '+' : '');
+    const stamp = Object.values(all).map((l) => `${l.albumId}:${l.ms}`).join() + (tracking.enabled ? '+' : '')
+      + [...uncountedKeys()].join();
     if (stamp === listenStamp) return;
     listenStamp = stamp;
-    listenIndex = indexListening(all);
+    listenRaw = all;
+    buildListenIndex();
     // Show the new totals, unless that would interrupt typing or an open dialog.
     if (!modalRoot.children.length && !document.activeElement?.closest('input, select, textarea')) render();
   } catch (e) { console.warn('Listening totals not loaded:', e.message); }
@@ -2265,6 +2397,14 @@ function bindHistoryBox(m) {
 
 function setUpListenBox(m) {
   bindHistoryBox(m);
+  $('#releasesToggle', m)?.addEventListener('change', async (e) => {
+    const on = e.target.checked;
+    try {
+      await store.setNewReleases(on);
+      tracking = { ...tracking, newReleases: on };
+      toast(on ? 'New releases will show up in Up next within half an hour, then weekly' : 'No more new releases in Up next');
+    } catch (err) { e.target.checked = !on; toast(`Couldn’t save that: ${err.message}`, 'error'); }
+  });
   $('#pillsToggle', m)?.addEventListener('change', (e) => {
     try { localStorage.setItem('music-log:pills', e.target.checked ? 'on' : 'off'); } catch {}
     render();
@@ -2468,6 +2608,17 @@ const playsSince = (t, since) => (since ? Object.entries(t.wplays).reduce((n, [w
 let listFilter = 'all'; // or 'unlogged'
 let listShown = 25;
 
+// The albums left out with "Don't count", folded away under the chart.
+function uncountedHtml() {
+  const list = (listenIndex?.uncounted || []).slice().sort((a, b) => b.ms - a.ms);
+  if (!list.length) return '';
+  return `<details class="uncounted">
+    <summary>${list.length} album${list.length === 1 ? '' : 's'} not counted · ${fmtDur(list.reduce((n, g) => n + g.ms, 0))}</summary>
+    <ul>${list.map((g) => `<li><span class="m"><b>${esc(g.title)}</b><small>${esc(g.artist)} · ${fmtDur(g.ms)}</small></span>
+      <button type="button" class="btn small" data-recount="${esc(g.key)}">Count it again</button></li>`).join('')}</ul>
+  </details>`;
+}
+
 function renderListening(period, mode = 'albums') {
   const P = PERIODS[period] ? period : 'month';
   if (mode === 'songs') return renderTopSongs(P);
@@ -2515,7 +2666,8 @@ function renderListening(period, mode = 'albums') {
             <button type="button" class="${listFilter === 'unlogged' ? 'on' : ''}" data-lb-filter="unlogged">Not logged <small>${unlogged.length}</small></button>
           </div>` : ''}
           <ol class="lb">${top.map(rowHtml).join('')}</ol>
-          ${list.length > listShown ? `<button class="btn small lb-more" id="lbMore">Show more (${list.length - listShown} left)</button>` : ''}`}`;
+          ${list.length > listShown ? `<button class="btn small lb-more" id="lbMore">Show more (${list.length - listShown} left)</button>` : ''}`}
+    ${uncountedHtml()}`;
   watchCovers();
   watchHeard();
   $('#goSettings')?.addEventListener('click', openSettings);
@@ -2548,10 +2700,11 @@ document.addEventListener('click', async (e) => {
 
 // ------------------------------------------------------------------ logging heard albums in place
 
-// Each album in the Listening chart that isn't in the log finds its album by
-// itself (Spotify, or iTunes) as it scrolls into view. A sure match (same Spotify album, or same artist
-// and title) is logged with one tap on +, filed under its release year.
-// Otherwise + (or tapping the row) opens the closest few to pick from.
+// Albums in the Listening chart that aren't in the log are only looked up when
+// you tap + (quickFind in art.js, at most two requests), so sorting a long
+// chart doesn't use up the Spotify and iTunes limits. A sure match (same
+// Spotify album, or same artist and title) is logged straight away under its
+// release year; otherwise the closest few open in the row to pick from.
 const heardMatches = new Map(); // group key -> Promise of { sure, list, options, failed }
 const heardResolved = new Map(); // group key -> the settled value, for clicks
 
@@ -2660,6 +2813,7 @@ function toggleHeardPick(li, g) {
         <button type="button" class="link-btn" data-pick-heard="named">Add it as it's named on Spotify</button>
         <button type="button" class="link-btn" data-search-heard>Search…</button>
         <button type="button" class="link-btn" data-hide-heard="${esc(g.key)}">Don't suggest it</button>
+        <button type="button" class="link-btn" data-uncount="${esc(g.key)}" title="For sleep sounds, white noise and the like">Don't count it</button>
       </p>`;
   });
 }
@@ -2824,6 +2978,7 @@ function listenPanelHtml(album, fav) {
     ${tracks.length ? `<ul class="tracks">${tracks.map((t) => `<li class="${best.has(norm(t.name)) ? 'best' : ''}">
       <span>${esc(t.name)}</span><em>${t.plays} play${t.plays === 1 ? '' : 's'} · ${fmtDur(t.ms)}</em>
       <div class="bar"><i style="width:${Math.round(t.ms / top * 100)}%"></i></div></li>`).join('')}</ul>` : ''}
+    <p class="listen-foot"><button type="button" class="link-btn" data-uncount="${esc(l.key)}" title="For sleep sounds, white noise and the like">Don't count this in my listening</button></p>
   </div>`;
 }
 
@@ -2878,12 +3033,33 @@ function closeModal(wrap, silent = false) {
 }
 
 let toastTimer;
-function toast(msg, kind = '') {
+// A short message at the bottom. With `undo`, it gets an Undo button and stays
+// up for 6 seconds: used instead of "Are you sure?" boxes for things that are
+// easy to put back (deleting an album, unfavouriting, ticking off Up next).
+function toast(msg, kind = '', undo = null) {
   const t = $('#toast');
   t.textContent = msg;
-  t.className = `toast show ${kind}`;
+  t.className = `toast show ${kind}${undo ? ' has-undo' : ''}`;
+  if (undo) {
+    const b = document.createElement('button');
+    b.type = 'button';
+    b.className = 'toast-undo';
+    b.textContent = 'Undo';
+    b.addEventListener('click', () => {
+      clearTimeout(toastTimer);
+      t.className = 'toast';
+      undo();
+    }, { once: true });
+    t.append(b);
+  }
   clearTimeout(toastTimer);
-  toastTimer = setTimeout(() => (t.className = 'toast'), kind === 'error' ? 6000 : 2400);
+  toastTimer = setTimeout(() => (t.className = 'toast'), undo ? 6000 : kind === 'error' ? 6000 : 2400);
+}
+
+// Puts an item back into a list at the position it had, unless it's back already.
+function putBack(list, item, index, key) {
+  if (list.some((x) => key(x) === key(item))) return;
+  list.splice(Math.min(index, list.length), 0, item);
 }
 
 // ------------------------------------------------------------------ pick for me
@@ -2992,10 +3168,10 @@ function openPicker() {
         <div class="pick-actions">
           <a class="btn spotify small" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play</a>
           <button type="button" class="btn small" data-pick-open>Open</button>
-          <button type="button" class="btn small" data-pick-again title="Pick another">${ICON.refresh} Another</button>
         </div>
       </div>
-    </div>`;
+    </div>
+    <button type="button" class="btn pick-again" data-pick-again title="Pick another">${ICON.refresh} Pick another</button>`;
     watchCovers(box);
     requestArt(album);
   }

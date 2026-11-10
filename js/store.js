@@ -10,9 +10,12 @@
 //   users/{uid}/meta/friends { list: [{ uid, token, name }] }   libraries they follow
 //   shares/{token}           { uid, name, createdAt }   lets a code be looked up
 //   shares/{token}/viewers/{viewerUid} { name, addedAt }  who added that code
-//   users/{uid}/private/spotify   listening tracking: { enabled, refreshToken, clientId, since, cursor, lastRun, lastError, plays }
+//   users/{uid}/private/spotify   listening tracking: { enabled, refreshToken, clientId, since, cursor, lastRun, lastError, plays,
+//                                 newReleases, releasesAt, releasesAdded, releasesError }
 //   users/{uid}/listening/{spotifyAlbumId}  time spent on that album, written by functions/index.js
-//   users/{uid}/meta/listening   { hidden[], history: { plays, albums, from, to, parts, importedAt } }
+//   users/{uid}/meta/listening   { hidden[], uncounted[], history: { plays, albums, from, to, parts, importedAt } }
+//                                hidden: chart albums not to suggest; uncounted: left out of every total
+//   users/{uid}/private/releases { artists: {name: spotifyArtistId}, seen[] }  new releases already suggested
 //   users/{uid}/history/{0..n}   { data }  imported Spotify history, gzipped JSON in base64 (see js/history.js)
 //   users/{uid}/private/push {tokens: {token: {at, device}}}  phones that asked for notifications
 //   users/{uid}/recs/{id}    { from, fromName, artist, title, year?, art?, spotify?, note?, sentAt, notified? }
@@ -33,6 +36,7 @@ import {
 } from '../vendor/firebase.js';
 import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js';
 import { pack, unpack, toListening } from './history.js';
+import { mergeDoc } from './merge.js';
 
 const listeners = new Set();
 let auth = null;
@@ -57,6 +61,9 @@ function ls(key, value) {
 }
 const dataKey = () => `music-log:data:${user.uid}`;
 const dirtyKey = () => `music-log:dirty:${user.uid}`;
+// The documents as this device last saw them on the server: the common base
+// for merging this device's edits with another device's (see js/merge.js).
+const baseKey = () => `music-log:base:${user.uid}`;
 
 export const configured = () => !!(FIREBASE_CONFIG && FIREBASE_CONFIG.apiKey);
 export const currentUser = () => user;
@@ -128,7 +135,7 @@ export async function resetPassword(email) {
 }
 
 export async function signOut() {
-  if (user && ls(dirtyKey()) !== '1') ls(dataKey(), null);
+  if (user && ls(dirtyKey()) !== '1') { ls(dataKey(), null); ls(baseKey(), null); }
   await fbSignOut(auth);
 }
 
@@ -164,6 +171,51 @@ function toDocs(d) {
   return clean(out);
 }
 
+function fromDocs(docs) {
+  const head = docs[`users/${user.uid}`] || {};
+  const years = {};
+  for (const [path, v] of Object.entries(docs)) {
+    const m = path.match(/\/years\/([^/]+)$/);
+    if (m) years[m[1]] = { albums: v.albums || [], favourites: v.favourites || [] };
+  }
+  return { version: head.version || 1, years, toListen: head.toListen || [], always: head.always || [] };
+}
+
+const same = (a, b) => JSON.stringify(a) === JSON.stringify(b);
+const parse = (json) => (json === undefined ? undefined : JSON.parse(json));
+
+function setWritten(next) {
+  written = next;
+  ls(baseKey(), JSON.stringify(written));
+}
+
+// A server document as the app stores it (without the save time).
+function serverDoc(snap) {
+  if (!snap.exists()) return undefined;
+  const { updatedAt, ...v } = snap.data();
+  return clean(v);
+}
+
+// Merges this device's documents with the server's, path by path. `base` is
+// the JSON last seen on the server for each path (may be missing).
+function mergeAll(base, local, remote) {
+  const out = {};
+  for (const p of new Set([...Object.keys(local), ...Object.keys(remote)])) {
+    const b = parse(base[p]);
+    if (!(p in remote)) {
+      // Only here: new on this device, or deleted on the server since. A doc
+      // deleted there and untouched here stays deleted.
+      if (b === undefined || !same(local[p], b)) out[p] = local[p];
+    } else if (!(p in local)) {
+      // Only on the server: new there, or deleted here. Edited there since? Keep it.
+      if (b === undefined || !same(remote[p], b)) out[p] = remote[p];
+    } else {
+      out[p] = mergeDoc(p, b, local[p], remote[p]);
+    }
+  }
+  return out;
+}
+
 // Returns the log, or null for a new account that has nothing saved yet.
 export async function load() {
   const local = ls(dataKey());
@@ -180,12 +232,18 @@ export async function load() {
     years[s.id] = { albums: v.albums || [], favourites: v.favourites || [] };
   });
   const remote = { version: head.version || 1, years, toListen: head.toListen || [], always: head.always || [] };
-  written = Object.fromEntries(Object.entries(toDocs(remote)).map(([p, v]) => [p, JSON.stringify(v)]));
+  const remoteDocs = toDocs(remote);
   if (local && ls(dirtyKey()) === '1') {
-    data = JSON.parse(local); // unsaved edits from last time win
+    // Unsaved edits from last time, merged with whatever other devices saved since.
+    let base = {};
+    try { base = JSON.parse(ls(baseKey()) || '{}'); } catch {}
+    data = fromDocs(mergeAll(base, toDocs(JSON.parse(local)), remoteDocs));
+    setWritten(Object.fromEntries(Object.entries(remoteDocs).map(([p, v]) => [p, JSON.stringify(v)])));
+    ls(dataKey(), JSON.stringify(data));
     scheduleSave(0);
   } else {
     data = remote;
+    setWritten(Object.fromEntries(Object.entries(remoteDocs).map(([p, v]) => [p, JSON.stringify(v)])));
     ls(dataKey(), JSON.stringify(data));
     setStatus('saved');
   }
@@ -194,7 +252,7 @@ export async function load() {
 }
 
 // Re-read from Firestore (another device may have saved). Skipped while this
-// device has edits that haven't been saved yet.
+// device has edits that haven't been saved yet: saving merges those instead.
 export async function refresh() {
   if (!canSync() || saving || saveTimer || ls(dirtyKey()) === '1') return false;
   const before = JSON.stringify(data);
@@ -219,19 +277,51 @@ export function flush() {
   if (saveTimer) { clearTimeout(saveTimer); saveTimer = null; save(); }
 }
 
-async function save() {
+// Offline: edits stay on this device (localStorage) and are merged and saved
+// once the connection is back.
+if (typeof window !== 'undefined') window.addEventListener('online', () => { if (canSync() && ls(dirtyKey()) === '1') scheduleSave(0); });
+const offline = () => Object.assign(new Error('offline'), { code: 'unavailable' });
+
+// Saves the documents that changed on this device. Each one is first compared
+// with the server: if another device changed it since this one last looked,
+// the two are merged (js/merge.js) so neither device's edits are lost.
+// `overwrite` skips that, for restoring a backup or starting fresh.
+async function save({ overwrite = false } = {}) {
   if (saving) return scheduleSave(800);
   saving = true;
   setStatus('saving');
   try {
-    const docs = toDocs(data);
+    const sent = toDocs(data);
+    const docs = { ...sent };
+    const changed = Object.keys(docs).filter((p) => written[p] !== JSON.stringify(docs[p]));
+    const removed = Object.keys(written).filter((p) => !(p in docs));
+    const mergedPaths = [];
+    if (!overwrite && (changed.length || removed.length)) {
+      if (typeof navigator !== 'undefined' && navigator.onLine === false) throw offline();
+      const paths = [...changed, ...removed];
+      // Reading the server copies can hang while the connection is flaky.
+      const snaps = await Promise.race([
+        Promise.all(paths.map((p) => getDoc(doc(db, p)))),
+        new Promise((_, reject) => setTimeout(() => reject(offline()), 15000)),
+      ]);
+      if (snaps.some((s) => s.metadata.fromCache)) throw offline();
+      snaps.forEach((s, i) => {
+        const p = paths[i];
+        const remote = serverDoc(s);
+        const base = parse(written[p]);
+        if (same(remote, base)) return; // nobody else touched it
+        const out = mergeAll(base === undefined ? {} : { [p]: written[p] }, p in docs ? { [p]: docs[p] } : {}, remote === undefined ? {} : { [p]: remote });
+        if (p in out) docs[p] = out[p]; else delete docs[p];
+        mergedPaths.push(p);
+      });
+    }
     const batch = writeBatch(db);
     const next = {};
     let changes = 0;
     for (const [path, value] of Object.entries(docs)) {
       const json = JSON.stringify(value);
       next[path] = json;
-      if (written[path] === json) continue;
+      if (written[path] === json && !mergedPaths.includes(path)) continue;
       const isHead = path === `users/${user.uid}`;
       batch.set(doc(db, path), isHead ? { ...value, updatedAt: serverTimestamp() } : value);
       changes++;
@@ -240,13 +330,31 @@ async function save() {
       if (!(path in docs)) { batch.delete(doc(db, path)); changes++; }
     }
     if (changes) await batch.commit();
-    written = next;
+    setWritten(next);
+    if (mergedPaths.length) {
+      // Show what the other device added. Anything edited here while saving
+      // is merged on top, and saved by the save that edit scheduled.
+      const now = toDocs(data);
+      const out = { ...now };
+      for (const p of mergedPaths) {
+        const n = now[p];
+        const merged = docs[p];
+        if (merged === undefined) { if (same(n, sent[p])) delete out[p]; continue; }
+        out[p] = n === undefined || same(n, sent[p]) ? merged : mergeDoc(p, sent[p], n, merged);
+      }
+      Object.assign(data, fromDocs(out));
+      ls(dataKey(), JSON.stringify(data));
+    }
     if (!saveTimer) ls(dirtyKey(), null);
     setStatus('saved');
   } catch (e) {
-    setStatus('error', e.code === 'permission-denied'
-      ? 'Firestore refused the save. Check the security rules in the Firebase console.'
-      : e.message);
+    if (e.code === 'unavailable' || (typeof navigator !== 'undefined' && navigator.onLine === false)) {
+      setStatus('offline', "You're offline. Your edits are kept on this device and will be saved when you're back online.");
+    } else {
+      setStatus('error', e.code === 'permission-denied'
+        ? 'Firestore refused the save. Check the security rules in the Firebase console.'
+        : e.message);
+    }
   } finally {
     saving = false;
   }
@@ -265,8 +373,8 @@ export async function replaceAll(next) {
   ls(dataKey(), JSON.stringify(data));
   ls(dirtyKey(), '1');
   clearTimeout(saveTimer); saveTimer = null;
-  await save();
-  if (status === 'error') throw new Error(lastError);
+  await save({ overwrite: true });
+  if (status === 'error' || status === 'offline') throw new Error(lastError);
   return data;
 }
 
@@ -506,6 +614,12 @@ export async function startTracking(refreshToken, clientId) {
   const snap = await getDoc(trackingDoc());
   const since = snap.exists() && snap.data().since;
   await setDoc(trackingDoc(), { enabled: true, refreshToken, clientId, since: since || Date.now(), lastError: '' }, { merge: true });
+}
+
+// New releases into Up next, checked weekly by functions/index.js (needs tracking on).
+// Clearing releasesAt makes the next run check straight away.
+export async function setNewReleases(on) {
+  await setDoc(trackingDoc(), { newReleases: !!on, ...(on ? { releasesAt: 0 } : {}) }, { merge: true });
 }
 
 export async function stopTracking() {
