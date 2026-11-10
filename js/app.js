@@ -2188,18 +2188,56 @@ async function acceptCode(code) {
 // plays and keeps a total per Spotify album in users/{uid}/listening. Here we
 // only read those totals and match them to albums in the log.
 
-let listenIndex = null; // { groups: { key: group }, byId: { spotifyId: key } }, built from the loaded totals
+let listenIndex = null; // { groups: { key: group }, byId: { spotifyId: key }, uncounted: [group] }, built from the loaded totals
 let listenStamp = '';
+let listenRaw = null; // the loaded totals, kept to rebuild the index when "Don't count" changes
+
+// Albums marked "Don't count" (sleep sounds, white noise, kids' audio) are left
+// out of every total, chart, time pill and sort. Saved in meta/listening.uncounted.
+const uncountedKeys = () => new Set(store.listeningMeta().uncounted || []);
+function buildListenIndex() {
+  listenIndex = indexListening(listenRaw);
+  const skip = uncountedKeys();
+  listenIndex.uncounted = [];
+  for (const key of skip) {
+    const g = listenIndex.groups[key];
+    if (g) { listenIndex.uncounted.push(g); delete listenIndex.groups[key]; }
+  }
+}
+async function setCounted(key, counted) {
+  const keys = uncountedKeys();
+  if (counted) keys.delete(key); else keys.add(key);
+  try {
+    await store.setListenMeta({ uncounted: [...keys] });
+  } catch (err) { toast(`Couldn’t save that: ${err.message}`, 'error'); return; }
+  buildListenIndex();
+  render();
+}
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-uncount], [data-recount]');
+  if (!b || ro()) return;
+  e.stopPropagation();
+  const counting = 'recount' in b.dataset;
+  const key = counting ? b.dataset.recount : b.dataset.uncount;
+  const g = listenIndex?.groups[key] || listenIndex?.uncounted.find((x) => x.key === key);
+  const box = b.closest('.modal-wrap');
+  if (box && !counting) closeModal(box);
+  setCounted(key, counting).then(() => {
+    if (!counting) toast(`Not counting ${g?.title || 'it'}`, '', () => setCounted(key, true));
+  });
+});
 
 async function loadListening() {
   if (ro()) return;
   try {
     const [all, state] = await Promise.all([store.loadListening(), store.trackingState()]);
     tracking = state;
-    const stamp = Object.values(all).map((l) => `${l.albumId}:${l.ms}`).join() + (tracking.enabled ? '+' : '');
+    const stamp = Object.values(all).map((l) => `${l.albumId}:${l.ms}`).join() + (tracking.enabled ? '+' : '')
+      + [...uncountedKeys()].join();
     if (stamp === listenStamp) return;
     listenStamp = stamp;
-    listenIndex = indexListening(all);
+    listenRaw = all;
+    buildListenIndex();
     // Show the new totals, unless that would interrupt typing or an open dialog.
     if (!modalRoot.children.length && !document.activeElement?.closest('input, select, textarea')) render();
   } catch (e) { console.warn('Listening totals not loaded:', e.message); }
@@ -2493,6 +2531,17 @@ const playsSince = (t, since) => (since ? Object.entries(t.wplays).reduce((n, [w
 let listFilter = 'all'; // or 'unlogged'
 let listShown = 25;
 
+// The albums left out with "Don't count", folded away under the chart.
+function uncountedHtml() {
+  const list = (listenIndex?.uncounted || []).slice().sort((a, b) => b.ms - a.ms);
+  if (!list.length) return '';
+  return `<details class="uncounted">
+    <summary>${list.length} album${list.length === 1 ? '' : 's'} not counted · ${fmtDur(list.reduce((n, g) => n + g.ms, 0))}</summary>
+    <ul>${list.map((g) => `<li><span class="m"><b>${esc(g.title)}</b><small>${esc(g.artist)} · ${fmtDur(g.ms)}</small></span>
+      <button type="button" class="btn small" data-recount="${esc(g.key)}">Count it again</button></li>`).join('')}</ul>
+  </details>`;
+}
+
 function renderListening(period, mode = 'albums') {
   const P = PERIODS[period] ? period : 'month';
   if (mode === 'songs') return renderTopSongs(P);
@@ -2540,7 +2589,8 @@ function renderListening(period, mode = 'albums') {
             <button type="button" class="${listFilter === 'unlogged' ? 'on' : ''}" data-lb-filter="unlogged">Not logged <small>${unlogged.length}</small></button>
           </div>` : ''}
           <ol class="lb">${top.map(rowHtml).join('')}</ol>
-          ${list.length > listShown ? `<button class="btn small lb-more" id="lbMore">Show more (${list.length - listShown} left)</button>` : ''}`}`;
+          ${list.length > listShown ? `<button class="btn small lb-more" id="lbMore">Show more (${list.length - listShown} left)</button>` : ''}`}
+    ${uncountedHtml()}`;
   watchCovers();
   watchHeard();
   $('#goSettings')?.addEventListener('click', openSettings);
@@ -2685,6 +2735,7 @@ function toggleHeardPick(li, g) {
         <button type="button" class="link-btn" data-pick-heard="named">Add it as it's named on Spotify</button>
         <button type="button" class="link-btn" data-search-heard>Search…</button>
         <button type="button" class="link-btn" data-hide-heard="${esc(g.key)}">Don't suggest it</button>
+        <button type="button" class="link-btn" data-uncount="${esc(g.key)}" title="For sleep sounds, white noise and the like">Don't count it</button>
       </p>`;
   });
 }
@@ -2849,6 +2900,7 @@ function listenPanelHtml(album, fav) {
     ${tracks.length ? `<ul class="tracks">${tracks.map((t) => `<li class="${best.has(norm(t.name)) ? 'best' : ''}">
       <span>${esc(t.name)}</span><em>${t.plays} play${t.plays === 1 ? '' : 's'} · ${fmtDur(t.ms)}</em>
       <div class="bar"><i style="width:${Math.round(t.ms / top * 100)}%"></i></div></li>`).join('')}</ul>` : ''}
+    <p class="listen-foot"><button type="button" class="link-btn" data-uncount="${esc(l.key)}" title="For sleep sounds, white noise and the like">Don't count this in my listening</button></p>
   </div>`;
 }
 
