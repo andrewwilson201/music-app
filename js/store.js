@@ -608,6 +608,12 @@ export async function startTracking(refreshToken, clientId) {
   await setDoc(trackingDoc(), { enabled: true, refreshToken, clientId, since: since || Date.now(), lastError: '' }, { merge: true });
 }
 
+// New releases into Up next, checked weekly by functions/index.js (needs tracking on).
+// Clearing releasesAt makes the next run check straight away.
+export async function setNewReleases(on) {
+  await setDoc(trackingDoc(), { newReleases: !!on, ...(on ? { releasesAt: 0 } : {}) }, { merge: true });
+}
+
 export async function stopTracking() {
   await setDoc(trackingDoc(), { enabled: false, refreshToken: '' }, { merge: true });
 }

@@ -1841,7 +1841,7 @@ function upNextHtml() {
         ${coverHtml(x)}
         <span class="q-title">${esc(queueName(x))}</span>
         <span class="q-sub">${esc(queueSub(x))}</span>
-        ${x.from ? `<span class="q-from">from ${esc(x.from)}</span>` : ''}
+        ${x.from ? `<span class="q-from">from ${esc(x.from)}</span>` : x.tag ? `<span class="q-from">${esc(x.tag)}</span>` : ''}
       </button>`).join('')}
       ${items.length > 15 ? `<a class="q-more" href="#/up-next">+${items.length - 15}<small>more</small></a>` : ''}
     </div>` : ''}
@@ -1874,7 +1874,7 @@ function openQueueItem(id) {
     <div class="detail">
       ${coverHtml(item, 'xl')}
       <div class="detail-info">
-        <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : 'up next'}${item.added ? ` · added ${esc(item.added)}` : ''}</p>
+        <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : item.tag ? `<span class="accent">${esc(item.tag)}</span>` : 'up next'}${item.released ? ` · out ${esc(item.released)}` : item.added ? ` · added ${esc(item.added)}` : ''}</p>
         <h2 class="detail-title">${esc(queueName(item))}</h2>
         <p class="detail-artist">${item.title ? esc(item.artist) : 'Artist to check out'}</p>
         ${item.note ? `<blockquote class="rec-note">${esc(item.note)}</blockquote>` : ''}
@@ -1904,15 +1904,16 @@ function openQueueItem(id) {
   }
   $('#heardIt', m).addEventListener('click', () => {
     closeModal(m, true);
-    // A friend's recommendation already says what it is; anything else is searched for.
-    if (item.from && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
+    // A friend's recommendation or a new release already says what it is; anything else is searched for.
+    if ((item.from || item.tag) && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
     else addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
   });
   $('#dropIt', m).addEventListener('click', () => {
+    const at = data.toListen.findIndex((x) => x.id === id);
     data.toListen = data.toListen.filter((x) => x.id !== id);
     store.commit();
     closeModal(m);
-    toast('Removed from Up next');
+    toast('Removed from Up next', '', () => { putBack(data.toListen, item, at, (x) => x.id); store.commit(); render(); });
   });
   m.onClose = () => render();
 }
@@ -1925,7 +1926,7 @@ function renderUpNext() {
       <div class="row-item">
         <button class="row-open" data-queue="${x.id}">
           ${coverHtml(x, 'sm')}
-          <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}${x.from ? ` · from ${esc(x.from)}` : ''}</span></span>
+          <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}${x.from ? ` · from ${esc(x.from)}` : x.tag ? ` · ${esc(x.tag)}` : ''}</span></span>
         </button>
         <button class="btn small" data-heard="${x.id}" title="Log it as listened">${ICON.check}<span class="hide-sm"> Listened</span></button>
         <button class="icon-btn subtle" data-drop="${x.id}" title="Remove">${ICON.close}</button>
@@ -1936,15 +1937,17 @@ function renderUpNext() {
     const drop = e.target.closest('[data-drop]');
     const heard = e.target.closest('[data-heard]');
     if (drop) {
+      const at = data.toListen.findIndex((x) => x.id === drop.dataset.drop);
+      const item = data.toListen[at];
       data.toListen = data.toListen.filter((x) => x.id !== drop.dataset.drop);
       store.commit();
       renderUpNext();
-      toast('Removed from Up next');
+      toast('Removed from Up next', '', () => { putBack(data.toListen, item, at, (x) => x.id); store.commit(); render(); });
     }
     if (heard) {
       const item = data.toListen.find((x) => x.id === heard.dataset.heard);
       if (queuedAlbum(item)) { tickOff(item.id); renderUpNext(); return; }
-      if (item.from && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
+      if ((item.from || item.tag) && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
       else addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
     }
   });
@@ -2011,6 +2014,11 @@ function openSettings() {
       </div>
       <p class="listen-status" id="listenStatus" ${tracking.enabled || tracking.lastError ? '' : 'hidden'}>${trackingStatusHtml()}</p>
       ${hasListening() ? `<label class="check listen-pills"><input type="checkbox" id="pillsToggle" ${pillsOn() ? 'checked' : ''}> Show time on album covers</label>` : ''}
+      <div class="share-head track-head" id="releasesRow" ${tracking.enabled ? '' : 'hidden'}>
+        ${ICON.plus}
+        <div><b>New releases into Up next</b><small>Once a week, new albums by the artists you log most go into Up next, marked “new release”.${tracking.releasesAt ? ` Last checked ${ago(tracking.releasesAt)}${tracking.releasesAdded ? `, ${tracking.releasesAdded} added` : ''}.` : ''}${tracking.releasesError ? ` Last error: ${esc(tracking.releasesError)}` : ''}</small></div>
+        <label class="switch" title="New releases into Up next"><input type="checkbox" id="releasesToggle" ${tracking.newReleases ? 'checked' : ''} aria-label="New releases into Up next"><span></span></label>
+      </div>
       <div class="import" id="historyBox">${historyBoxHtml()}</div>
     </div>` : ''}
     <div class="share-box" id="shareBox">
@@ -2373,6 +2381,14 @@ function bindHistoryBox(m) {
 
 function setUpListenBox(m) {
   bindHistoryBox(m);
+  $('#releasesToggle', m)?.addEventListener('change', async (e) => {
+    const on = e.target.checked;
+    try {
+      await store.setNewReleases(on);
+      tracking = { ...tracking, newReleases: on };
+      toast(on ? 'New releases will show up in Up next within half an hour, then weekly' : 'No more new releases in Up next');
+    } catch (err) { e.target.checked = !on; toast(`Couldn’t save that: ${err.message}`, 'error'); }
+  });
   $('#pillsToggle', m)?.addEventListener('change', (e) => {
     try { localStorage.setItem('music-log:pills', e.target.checked ? 'on' : 'off'); } catch {}
     render();
