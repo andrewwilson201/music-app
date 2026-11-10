@@ -722,3 +722,18 @@ body.signed-out .view-bar { display: none; }
 .fix-open b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .fix-open small { color: var(--muted); }
 .fix-open .fix-why { color: var(--accent); font-size: 12.5px; }
+
+/* A song highlighted on a recommendation */
+.rec-pick { gap: 8px; }
+.rec-pick .song-chips { margin: 2px 0 0; }
+.rec-pick .tl-toggle { align-self: flex-start; }
+.rec-pick .tracklist { width: 100%; max-height: 260px; overflow-y: auto; }
+.song-chip.pick { padding: 4px 11px; background: var(--surface-2); color: var(--text); font-weight: 500; transition: .15s; }
+.song-chip.pick.on { background: var(--accent); color: #fff; font-weight: 600; }
+.q-song { font-size: 12px; color: var(--text); margin-top: -4px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.row-song { display: block; font-size: 13px; color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-song { display: flex; align-items: center; justify-content: space-between; gap: 12px; margin: 4px 0 14px; padding: 10px 12px; border-radius: 12px; background: var(--accent-soft); }
+.rec-song span { display: flex; flex-direction: column; min-width: 0; }
+.rec-song small { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
+.rec-song b { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.rec-song .btn { flex: none; }

@@ -244,9 +244,10 @@ export async function notifyRecommendation(db, messaging, sender, to, id) {
     return { sent: 0, devices: 0, errors: ['no-rec'] };
   }
   const album = rec.title ? `${rec.title} by ${rec.artist}` : rec.artist;
+  const what = rec.song && rec.title ? `${rec.song}, from ${album}` : album;
   return pushTo(db, messaging, to, {
     title: `${rec.fromName || 'A friend'} recommends`,
-    body: rec.note ? `${album}: “${rec.note}”` : album,
+    body: rec.note ? `${what}: “${rec.note}”` : what,
     url: `${APP_URL}#/rec/${id}`,
     tag: `rec-${id}`,
     icon: rec.art || `${APP_URL}icons/icon-192.png`,

@@ -71,6 +71,9 @@ test('friends who follow each other can recommend albums', async () => {
   await friends();
   await assertSucceeds(setDoc(doc(as('bob'), 'users/ann/recs/r1'), rec()));
   await assertFails(getDoc(doc(as('bob'), 'users/ann/recs/r1')));
+  // ...with a song to start with
+  await assertSucceeds(setDoc(doc(as('bob'), 'users/ann/recs/r2'), rec({ song: 'trinidad', songSpotify: 'https://open.spotify.com/track/abc' })));
+  await assertFails(setDoc(doc(as('bob'), 'users/ann/recs/r3'), rec({ song: 'x'.repeat(201) })));
 });
 
 test("recommendations need both of you following each other, and can't be forged", async () => {
