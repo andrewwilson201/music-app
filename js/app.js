@@ -640,6 +640,28 @@ function sortedAll() {
   return list.sort(sorts[ui.allSort] || byYear);
 }
 
+// What's missing from an album: a name (the old spreadsheet often had only the
+// artist), a cover that couldn't be found, or a Spotify link.
+function fixReasons(album) {
+  const out = [];
+  if (!album.title) out.push('No album name');
+  if (artFor(album) === '') out.push('No cover');
+  if (!album.spotify) out.push('No Spotify link');
+  return out;
+}
+const fixRowHtml = ({ album, year }) => `<div class="fix-row">
+    <button type="button" class="fix-open" data-open="${album.id}">${coverHtml(album, 'sm')}
+      <span class="m"><b>${esc(album.title || album.artist)}</b><small>${album.title ? `${esc(album.artist)} · ` : ''}${year}</small>
+      <small class="fix-why">${fixReasons(album).join(' · ')}</small></span></button>
+    <button type="button" class="btn small" data-fix="${album.id}">Fix</button>
+  </div>`;
+document.addEventListener('click', (e) => {
+  const b = e.target.closest('[data-fix]');
+  if (!b || ro()) return;
+  const found = store.findAlbum(b.dataset.fix);
+  if (found) editAlbum(b.dataset.fix, { findArt: true });
+});
+
 function renderAll(decade = null) {
   allDecade = decade;
   const all = allAlbums();
@@ -670,10 +692,18 @@ function renderAll(decade = null) {
         </label>
         ${viewToggleHtml()}
       </div>
+      <div class="fix-bar" id="fixBar"></div>
       <div id="grid"></div>
     </div>`;
   const body = $('#yearBody');
   if (!ro() && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
+  const fixCount = ro() ? 0 : all.filter((x) => fixReasons(x.album).length).length;
+  if (!fixCount) ui.needsFix = false;
+  if (fixCount) {
+    $('#fixBar').innerHTML = `<button type="button" class="fix-toggle${ui.needsFix ? ' on' : ''}" id="fixToggle" aria-pressed="${!!ui.needsFix}">
+      ${ui.needsFix ? `Showing ${fixCount} that need fixing · Show all` : `${fixCount} album${fixCount === 1 ? ' needs' : 's need'} fixing`}</button>`;
+    $('#fixToggle').addEventListener('click', () => { ui.needsFix = !ui.needsFix; render(); });
+  }
   $('#sort').value = ui.allSort;
   const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
   sortTitle();
@@ -694,6 +724,14 @@ function renderAll(decade = null) {
     more?.disconnect();
     list = sortedAll();
     shown = 0;
+    if (ui.needsFix) {
+      list = list.filter((x) => fixReasons(x.album).length);
+      $('#grid').innerHTML = list.length
+        ? `<div class="fix-list">${list.map(fixRowHtml).join('')}</div>`
+        : `<p class="muted pad">Nothing that needs fixing matches “${esc(ui.filter)}”.</p>`;
+      watchCovers($('#grid'));
+      return;
+    }
     $('#grid').innerHTML = list.length
       ? `<div class="${ui.view === 'list' ? 'rows' : 'grid'}"></div><button type="button" class="btn all-more" id="allMore">Show more</button>`
       : all.length
@@ -1225,7 +1263,7 @@ function openFriendAlbum(id) {
   });
 }
 
-function editAlbum(id) {
+function editAlbum(id, { findArt = false } = {}) {
   const { year, album, yearData } = store.findAlbum(id);
   const m = openModal(`
     <div class="modal-head"><h2>Edit album</h2>${closeBtn()}</div>
@@ -1258,17 +1296,20 @@ function editAlbum(id) {
       }
       picker.innerHTML = list.length
         ? `<p class="muted pick-hint">Tap the right cover</p><div class="art-grid">${list.slice(0, 24).map((r) => `
-            <button type="button" class="art-opt" data-art="${esc(r.art)}" data-spotify="${esc(r.spotify || '')}" title="${esc(`${r.title} · ${r.artist}`)}">
+            <button type="button" class="art-opt" data-art="${esc(r.art)}" data-spotify="${esc(r.spotify || '')}" data-title="${esc(r.title || '')}" title="${esc(`${r.title} · ${r.artist}`)}">
               <img src="${esc(r.art.replace('600x600', '200x200'))}" alt="" loading="lazy">
               <span>${esc(r.title)}</span><small>${esc(r.artist)}</small></button>`).join('')}</div>`
         : '<p class="muted pad-sm">Apple Music has nothing under that name. You can paste an image link in Artwork URL below.</p>';
     } catch { picker.innerHTML = '<p class="muted pad-sm">Artwork search is unavailable right now.</p>'; }
   });
+  if (findArt) $('#refetch', m).click();
   $('#artPicker', m).addEventListener('click', (e) => {
     const b = e.target.closest('.art-opt');
     if (!b) return;
     $('[name=art]', m).value = b.dataset.art;
     if (b.dataset.spotify) $('[name=spotify]', m).value = b.dataset.spotify;
+    // No album name yet (artist-only entries): take the one picked.
+    if (!$('[name=title]', m).value.trim() && b.dataset.title) $('[name=title]', m).value = b.dataset.title.toLowerCase();
     m.querySelectorAll('.art-opt').forEach((x) => x.classList.toggle('chosen', x === b));
     $('#editCover', m).innerHTML = coverHtml({ ...album, art: b.dataset.art }, 'md');
   });

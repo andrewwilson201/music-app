@@ -697,3 +697,16 @@ body.signed-out .view-bar { display: none; }
 .uncounted li { display: flex; align-items: center; gap: 12px; justify-content: space-between; padding: 10px 14px; border-radius: 12px; background: var(--bg-2); }
 .uncounted .m { display: grid; min-width: 0; }
 .uncounted .m b { color: var(--text); font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+
+/* All years: "needs fixing" filter */
+.fix-bar:empty { display: none; }
+.fix-bar { margin: -4px 0 16px; }
+.fix-toggle { padding: 7px 14px; border-radius: 999px; border: 1px solid var(--line, rgba(255,255,255,.12)); color: var(--muted); font-size: 14px; font-weight: 600; background: transparent; }
+.fix-toggle.on { color: var(--accent); border-color: var(--accent); background: var(--accent-soft); }
+.fix-list { display: grid; gap: 8px; }
+.fix-row { display: flex; align-items: center; gap: 12px; padding: 8px 12px 8px 8px; border-radius: 14px; background: var(--bg-2); }
+.fix-open { flex: 1; min-width: 0; display: flex; align-items: center; gap: 12px; text-align: left; background: transparent; color: inherit; }
+.fix-open .m { display: grid; min-width: 0; }
+.fix-open b { font-weight: 600; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.fix-open small { color: var(--muted); }
+.fix-open .fix-why { color: var(--accent); font-size: 12.5px; }
