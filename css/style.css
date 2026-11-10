@@ -677,3 +677,11 @@ body.signed-out .view-bar { display: none; }
 .pick-played { display: flex; align-items: center; gap: 6px; margin: 6px 0 0; color: var(--faint); font-size: 13px; }
 .pick-played svg { width: 14px; height: 14px; }
 @media (max-width: 720px) { .seg .seg-year { flex: 1; justify-content: center; } }
+
+/* Paste a list */
+.list-text { width: 100%; box-sizing: border-box; margin: 8px 0 10px; padding: 10px 12px; border: 1px solid var(--line); border-radius: 10px; background: var(--bg-2); color: var(--text); font: inherit; font-size: 14px; resize: vertical; }
+.list-check { list-style: none; margin: 4px 0 10px; padding: 0; max-height: 50vh; overflow-y: auto; }
+.list-check li label { display: flex; align-items: flex-start; gap: 10px; padding: 8px 2px; border-bottom: 1px solid var(--line); cursor: pointer; }
+.list-check input { accent-color: var(--accent); width: 16px; height: 16px; margin-top: 3px; flex: none; }
+.list-check small { display: block; color: var(--muted); font-size: 12px; }
+.list-check li.have { opacity: .6; }
