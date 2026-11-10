@@ -641,12 +641,13 @@ function sortedAll() {
 }
 
 // What's missing from an album: a name (the old spreadsheet often had only the
-// artist), a cover that couldn't be found, or a Spotify link.
+// artist) or a cover that couldn't be found. A missing Spotify link alone isn't
+// listed, since Play on Spotify searches for it anyway; Fix adds one too.
 function fixReasons(album) {
   const out = [];
   if (!album.title) out.push('No album name');
   if (artFor(album) === '') out.push('No cover');
-  if (!album.spotify) out.push('No Spotify link');
+  if (out.length && !album.spotify) out.push('No Spotify link');
   return out;
 }
 const fixRowHtml = ({ album, year }) => `<div class="fix-row">
