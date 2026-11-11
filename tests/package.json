@@ -3,7 +3,7 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "test": "node --test merge.test.js",
+    "test": "node --test merge.test.js safe.test.js",
     "test:emulators": "node --test --test-concurrency=1 rules.test.js smoke.test.js"
   },
   "devDependencies": {

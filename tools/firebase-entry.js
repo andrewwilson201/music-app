@@ -5,6 +5,6 @@
 //     --legal-comments=none --outfile=vendor/firebase.js
 export { initializeApp } from 'firebase/app';
 export { getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect, getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail, signOut, connectAuthEmulator } from 'firebase/auth';
-export { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp, connectFirestoreEmulator } from 'firebase/firestore';
+export { initializeFirestore, persistentLocalCache, persistentMultipleTabManager, memoryLocalCache, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, setDoc, deleteDoc, collection, writeBatch, serverTimestamp, connectFirestoreEmulator } from 'firebase/firestore';
 export { getMessaging, getToken, deleteToken, isSupported as messagingSupported } from 'firebase/messaging';
 export { getFunctions, httpsCallable, connectFunctionsEmulator } from 'firebase/functions';

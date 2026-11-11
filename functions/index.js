@@ -122,6 +122,12 @@ export const syncListening = onSchedule({ schedule: 'every 30 minutes', timeoutS
     if (!state?.enabled || !state.refreshToken || !state.clientId) continue;
     try {
       const tok = await refresh(state);
+      // Spotify hands over a new sign-in with each refresh and can retire the
+      // old one. Keep the new one straight away: if reading the plays fails
+      // after this, the next run must still be able to sign in.
+      if (tok.refresh_token && tok.refresh_token !== state.refreshToken) {
+        await stateRef.set({ refreshToken: tok.refresh_token }, { merge: true });
+      }
       const n = await syncUser(user.id, stateRef, state, tok);
       if (n) logger.info(`${user.id}: ${n} new plays`);
       if (state.newReleases && Date.now() - (state.releasesAt || 0) > RELEASES_EVERY) {
@@ -187,7 +193,8 @@ export async function checkReleases(uid, stateRef, token) {
     if (fresh.length) {
       const today = new Date().toISOString().slice(0, 10);
       const items = fresh.map(({ spotifyId, ...x }) => ({ ...x, added: today }));
-      tx.set(userRef, { toListen: [...items, ...toListen] }, { merge: true });
+      // updatedAt tells the app's other devices that the log changed (store.js, refresh).
+      tx.set(userRef, { toListen: [...items, ...toListen], updatedAt: FieldValue.serverTimestamp() }, { merge: true });
     }
     tx.set(memoRef, { artists: ids, seen: [...(memo.seen || []), ...fresh.map((x) => x.spotifyId)].slice(-500) }, { merge: true });
     return fresh.length;
