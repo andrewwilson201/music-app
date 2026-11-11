@@ -143,3 +143,70 @@ test('edits made on two devices are both kept', async () => {
   await phone.ctx.close();
   await laptop.ctx.close();
 });
+
+test('a shared library with markup in it is shown as plain text', async () => {
+  const sharer = await device();
+  const viewer = await device();
+  const t = Date.now();
+  await signIn(sharer.page, `sharer${t}@example.com`, true);
+  await sharer.page.click('[data-start="fresh"]');
+  await sharer.page.waitForSelector('.hero');
+  // An album whose id carries markup, and one the viewer already has.
+  const code = await store(sharer.page, async (s) => {
+    const y = String(new Date().getFullYear());
+    s.getData().years[y].albums.push(
+      { id: 'x"><img src=x onerror="window.__ran=1">', artist: 'test artist', title: 'test album', songs: [], spotify: 'javascript:window.__ran=1' },
+      { id: 'ok1', artist: 'Hollow Pines', title: 'River of Glass (Deluxe)', songs: [] },
+    );
+    s.commit({ delay: 0 });
+    return (await s.startSharing('Sharer <b>')).token;
+  });
+  await waitClean(sharer.page);
+
+  await signIn(viewer.page, `viewer${t}@example.com`, true);
+  await viewer.page.setInputFiles('[data-start="file"] input', FIXTURE);
+  await viewer.page.waitForSelector('button.card[data-open]');
+  await viewer.page.goto(`${base}#/friend/${code}`);
+  await viewer.page.waitForSelector('#viewBar:not([hidden])');
+  await viewer.page.waitForSelector('button.card[data-open]');
+  assert.equal(await viewer.page.locator('button.card[data-open]').count(), 2);
+  assert.equal(await viewer.page.evaluate(() => window.__ran), undefined, 'nothing from the shared library ran');
+  assert.equal(await viewer.page.locator('#app img[src="x"]').count(), 0);
+  // The album the viewer already has is ticked, and can be hidden.
+  assert.equal(await viewer.page.locator('.mine-pill').count(), 1);
+  await viewer.page.click('#notMine');
+  assert.equal(await viewer.page.locator('button.card[data-open]').count(), 1);
+  // Its popup opens, and the Spotify button is a normal link.
+  await viewer.page.click('button.card[data-open]');
+  const href = await viewer.page.getAttribute('.modal .btn.spotify', 'href');
+  assert.ok(href.startsWith('https://open.spotify.com/'), href);
+  assert.equal(await viewer.page.evaluate(() => window.__ran), undefined);
+
+  assert.deepEqual([...sharer.page.errors, ...viewer.page.errors], []);
+  await sharer.ctx.close();
+  await viewer.ctx.close();
+});
+
+test('an album can be saved to Up next from the Add sheet, then logged', async () => {
+  const { ctx, page } = await device();
+  await signIn(page, `queue${Date.now()}@example.com`, true);
+  await page.click('[data-start="fresh"]');
+  await page.waitForSelector('.hero');
+  await page.click('#addBtn');
+  await page.click('#manualBtn');
+  await page.fill('#addForm [name=artist]', 'new band');
+  await page.fill('#addForm [name=title]', 'first record');
+  await page.fill('#addForm [name=year]', '2024');
+  await page.click('#addQueue');
+  await page.waitForSelector('.q-card');
+  assert.deepEqual(await store(page, (s) => s.getData().toListen.map((x) => [x.artist, x.title, x.year])), [['new band', 'first record', '2024']]);
+  assert.equal(await store(page, (s) => s.getData().years['2024']), undefined, 'not logged yet');
+  // "I've listened" starts from what was saved and files it under its year.
+  await page.click('.q-card');
+  await page.click('#heardIt');
+  await page.click('#addSubmit');
+  await page.waitForSelector('button.card[data-open]');
+  assert.deepEqual(await store(page, (s) => [s.getData().toListen.length, s.getData().years['2024'].albums.map((a) => a.title)]), [0, ['first record']]);
+  assert.deepEqual(page.errors, []);
+  await ctx.close();
+});

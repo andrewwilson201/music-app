@@ -31,12 +31,13 @@ import {
   initializeApp, getAuth, onAuthStateChanged, GoogleAuthProvider, signInWithPopup, signInWithRedirect,
   getRedirectResult, signInWithEmailAndPassword, createUserWithEmailAndPassword, sendPasswordResetEmail,
   signOut as fbSignOut, initializeFirestore, persistentLocalCache, persistentMultipleTabManager,
-  memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
+  memoryLocalCache, connectAuthEmulator, connectFirestoreEmulator, doc, getDoc, getDocs, getDocFromCache, getDocsFromCache, setDoc, deleteDoc, collection, writeBatch, serverTimestamp,
   getMessaging, getToken, deleteToken, messagingSupported, getFunctions, httpsCallable, connectFunctionsEmulator,
 } from '../vendor/firebase.js';
 import { FIREBASE_CONFIG, FIREBASE_VAPID_KEY } from './config.js';
 import { pack, unpack, toListening } from './history.js';
 import { mergeDoc } from './merge.js';
+import { cleanYears, cleanRec } from './safe.js';
 
 const listeners = new Set();
 let auth = null;
@@ -226,6 +227,8 @@ export async function load() {
     return null;
   }
   const head = snap.data();
+  headStamp = head.updatedAt?.toMillis?.() || 0;
+  loadedAt = Date.now();
   const years = {};
   (await getDocs(yearsCol())).forEach((s) => {
     const v = s.data();
@@ -253,8 +256,19 @@ export async function load() {
 
 // Re-read from Firestore (another device may have saved). Skipped while this
 // device has edits that haven't been saved yet: saving merges those instead.
+// Every save stamps the user document with the time, so one small read says
+// whether anything changed; the years are only read again when it did (or
+// every few hours regardless, in case a device runs an older copy of the app).
+let headStamp = 0; // updatedAt of the user document when the log was last read
+let loadedAt = 0;
+const FULL_REFRESH = 6 * 3600e3;
 export async function refresh() {
   if (!canSync() || saving || saveTimer || ls(dirtyKey()) === '1') return false;
+  if (headStamp && Date.now() - loadedAt < FULL_REFRESH) {
+    const head = await getDoc(userDoc());
+    if (head.exists() && !head.metadata.fromCache && (head.data().updatedAt?.toMillis?.() || 0) === headStamp) return false;
+    if (saving || saveTimer || ls(dirtyKey()) === '1') return false;
+  }
   const before = JSON.stringify(data);
   await load();
   return JSON.stringify(data) !== before;
@@ -328,6 +342,12 @@ async function save({ overwrite = false } = {}) {
     }
     for (const path of Object.keys(written)) {
       if (!(path in docs)) { batch.delete(doc(db, path)); changes++; }
+    }
+    // Stamp the user document on every save, so other devices can tell with
+    // one read that something changed (see refresh).
+    const headPath = `users/${user.uid}`;
+    if (changes && headPath in docs && written[headPath] === JSON.stringify(docs[headPath]) && !mergedPaths.includes(headPath)) {
+      batch.set(doc(db, headPath), { updatedAt: serverTimestamp() }, { merge: true });
     }
     if (changes) await batch.commit();
     setWritten(next);
@@ -490,15 +510,17 @@ export async function viewFriend(uid) {
   try {
     const share = await getDoc(shareDoc(f.token));
     if (!share.exists() || share.data().uid !== uid) throw Object.assign(new Error(), { code: 'permission-denied' });
-    name = share.data().name || name;
+    name = String(share.data().name || name).slice(0, 60);
     const years = {};
     (await getDocs(collection(db, 'users', uid, 'years'))).forEach((s) => {
       const v = s.data();
       years[s.id] = { albums: v.albums || [], favourites: v.favourites || [] };
     });
+    // Someone else wrote this: clean it before any of it reaches the page (js/safe.js).
+    const safe = cleanYears(years);
     const now = String(new Date().getFullYear());
-    if (!years[now]) years[now] = { albums: [], favourites: [] };
-    viewing = { uid, name, data: { years, toListen: [], always: [] } };
+    if (!safe[now]) safe[now] = { albums: [], favourites: [] };
+    viewing = { uid, name: String(name || 'A friend').slice(0, 60), data: { years: safe, toListen: [], always: [] } };
   } catch (e) {
     if (e.code === 'permission-denied') {
       throw Object.assign(new Error(`${name} has stopped sharing or made a new code. Ask for the new one.`), { gone: true });
@@ -553,7 +575,11 @@ export async function sendRec(toUid, album, note = '') {
 export async function recs() {
   if (!user) return [];
   const out = [];
-  (await getDocs(recsCol(user.uid))).forEach((s) => out.push({ id: s.id, ...s.data() }));
+  (await getDocs(recsCol(user.uid))).forEach((s) => {
+    // Written by someone else: cleaned before use, and thrown away if unusable (js/safe.js).
+    const rec = cleanRec(s.id, s.data());
+    if (rec) out.push(rec); else deleteDoc(s.ref).catch(() => {});
+  });
   const ms = (r) => r.sentAt?.toMillis?.() || 0;
   return out.sort((a, b) => ms(b) - ms(a));
 }
@@ -648,7 +674,7 @@ export async function setNewReleases(on) {
 }
 
 export async function stopTracking() {
-  await setDoc(trackingDoc(), { enabled: false, refreshToken: '' }, { merge: true });
+  await setDoc(trackingDoc(), { enabled: false, refreshToken: '', lastError: '' }, { merge: true });
 }
 
 const listenMetaDoc = () => doc(db, 'users', user.uid, 'meta', 'listening');
@@ -658,19 +684,70 @@ let history = { stamp: 0, entries: {} };
 
 // All of this person's listening totals: the live ones keyed by Spotify album
 // id, plus any imported history keyed h:0, h:1...
+//
+// The totals only change when the function counts new plays, and the history
+// only when it's imported again. So this reads two small documents first, and
+// fetches the rest from the server only when they say something moved;
+// otherwise it uses what's in memory, or the copy Firestore keeps on the device.
+const listenStampKey = () => `music-log:listen-stamp:${user.uid}`;
+const historyStampKey = () => `music-log:history-stamp:${user.uid}`;
+let liveStamp = ''; // what the totals in memory were loaded for
+let liveDocs = null;
+let trackingSeen = null; // the tracking document as last read, without the sign-in
+
+async function cachedDocs(col) {
+  try {
+    const snap = await getDocsFromCache(col);
+    return snap.empty ? null : snap;
+  } catch { return null; }
+}
+async function cachedDoc(ref) {
+  try {
+    const snap = await getDocFromCache(ref);
+    return snap.exists() ? snap : null;
+  } catch { return null; }
+}
+
 export async function loadListening() {
   if (!user || viewing) return listening || {};
-  const out = {};
-  const [live, meta] = await Promise.all([getDocs(collection(db, 'users', user.uid, 'listening')), getDoc(listenMetaDoc())]);
-  live.forEach((s) => { out[s.id] = s.data(); });
+  const col = collection(db, 'users', user.uid, 'listening');
+  const [state, meta] = await Promise.all([getDoc(trackingDoc()), getDoc(listenMetaDoc())]);
+  if (state.exists()) { const { refreshToken, clientId, ...rest } = state.data(); trackingSeen = { ...rest, enabled: !!(rest.enabled && refreshToken) }; }
+  else trackingSeen = { enabled: false };
   listenMeta = meta.exists() ? meta.data() : {};
+  // New plays move the cursor and the count; a day's change forces one fresh read regardless.
+  const stamp = `${trackingSeen.cursor || 0}:${trackingSeen.plays || 0}:${new Date().toISOString().slice(0, 10)}`;
+  if (!liveDocs || liveStamp !== stamp) {
+    let live = ls(listenStampKey()) === stamp ? await cachedDocs(col) : null;
+    if (!live) live = await getDocs(col);
+    const out = {};
+    live.forEach((s) => { out[s.id] = s.data(); });
+    liveDocs = out;
+    liveStamp = stamp;
+    if (!live.metadata.fromCache) ls(listenStampKey(), stamp);
+  }
   const h = listenMeta.history;
   if (!h?.parts) history = { stamp: 0, entries: {} };
   else if (h.importedAt !== history.stamp) {
-    const parts = await Promise.all(Array.from({ length: h.parts }, (_, i) => getDoc(historyPart(i))));
-    history = { stamp: h.importedAt, entries: toListening(await unpack(parts.map((p) => p.data()?.data || ''))) };
+    // The parts are big (a few hundred KB each): use the device's copy when
+    // it was fetched for this same import, else fetch and remember that.
+    const fetchParts = (get) => Promise.all(Array.from({ length: h.parts }, (_, i) => get(historyPart(i))));
+    const text = (parts) => parts.map((p) => p?.data()?.data || '');
+    let albums = null;
+    if (ls(historyStampKey()) === String(h.importedAt)) {
+      try {
+        const parts = await fetchParts(cachedDoc);
+        if (parts.every(Boolean)) albums = await unpack(text(parts));
+      } catch { albums = null; }
+    }
+    if (!albums) {
+      const parts = await fetchParts(getDoc);
+      albums = await unpack(text(parts));
+      if (parts.every((p) => !p.metadata.fromCache)) ls(historyStampKey(), String(h.importedAt));
+    }
+    history = { stamp: h.importedAt, entries: toListening(albums) };
   }
-  listening = { ...out, ...history.entries };
+  listening = { ...liveDocs, ...history.entries };
   return listening;
 }
 export const getListening = () => (viewing ? null : listening);
@@ -713,8 +790,10 @@ export function exportJson() {
 
 export const uid = () => 'a' + Math.random().toString(36).slice(2, 12);
 
+// Only four-digit years: the names end up in the page and in links.
+const isYear = (y) => /^\d{4}$/.test(y);
 export function years() {
-  return Object.keys(getData().years).sort((a, b) => b - a);
+  return Object.keys(getData().years).filter(isYear).sort((a, b) => b - a);
 }
 
 export function ensureYear(y) {
@@ -725,6 +804,7 @@ export function ensureYear(y) {
 
 export function findAlbum(id) {
   for (const [year, y] of Object.entries(getData().years)) {
+    if (!isYear(year)) continue;
     const album = y.albums.find((a) => a.id === id);
     if (album) return { year, album, yearData: y };
   }

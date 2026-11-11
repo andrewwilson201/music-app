@@ -278,13 +278,14 @@ function render() {
   const years = shownYears();
   if (sortable) { sortable.destroy(); sortable = null; }
   closeYearMenu();
-  $('#listenBtn').hidden = !(hasListening() || (!ro() && tracking.enabled));
+  $('#listenBtn').hidden = !(hasListening() || (!ro() && (tracking.enabled || trackingStopped())));
   $('#listenBtn').classList.toggle('on', page === 'listening');
+  $('#listenBtn').classList.toggle('stopped', !ro() && !!trackingStopped());
   navActive = page === 'year' ? a : page ? page : homeIsAll() ? 'all' : years[0];
   if (!page) return homeIsAll() ? renderAll() : renderYear(years[0], 'listened');
   if (page === 'all') return renderAll();
   if (page === 'decade' && /^\d{3}0$/.test(a || '')) { navActive = `${a}s`; return renderAll(Number(a)); }
-  if (page === 'year' && data.years[a]) return renderYear(a, b || 'listened');
+  if (page === 'year' && /^\d{4}$/.test(a) && data.years[a]) return renderYear(a, b || 'listened');
   if ((page === 'up-next' || page === 'to-listen') && !ro()) return renderUpNext();
   if (page === 'search') { openSearch(); return; } // old links: search is the All years filter now
   if (page === 'listening' && !ro()) return renderListening(a || 'month', b === 'songs' ? 'songs' : 'albums');
@@ -374,7 +375,7 @@ function artFor(album) {
 function coverHtml(album, cls = '') {
   const art = artFor(album);
   const initials = esc((album.title || album.artist).slice(0, 1).toUpperCase());
-  return `<div class="cover ${cls}" data-art-id="${album.id}" style="background:${placeholder(album)}">
+  return `<div class="cover ${cls}" data-art-id="${esc(album.id)}" style="background:${placeholder(album)}">
     <span class="cover-initial">${initials}</span>
     ${art ? `<img src="${esc(art)}" alt="" loading="lazy" onerror="this.remove()">` : ''}
   </div>`;
@@ -447,7 +448,7 @@ function setArt(album, url, spotifyLink = '') {
     artCache[album.id] = url || `miss:${artVersion()}`;
     try { localStorage.setItem(artCacheKey, JSON.stringify(artCache)); } catch {}
   }
-  $$(`.cover[data-art-id="${album.id}"]`).forEach((el) => {
+  $$(`.cover[data-art-id="${CSS.escape(album.id)}"]`).forEach((el) => {
     observer.unobserve(el);
     el.querySelector('img')?.remove();
     if (url) el.insertAdjacentHTML('beforeend', `<img src="${esc(url)}" alt="" onerror="this.remove()">`);
@@ -460,6 +461,7 @@ function sortedAlbums(yearData) {
   let list = yearData.albums.map((a, i) => ({ a, i }));
   const q = norm(ui.filter);
   if (q) list = list.filter(({ a }) => norm(`${a.artist} ${a.title} ${(a.songs || []).join(' ')}`).includes(q));
+  if (ro() && ui.notMine) list = list.filter(({ a }) => !inMine(a));
   if (ui.sort === 'latest') list.reverse();
   if (ui.sort === 'artist') list.sort((x, y) => norm(x.a.artist).localeCompare(norm(y.a.artist)));
   if (ui.sort === 'favs') list.sort((x, y) => (store.favRank(yearData, x.a.id) || 999) - (store.favRank(yearData, y.a.id) || 999));
@@ -476,10 +478,27 @@ const timePill = (album) => {
   return l && l.ms >= 60000 ? `<span class="play-time" title="Time listened on Spotify">${ICON.headphones}${fmtDur(l.ms)}</span>` : '';
 };
 
+// While looking at a friend's library: is this album in mine already?
+// Same matching as the Add search (artist + title, edition tags ignored).
+let mine = { stamp: '', keys: new Set() };
+function inMine(album) {
+  const own = store.ownData();
+  if (!ro() || !own || !album.title) return false;
+  const stamp = Object.entries(own.years).map(([y, v]) => `${y}:${v.albums.length}`).join();
+  if (mine.stamp !== stamp) {
+    mine = { stamp, keys: new Set() };
+    for (const v of Object.values(own.years)) for (const a of v.albums) if (a.title) mine.keys.add(`${norm(a.artist)}|${bareTitle(a.title)}`);
+  }
+  return mine.keys.has(`${norm(album.artist)}|${bareTitle(album.title)}`);
+}
+const minePill = (album) => (inMine(album) ? `<span class="mine-pill" title="Already in your library">${ICON.check}In yours</span>` : '');
+const notMineBar = (count) => (ro() && count ? `<button type="button" class="fix-toggle${ui.notMine ? ' on' : ''}" id="notMine" aria-pressed="${!!ui.notMine}">
+  ${ui.notMine ? 'Showing albums you don’t have · Show all' : `Hide the ${count} you already have`}</button>` : '');
+
 function cardHtml(album, yearData, showYear = '') {
   const rank = yearData ? store.favRank(yearData, album.id) : 0;
-  return `<button class="card" data-open="${album.id}">
-    ${coverHtml(album).replace(/<\/div>$/, `${timePill(album)}</div>`)}
+  return `<button class="card" data-open="${esc(album.id)}">
+    ${coverHtml(album).replace(/<\/div>$/, `${timePill(album)}${minePill(album)}</div>`)}
     ${rank ? `<span class="rank-badge" title="#${rank} favourite">${rank}</span>` : ''}
     <span class="card-meta">
       <span class="card-title">${esc(album.title || album.artist)}</span>
@@ -492,7 +511,7 @@ function rowHtml(album, yearData, showYear = '') {
   const rank = yearData ? store.favRank(yearData, album.id) : 0;
   const songs = (album.songs || []).join(', ');
   return `<div class="row-item">
-    <button class="row-open" data-open="${album.id}">
+    <button class="row-open" data-open="${esc(album.id)}">
       ${coverHtml(album, 'sm')}
       <span class="row-meta">
         <span class="row-title">${esc(album.title || album.artist)}</span>
@@ -500,6 +519,7 @@ function rowHtml(album, yearData, showYear = '') {
         ${songs ? `<span class="row-songs">♪ ${esc(songs)}</span>` : ''}
       </span>
       ${(() => { const l = listeningFor(album); return l && l.ms >= 60000 ? `<span class="row-time" title="Time listened on Spotify">${fmtDur(l.ms)}</span>` : ''; })()}
+      ${inMine(album) ? `<span class="row-mine" title="Already in your library">${ICON.check}<span class="hide-sm">In yours</span></span>` : ''}
       ${rank ? `<span class="row-rank" title="#${rank} favourite">${ICON.heart}${rank}</span>` : ''}
     </button>
     <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify" aria-label="Play ${esc(album.title || album.artist)} on Spotify">${ICON.spotify}</a>
@@ -527,6 +547,16 @@ function bindViewToggle(root, redraw) {
     b.setAttribute('aria-label', viewLabel());
     redraw();
   });
+}
+
+// The sort button is an icon; when the list isn't in its usual order the
+// button also says which order it's in, so a remembered sort is never a mystery.
+function showSort(usual) {
+  const sel = $('#sort');
+  const name = sel.selectedOptions[0]?.text || '';
+  sel.parentElement.title = `Sort: ${name}`;
+  sel.parentElement.classList.toggle('named', sel.value !== usual);
+  $('#sortName').textContent = sel.value !== usual ? name : '';
 }
 
 function renderYear(year, tab) {
@@ -560,7 +590,7 @@ function renderListened(year) {
         <input id="filter" type="search" placeholder="Filter albums" aria-label="Filter ${year}" value="${esc(ui.filter)}" autocomplete="off">
       </label>
       <label class="tool-btn" title="Sort">
-        ${ICON.sort}
+        ${ICON.sort}<span class="sort-name" id="sortName"></span>
         <select id="sort" aria-label="Sort">
           <option value="latest">Latest logged</option>
           <option value="artist">Artist A–Z</option>
@@ -570,25 +600,27 @@ function renderListened(year) {
       </label>
       ${viewToggleHtml()}
     </div>
+    <div class="fix-bar">${notMineBar(y.albums.filter(inMine).length)}</div>
     <div id="grid"></div>`;
+  $('#notMine')?.addEventListener('click', () => { ui.notMine = !ui.notMine; render(); });
   if (!ro() && year === store.years()[0] && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
   if ((ui.sort === 'listened' || ui.sort === 'recent') && !hasListening()) ui.sort = 'latest';
   $('#sort').value = ui.sort;
-  const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
+  const sortTitle = () => showSort('latest');
   sortTitle();
   const draw = () => {
     const list = sortedAlbums(y);
     $('#grid').innerHTML = list.length
       ? albumsHtml(list, y)
       : y.albums.length
-        ? `<p class="muted pad">Nothing in ${year} matches “${esc(ui.filter)}”.</p>`
+        ? `<p class="muted pad">${ui.filter ? `Nothing in ${year} matches “${esc(ui.filter)}”.` : `You already have everything here from ${year}.`}</p>`
         : ro()
           ? `<div class="empty"><h2>Nothing logged for ${year} yet</h2><p>${esc(friendName())} hasn't added any albums from ${year}.</p></div>`
           : `<div class="empty"><h2>Nothing logged for ${year} yet</h2><p>Add the first album you listen to.</p><button class="btn primary" data-add="${year}">${ICON.plus} Add album</button></div>`;
     watchCovers();
   };
   $('#filter').addEventListener('input', (e) => { ui.filter = e.target.value; draw(); });
-  $('#sort').addEventListener('change', (e) => { ui.sort = e.target.value; sortTitle(); draw(); toast(e.target.selectedOptions[0].text); });
+  $('#sort').addEventListener('change', (e) => { ui.sort = e.target.value; sortTitle(); draw(); });
   bindViewToggle(body, draw);
   draw();
 }
@@ -627,6 +659,7 @@ function sortedAll() {
   let list = allAlbums();
   const q = norm(ui.filter);
   if (q) list = list.filter(({ album: a, year }) => norm(`${a.artist} ${a.title} ${(a.songs || []).join(' ')} ${year}`).includes(q));
+  if (ro() && ui.notMine) list = list.filter(({ album: a }) => !inMine(a));
   const byYear = (x, y) => (y.year - x.year) || (y.i - x.i);
   const text = (s) => norm(s || '').replace(/^the /, '');
   const sorts = {
@@ -652,10 +685,10 @@ function fixReasons(album) {
   return out;
 }
 const fixRowHtml = ({ album, year }) => `<div class="fix-row">
-    <button type="button" class="fix-open" data-open="${album.id}">${coverHtml(album, 'sm')}
+    <button type="button" class="fix-open" data-open="${esc(album.id)}">${coverHtml(album, 'sm')}
       <span class="m"><b>${esc(album.title || album.artist)}</b><small>${album.title ? `${esc(album.artist)} · ` : ''}${year}</small>
       <small class="fix-why">${fixReasons(album).join(' · ')}</small></span></button>
-    <button type="button" class="btn small" data-fix="${album.id}">Fix</button>
+    <button type="button" class="btn small" data-fix="${esc(album.id)}">Fix</button>
   </div>`;
 document.addEventListener('click', (e) => {
   const b = e.target.closest('[data-fix]');
@@ -687,7 +720,7 @@ function renderAll(decade = null) {
           <input id="filter" type="search" placeholder="${decade != null ? `Filter the ${decade}s` : 'Filter your library'}" aria-label="${decade != null ? `Filter the ${decade}s` : 'Filter your library'}" value="${esc(ui.filter)}" autocomplete="off">
         </label>
         <label class="tool-btn" title="Sort">
-          ${ICON.sort}
+          ${ICON.sort}<span class="sort-name" id="sortName"></span>
           <select id="sort" aria-label="Sort">
             ${Object.entries(ALL_SORTS).filter(([k]) => !['listened', 'recent'].includes(k) || hasListening()).map(([k, v]) => `<option value="${k}">${v}</option>`).join('')}
           </select>
@@ -701,13 +734,17 @@ function renderAll(decade = null) {
   if (!ro() && data.toListen.length) body.insertAdjacentHTML('afterbegin', upNextHtml());
   const fixCount = ro() ? 0 : all.filter((x) => fixReasons(x.album).length).length;
   if (!fixCount) ui.needsFix = false;
+  if (ro()) {
+    $('#fixBar').innerHTML = notMineBar(all.filter((x) => inMine(x.album)).length);
+    $('#notMine')?.addEventListener('click', () => { ui.notMine = !ui.notMine; render(); });
+  }
   if (fixCount) {
     $('#fixBar').innerHTML = `<button type="button" class="fix-toggle${ui.needsFix ? ' on' : ''}" id="fixToggle" aria-pressed="${!!ui.needsFix}">
       ${ui.needsFix ? `Showing ${fixCount} that need fixing · Show all` : `${fixCount} album${fixCount === 1 ? ' needs' : 's need'} fixing`}</button>`;
     $('#fixToggle').addEventListener('click', () => { ui.needsFix = !ui.needsFix; render(); });
   }
   $('#sort').value = ui.allSort;
-  const sortTitle = () => { $('#sort').parentElement.title = `Sort: ${$('#sort').selectedOptions[0].text}`; };
+  const sortTitle = () => showSort('newest');
   sortTitle();
   let list = [];
   let shown = 0;
@@ -737,7 +774,7 @@ function renderAll(decade = null) {
     $('#grid').innerHTML = list.length
       ? `<div class="${ui.view === 'list' ? 'rows' : 'grid'}"></div><button type="button" class="btn all-more" id="allMore">Show more</button>`
       : all.length
-        ? `<p class="muted pad">Nothing in ${decade != null ? `the ${decade}s` : 'your library'} matches “${esc(ui.filter)}”.</p>`
+        ? `<p class="muted pad">${ui.filter || !ro() ? `Nothing in ${decade != null ? `the ${decade}s` : 'your library'} matches “${esc(ui.filter)}”.` : 'You already have everything here.'}</p>`
         : ro()
           ? `<div class="empty"><h2>Nothing logged yet</h2><p>${esc(friendName())} hasn't added any albums.</p></div>`
           : `<div class="empty"><h2>Nothing logged yet</h2><p>Add the first album you listen to.</p><button class="btn primary" data-add="">${ICON.plus} Add album</button></div>`;
@@ -754,7 +791,7 @@ function renderAll(decade = null) {
   $('#sort').addEventListener('change', (e) => {
     ui.allSort = e.target.value;
     try { localStorage.setItem('music-log:all-sort', ui.allSort); } catch {}
-    sortTitle(); draw(); toast(e.target.selectedOptions[0].text);
+    sortTitle(); draw();
   });
   bindViewToggle(body, draw);
   draw();
@@ -833,18 +870,18 @@ function renderFavourites(year) {
 // picked in the album popup (tap the album or "Add best songs").
 function favRowHtml(album, fav, i) {
   const songs = bestSongs(fav.song).length;
-  return `<li class="fav" data-id="${album.id}">
+  return `<li class="fav" data-id="${esc(album.id)}">
     ${ro() ? '' : `<span class="grip" title="Drag to reorder">${ICON.grip}</span>`}
     <span class="fav-rank">${i + 1}</span>
-    <button class="fav-cover" data-open="${album.id}">${coverHtml(album)}</button>
+    <button class="fav-cover" data-open="${esc(album.id)}">${coverHtml(album)}</button>
     <div class="fav-main">
-      <button class="fav-title" data-open="${album.id}">${esc(album.title || album.artist)}</button>
+      <button class="fav-title" data-open="${esc(album.id)}">${esc(album.title || album.artist)}</button>
       <span class="fav-artist">${esc(album.artist)}</span>
       ${songs ? `<ul class="song-chips">${songChipsHtml(fav, false)}</ul>`
-        : ro() ? '' : `<button class="link-btn add-songs" data-open="${album.id}">${ICON.plus} Add best songs</button>`}
+        : ro() ? '' : `<button class="link-btn add-songs" data-open="${esc(album.id)}">${ICON.plus} Add best songs</button>`}
     </div>
     <a class="icon-btn spot" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener" title="Play on Spotify">${ICON.spotify}</a>
-    ${ro() ? '' : `<button class="icon-btn subtle" data-unfav="${album.id}" title="Remove from favourites">${ICON.close}</button>`}
+    ${ro() ? '' : `<button class="icon-btn subtle" data-unfav="${esc(album.id)}" title="Remove from favourites">${ICON.close}</button>`}
   </li>`;
 }
 
@@ -937,7 +974,7 @@ function songChipsHtml(fav, editable = true) {
 
 function songPickerHtml(album, fav, listId) {
   const n = bestSongs(fav.song).length;
-  return `<div class="song-picker" data-album="${album.id}">
+  return `<div class="song-picker" data-album="${esc(album.id)}">
     <ul class="song-chips">${songChipsHtml(fav)}</ul>
     <div class="song-add">
       <input class="song-input" placeholder="${n ? '+ Add another song' : 'Best song…'}" aria-label="${n ? 'Add another best song' : 'Best song'}" list="${listId}" enterkeyhint="done" autocomplete="off">
@@ -1104,7 +1141,7 @@ function pickFavourite(year) {
     const list = y.albums.slice().reverse().filter((a) => !q || norm(`${a.artist} ${a.title}`).includes(q));
     if (hasListening()) list.sort((a, b) => ms(b) - ms(a));
     $('#pickList', m).innerHTML = list.map((a) => `
-      <button class="pick ${favSet.has(a.id) ? 'chosen' : ''}" data-pick="${a.id}">
+      <button class="pick ${favSet.has(a.id) ? 'chosen' : ''}" data-pick="${esc(a.id)}">
         ${coverHtml(a, 'sm')}
         <span><b>${esc(a.title || a.artist)}</b><small>${a.title ? esc(a.artist) : 'no album noted'}${ms(a) >= 60000 ? ` · ${fmtDur(ms(a)).replace(/ 00m$/, '')}` : ''}</small></span>
         <span class="pick-state">${favSet.has(a.id) ? ICON.check : ICON.plus}</span>
@@ -1150,7 +1187,6 @@ function openAlbum(id) {
             <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted. Tap Edit to add one.'}</p>
           </div>
         </div>
-        ${listenPanelHtml(album, fav)}
         <div class="detail-actions">
           <a class="btn spotify" href="${esc(spotifyUrl(album))}" target="_blank" rel="noopener">${ICON.spotify} Play on Spotify</a>
           <button class="btn heart ${rank ? 'on' : ''}" id="favToggle" aria-pressed="${!!rank}">${ICON.heart}<span>${rank ? 'Favourite' : 'Add to favourites'}</span></button>
@@ -1159,6 +1195,7 @@ function openAlbum(id) {
           <button class="btn small queue ${queued ? 'on' : ''}" id="queueToggle" aria-pressed="${!!queued}" title="${queued ? 'Tap to take it off Up next' : 'Save it to play again soon'}">${queued ? ICON.check : ICON.queue}<span>${queued ? 'In Up next' : 'Add to Up next'}</span></button>
           <button class="btn small" id="recommend" title="Send it to a friend">${ICON.gift}<span>Recommend</span></button>
         </div>
+        ${listenPanelHtml(album, fav)}
         <div class="field" id="bestSongField"><span>Best songs</span>${songPickerHtml(album, songsOf(album, fav), 'detailSongs')}</div>
         <div class="detail-foot">
           <button class="link-btn" id="editAlbum">${ICON.edit} Edit</button>
@@ -1239,6 +1276,7 @@ function openFriendAlbum(id) {
             <p class="eyebrow"><a href="#/year/${year}">${year}</a>${rank ? ` · <span class="accent">${esc(possessive(friendName()))} #${rank}</span>` : ''}</p>
             <h2 class="detail-title">${esc(album.title || album.artist)}</h2>
             <p class="detail-artist">${album.title ? esc(album.artist) : 'No album noted'}</p>
+            ${inMine(album) ? `<p class="mine-note">${ICON.check} Already in your library</p>` : ''}
           </div>
         </div>
         ${(album.songs || []).length ? `<div class="chips">${album.songs.map((s) => `<span class="chip">${esc(s)}</span>`).join('')}</div>` : ''}
@@ -1339,11 +1377,16 @@ function editAlbum(id, { findArt = false } = {}) {
     album.art = f.get('art').trim();
     const newYear = f.get('year');
     if (newYear !== year) {
-      const favWas = yearData.favourites.some((x) => x.albumId === id);
+      // A favourite stays one: it joins the end of the new year's favourites, songs and all.
+      const favWas = yearData.favourites.find((x) => x.albumId === id);
       yearData.albums = yearData.albums.filter((a) => a.id !== id);
       yearData.favourites = yearData.favourites.filter((x) => x.albumId !== id);
-      store.ensureYear(newYear).albums.push(album);
-      if (favWas) toast(`Moved to ${newYear}. It was removed from the ${year} favourites.`);
+      const to = store.ensureYear(newYear);
+      to.albums.push(album);
+      if (favWas) {
+        to.favourites.push(favWas);
+        toast(`Moved to ${newYear}. It's now #${to.favourites.length} in your ${newYear} favourites.`);
+      }
     }
     store.commit();
     closeModal(m, true);
@@ -1509,6 +1552,7 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, prefill = 
         <button class="btn" id="addMore" hidden>Add and pick another</button>
         <button class="btn primary" id="addSubmit">Add to log</button>
       </div>
+      ${fromQueue ? '' : `<button type="button" class="link-btn save-next" id="addQueue">${ICON.queue} Not heard it yet? Save to Up next</button>`}
     </form>`, 'wide');
   const form = $('#addForm', m);
   const F = form.elements;
@@ -1623,6 +1667,25 @@ function addAlbum({ year: fallbackYear, query = '', fromQueue = null, prefill = 
     yearTyped = !!F.year.value; clearTimeout(yearTimer); yearTicket++; hint.hidden = true;
     if (!yearTyped) autoYear();
     checkDup();
+  });
+  // Not heard yet: keep it in Up next instead of logging it. "I've listened"
+  // there logs it later with the same cover, link and year.
+  $('#addQueue', m)?.addEventListener('click', () => {
+    const artist = F.artist.value.trim(), title = F.title.value.trim();
+    if (!artist) { F.artist.focus(); return toast('Type the artist first'); }
+    const want = { artist, title };
+    if (title && loggedYear(want)) return toast(`You've already logged this in ${loggedYear(want)}`);
+    if (data.toListen.some((x) => queueMatches(x, want) && !x.title === !title)) return toast('Already in Up next');
+    const item = { id: store.uid(), artist, title, added: new Date().toISOString().slice(0, 10) };
+    if (chosen?.art) item.art = chosen.art;
+    if (chosen?.spotify) item.spotify = chosen.spotify;
+    const yr = F.year.value || chosen?.year;
+    if (yr) item.year = String(yr);
+    data.toListen.unshift(item);
+    store.commit();
+    closeModal(m, true);
+    render();
+    toast('Saved to Up next', '', () => { data.toListen = data.toListen.filter((x) => x.id !== item.id); store.commit(); render(); });
   });
   let saving = false;
   form.addEventListener('submit', async (e) => {
@@ -1901,7 +1964,10 @@ function clearFromQueue(album, fromId) {
 
 const queueName = (x) => x.title || x.artist;
 // A recommended song: its own Spotify link when the sender's tracklist had one, else a search.
-const songUrl = (x) => x.songSpotify || `https://open.spotify.com/search/${encodeURIComponent(`${cleanSong(x.song)} ${x.artist}`)}`;
+const httpsLink = (u) => (/^https:\/\//.test(u || '') ? u : '');
+// "2026-11-09" as "9 Nov" (with the year when it isn't this one).
+const niceDate = (d) => { const ms = Date.parse(d); return Number.isFinite(ms) ? fmtDay(ms) : String(d || ''); };
+const songUrl = (x) => httpsLink(x.songSpotify) || `https://open.spotify.com/search/${encodeURIComponent(`${cleanSong(x.song)} ${x.artist}`)}`;
 const queueSub = (x) => (x.title ? x.artist : 'artist');
 
 function upNextHtml() {
@@ -1912,7 +1978,7 @@ function upNextHtml() {
       <a class="link-btn" href="#/up-next">See all</a>
     </div>
     ${items.length ? `<div class="upnext-strip">${items.slice(0, 15).map((x) => `
-      <button class="q-card" data-queue="${x.id}">
+      <button class="q-card" data-queue="${esc(x.id)}">
         ${coverHtml(x)}
         <span class="q-title">${esc(queueName(x))}</span>
         <span class="q-sub">${esc(queueSub(x))}</span>
@@ -1953,7 +2019,7 @@ function openQueueItem(id) {
         <div class="detail-head">
           ${coverHtml(item, 'thumb')}
           <div>
-            <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : item.tag ? `<span class="accent">${esc(item.tag)}</span>` : 'up next'}${item.released ? ` · out ${esc(item.released)}` : item.added ? ` · added ${esc(item.added)}` : ''}</p>
+            <p class="eyebrow">${item.from ? `<span class="accent">${esc(item.from)} recommends</span>` : item.tag ? `<span class="accent">${esc(item.tag)}</span>` : 'up next'}${item.released ? ` · out ${esc(niceDate(item.released))}` : item.added ? ` · added ${esc(niceDate(item.added))}` : ''}</p>
             <h2 class="detail-title">${esc(queueName(item))}</h2>
             <p class="detail-artist">${item.title ? esc(item.artist) : 'Artist to check out'}</p>
           </div>
@@ -1962,7 +2028,7 @@ function openQueueItem(id) {
         ${item.song ? `<div class="rec-song"><span><small>Start with</small><b>♪ ${esc(item.song)}</b></span>
           <a class="btn small spotify" href="${esc(songUrl(item))}" target="_blank" rel="noopener">${ICON.spotify} Play song</a></div>` : ''}
         <div class="detail-actions">
-          <a class="btn spotify" href="${esc(item.title ? spotifyUrl(item) : (item.spotify || spotifyArtistUrl(item.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play ${item.song ? 'album' : 'on Spotify'}</a>
+          <a class="btn spotify" href="${esc(item.title ? spotifyUrl(item) : (httpsLink(item.spotify) || spotifyArtistUrl(item.artist)))}" target="_blank" rel="noopener">${ICON.spotify} Play ${item.song ? 'album' : 'on Spotify'}</a>
           <button class="btn primary" id="heardIt">${ICON.check} I've listened</button>
         </div>
         <p class="muted small-print">“I've listened” moves it into your log and takes it off Up next.</p>
@@ -1988,7 +2054,7 @@ function openQueueItem(id) {
   $('#heardIt', m).addEventListener('click', () => {
     closeModal(m, true);
     // A friend's recommendation or a new release already says what it is; anything else is searched for.
-    if ((item.from || item.tag) && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
+    if ((item.from || item.tag || item.year || item.spotify) && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
     else addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
   });
   $('#dropIt', m).addEventListener('click', () => {
@@ -2007,12 +2073,12 @@ function renderUpNext() {
       <p class="hero-stats"><b>${data.toListen.length}</b> waiting to be heard</p></div></section>
     ${data.toListen.length ? `<div class="rows">${data.toListen.map((x) => `
       <div class="row-item">
-        <button class="row-open" data-queue="${x.id}">
+        <button class="row-open" data-queue="${esc(x.id)}">
           ${coverHtml(x, 'sm')}
           <span class="row-meta"><span class="row-title">${esc(queueName(x))}</span><span class="row-artist">${x.title ? esc(x.artist) : '<i>artist</i>'}${x.from ? ` · from ${esc(x.from)}` : x.tag ? ` · ${esc(x.tag)}` : ''}</span>${x.song ? `<span class="row-song">♪ ${esc(x.song)}</span>` : ''}</span>
         </button>
-        <button class="btn small" data-heard="${x.id}" title="Log it as listened">${ICON.check}<span class="hide-sm"> Listened</span></button>
-        <button class="icon-btn subtle" data-drop="${x.id}" title="Remove">${ICON.close}</button>
+        <button class="btn small" data-heard="${esc(x.id)}" title="Log it as listened">${ICON.check}<span> Listened</span></button>
+        <button class="icon-btn subtle hide-sm" data-drop="${esc(x.id)}" title="Remove from Up next" aria-label="Remove from Up next">${ICON.close}</button>
       </div>`).join('')}</div>`
       : '<div class="empty"><h2>Nothing queued</h2><p>Open any album in your library and tap Add to Up next.</p></div>'}`;
   watchCovers();
@@ -2030,7 +2096,7 @@ function renderUpNext() {
     if (heard) {
       const item = data.toListen.find((x) => x.id === heard.dataset.heard);
       if (queuedAlbum(item)) { tickOff(item.id); renderUpNext(); return; }
-      if ((item.from || item.tag) && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
+      if ((item.from || item.tag || item.year || item.spotify) && item.title) addAlbum({ prefill: item, fromQueue: item.id, year: String(new Date().getFullYear()) });
       else addAlbum({ query: `${item.artist} ${item.title}`.trim(), fromQueue: item.id, year: String(new Date().getFullYear()) });
     }
   });
@@ -2109,7 +2175,11 @@ function openSettings() {
         <label class="switch" title="Track listening time"><input type="checkbox" id="listenToggle" ${tracking.enabled ? 'checked' : ''} aria-label="Track listening time"><span></span></label>
       </div>
       <p class="listen-status" id="listenStatus" ${tracking.enabled || tracking.lastError ? '' : 'hidden'}>${trackingStatusHtml()}</p>
-      ${hasListening() ? `<label class="check listen-pills"><input type="checkbox" id="pillsToggle" ${pillsOn() ? 'checked' : ''}> Show time on album covers</label>` : ''}
+      ${hasListening() ? `<div class="share-head track-head">
+        ${ICON.grid}
+        <div><b>Show time on album covers</b><small>The small time badge on each cover, on this device.</small></div>
+        <label class="switch" title="Show time on album covers"><input type="checkbox" id="pillsToggle" ${pillsOn() ? 'checked' : ''} aria-label="Show time on album covers"><span></span></label>
+      </div>` : ''}
       <div class="share-head track-head" id="releasesRow" ${tracking.enabled ? '' : 'hidden'}>
         ${ICON.plus}
         <div><b>New releases into Up next</b><small>Once a week, new albums by the artists you log most go into Up next, marked “new release”.${tracking.releasesAt ? ` Last checked ${ago(tracking.releasesAt)}${tracking.releasesAdded ? `, ${tracking.releasesAdded} added` : ''}.` : ''}${tracking.releasesError ? ` Last error: ${esc(tracking.releasesError)}` : ''}</small></div>
@@ -2699,6 +2769,21 @@ function uncountedHtml() {
   </details>`;
 }
 
+// Tracking can stop without anyone touching it (Spotify withdrew the sign-in,
+// or the half-hourly check hasn't run for a day). Say so where it's noticed.
+function trackingStopped() {
+  const t = tracking;
+  if (!t.enabled && t.lastError) return t.lastError;
+  if (t.enabled && t.lastRun && Date.now() - t.lastRun > 864e5) return `Your Spotify plays haven't been checked since ${fmtDay(t.lastRun)}.`;
+  return '';
+}
+const trackingNoteHtml = () => {
+  const why = ro() ? '' : trackingStopped();
+  return why ? `<div class="track-note" role="status"><span><b>Listening tracking has stopped.</b> ${esc(why)}</span>
+    <button type="button" class="btn small" data-track-again>${ICON.spotify} Turn it back on</button></div>` : '';
+};
+document.addEventListener('click', (e) => { if (e.target.closest('[data-track-again]')) spotify.loginForTracking(); });
+
 function renderListening(period, mode = 'albums') {
   const P = PERIODS[period] ? period : 'month';
   if (mode === 'songs') return renderTopSongs(P);
@@ -2731,6 +2816,7 @@ function renderListening(period, mode = 'albums') {
   };
   app.innerHTML = `
     <section class="hero"><div><p class="eyebrow">your listening</p><h1>${PERIODS[P].title.toLowerCase()}</h1></div></section>
+    ${trackingNoteHtml()}
     ${listenNavHtml(P, 'albums')}
     ${!tracking.enabled && !hasListening()
       ? `<div class="empty"><h2>Not tracking yet</h2><p>Switch on Track listening time in Settings to see how long you spend on each album.</p><button class="btn primary" id="goSettings">Open Settings</button></div>`
@@ -2757,7 +2843,7 @@ function renderListening(period, mode = 'albums') {
 
 // Albums heard on Spotify but not in the log: tapping them, or their + button,
 // opens Add album with a search for them already filled in.
-const openAttr = (r) => (r.album ? `data-open="${r.album.id}"` : `data-log-heard="${esc(r.g.key)}" title="Add to your library"`);
+const openAttr = (r) => (r.album ? `data-open="${esc(r.album.id)}"` : `data-log-heard="${esc(r.g.key)}" title="Add to your library"`);
 // Albums hidden with "Don't suggest it" lose their + and match.
 const hiddenHeard = () => new Set(store.listeningMeta().hidden || []);
 const logBtn = (r) => (r.album || hiddenHeard().has(r.g.key) ? '' : `<button class="icon-btn log-add" data-log-heard="${esc(r.g.key)}" title="Add ${esc(r.g.title)} to your library" aria-label="Add ${esc(r.g.title)} to your library">${ICON.plus}</button>`);
@@ -2998,6 +3084,7 @@ function renderTopSongs(P) {
   const pseudo = (g) => ({ id: `l-${g.ids[0]}`, artist: g.artist, title: g.title, art: g.art || '' });
   app.innerHTML = `
     <section class="hero"><div><p class="eyebrow">your listening</p><h1>${PERIODS[P].title.toLowerCase()}</h1></div></section>
+    ${trackingNoteHtml()}
     ${listenNavHtml(P, 'songs')}
     ${!top.length
       ? `<div class="empty"><h2>No songs yet</h2><p>${tracking.enabled ? 'Songs you play on Spotify show up here within half an hour.' : 'Switch on Track listening time in Settings to see your most played songs.'}</p></div>`
@@ -3198,7 +3285,7 @@ function openPicker() {
     <p class="pick-label">How are you feeling?</p>
     <div class="mood-chips">
       <button type="button" class="mood-chip" data-mood="">${ICON.dice}<span>Surprise me</span></button>
-      ${mood.MOODS.map((x) => `<button type="button" class="mood-chip" data-mood="${x.id}"><i aria-hidden="true">${x.emoji}</i><span>${esc(x.label)}</span><small></small></button>`).join('')}
+      ${mood.MOODS.map((x) => `<button type="button" class="mood-chip" data-mood="${esc(x.id)}"><i aria-hidden="true">${x.emoji}</i><span>${esc(x.label)}</span><small></small></button>`).join('')}
     </div>
     <div id="pickResult" class="pick-result" aria-live="polite"></div>
     <p id="pickStatus" class="pick-status muted"></p>`, 'pick-modal');

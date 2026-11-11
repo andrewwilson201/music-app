@@ -398,7 +398,8 @@ select { background: var(--surface); border: 1px solid var(--line); border-radiu
   .simple-list .btn.small { padding: 0 10px; }
   .cover.md { width: 96px; }
   .hide-sm { display: none; }
-  .q-card, .q-more { flex-basis: 104px; width: 104px; }
+  .q-card, .q-more { flex-basis: 88px; width: 88px; }
+  .q-card .q-title { font-size: 13px; }
 }
 
 /* ---------- sign in, first run, account */
@@ -589,7 +590,6 @@ body.signed-out .view-bar { display: none; }
 .lb.unlogged li { padding-left: 8px; background: transparent; border-style: dashed; }
 .sec-title { display: flex; align-items: baseline; justify-content: space-between; max-width: 760px; margin: 30px 0 12px; font-family: var(--serif); font-size: 22px; font-weight: 600; letter-spacing: -.01em; }
 .sec-title small { font-family: var(--sans); font-size: 13px; font-weight: 500; color: var(--muted); }
-.listen-pills { margin-top: 12px; height: 38px; font-size: 14px; }
 @media (max-width: 720px) {
   .listen-seg { width: 100%; }
   .big-total { gap: 16px; }
@@ -737,3 +737,23 @@ body.signed-out .view-bar { display: none; }
 .rec-song small { font-size: 11px; letter-spacing: .08em; text-transform: uppercase; color: var(--muted); }
 .rec-song b { color: var(--accent); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
 .rec-song .btn { flex: none; }
+
+/* ---- third review (Nov 2026) ---- */
+/* Sort button names the order when it isn't the usual one. */
+.sort-name:empty { display: none; }
+.tool-btn.named { width: auto; display: inline-flex; align-items: center; gap: 6px; padding: 0 12px; color: var(--text); font-size: 13px; font-weight: 600; white-space: nowrap; }
+.tool-btn.named svg { flex: none; }
+/* A friend's library: albums already in yours. */
+.mine-pill { position: absolute; left: 7px; bottom: 7px; z-index: 1; display: inline-flex; align-items: center; gap: 4px; padding: 3px 8px; border-radius: 999px; background: rgba(18, 17, 16, .78); backdrop-filter: blur(6px); color: var(--text); font-size: 12px; font-weight: 600; }
+.mine-pill svg, .row-mine svg, .mine-note svg { width: 13px; height: 13px; fill: none; stroke: var(--ok); stroke-width: 2.6; stroke-linecap: round; stroke-linejoin: round; }
+.row-mine { flex: none; display: inline-flex; align-items: center; gap: 4px; color: var(--muted); font-size: 13px; font-weight: 600; }
+.mine-note { margin: 6px 0 0; display: inline-flex; align-items: center; gap: 6px; color: var(--muted); font-size: 14px; }
+/* Add sheet: save for later instead of logging. */
+.save-next { margin-top: 4px; align-self: center; }
+/* Listening: tracking has stopped. */
+.track-note { display: flex; align-items: center; justify-content: space-between; gap: 12px; flex-wrap: wrap; margin: 0 0 18px; padding: 12px 14px; border-radius: 12px; background: rgba(231, 176, 74, .12); color: var(--warn); font-size: 14px; }
+.track-note b { color: var(--text); }
+.track-note .btn { flex: none; }
+#listenBtn.stopped::after { content: ''; position: absolute; top: 7px; right: 7px; width: 8px; height: 8px; border-radius: 50%; background: var(--warn); box-shadow: 0 0 0 2px var(--bg); }
+/* Wide screens: the big cover stays in view while the details scroll. */
+@media (min-width: 721px) { .detail > .cover.xl { position: sticky; top: 0; align-self: start; } }

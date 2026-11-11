@@ -428,7 +428,8 @@ async function run() {
 
 // ---- Spotify ----
 export function spotifyUrl(album) {
-  if (album.spotify) return album.spotify;
+  // Only real links: this goes straight into a link's address.
+  if (/^https:\/\//.test(album.spotify || '')) return album.spotify;
   return `https://open.spotify.com/search/${encodeURIComponent(`${album.artist} ${album.title || ''}`.trim())}`;
 }
 export function spotifyArtistUrl(name) {
