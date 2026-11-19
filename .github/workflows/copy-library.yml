@@ -1,0 +1,26 @@
+# One-off, on this branch only: copy Andrew's library into Tess's account.
+# Reads tools/copy-library/MODE (plan or write). Not for main.
+name: Copy library (one-off)
+on:
+  push:
+    branches: [claude/project-thread-oramrp]
+    paths: ['tools/copy-library/**', '.github/workflows/copy-library.yml']
+concurrency: copy-library
+jobs:
+  copy:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - run: npm ci
+        working-directory: functions
+      - name: Run
+        env:
+          SA: ${{ secrets.FIREBASE_SERVICE_ACCOUNT }}
+        run: |
+          export GOOGLE_APPLICATION_CREDENTIALS="$RUNNER_TEMP/sa.json"
+          printf '%s' "$SA" > "$GOOGLE_APPLICATION_CREDENTIALS"
+          set -a; . tools/copy-library/MODE.env 2>/dev/null || true; set +a
+          MODE="$(cat tools/copy-library/MODE)" node tools/copy-library/run.mjs
