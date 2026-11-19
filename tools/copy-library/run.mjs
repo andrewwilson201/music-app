@@ -33,7 +33,13 @@ try {
   }
 } catch {}
 const match = (re) => users.filter((u) => [...info[u].names].some((n) => re.test(n.trim())));
-const srcs = match(SRC_NAME), dsts = match(DST_NAME);
+const srcs = match(SRC_NAME);
+let dsts = match(DST_NAME);
+// Only two accounts and no name for the other one: it can only be Tess's.
+if (!dsts.length && srcs.length === 1 && users.length === 2) {
+  dsts = users.filter((u) => u !== srcs[0]);
+  console.log(`Target found as the only other account (it has ${info[dsts[0]].names.size} names on record, none starting "Tess").`);
+}
 console.log(`Accounts: ${users.length}. Name matches: source ${srcs.map(short).join(', ') || 'none'}, target ${dsts.map(short).join(', ') || 'none'}`);
 if (srcs.length !== 1 || dsts.length !== 1 || srcs[0] === dsts[0]) { console.log('Not exactly one of each: stopping.'); process.exit(1); }
 const [SRC] = srcs, [DST] = dsts;
